@@ -1,6 +1,6 @@
 # S-303: Ingredient deletion rules
 
-**Epic:** E-3 Ingredients & Pantry | **Status:** TODO | **Depends on:** S-302
+**Epic:** E-3 Ingredients & Pantry | **Status:** DONE (2026-07-11) | **Depends on:** S-302
 **Covers:** FR-4
 
 ## Context

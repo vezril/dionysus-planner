@@ -17,6 +17,8 @@ import type { IngredientRecord } from "@/data/repositories/ingredientRepo";
 import {
   createIngredientRecord,
   getIngredientRecordById,
+  getIngredientReferences,
+  removeIngredientRecord,
   updateIngredientNutritionRecord,
 } from "@/data/ingredients";
 
@@ -115,4 +117,84 @@ export async function overrideIngredientNutrition(
 
   revalidatePath("/ingredients");
   return { ok: true, data: record };
+}
+
+/**
+ * Builds the friendly, FR-4-mandated referencing-records listing — every
+ * referencing recipe named by `name`, plus a mention of "pantry" whenever
+ * `inPantry` is true. Never a raw FK error (architecture.md §6).
+ */
+function referencedMessage(references: { recipes: Array<{ id: number; name: string }>; inPantry: boolean }): string {
+  const reasons: string[] = [];
+  if (references.recipes.length > 0) {
+    const names = references.recipes.map((recipe) => recipe.name).join(", ");
+    reasons.push(`recipe(s) ${names}`);
+  }
+  if (references.inPantry) {
+    reasons.push("your pantry");
+  }
+  const listing = reasons.length > 0 ? reasons.join(" and ") : "other records";
+  return `Cannot delete this ingredient — it is referenced by ${listing}.`;
+}
+
+/**
+ * S-303 deletion rules (docs/stories/S-303, FR-4, architecture.md §4/§6):
+ *   - Unresolvable `id` => `NOT_FOUND`, no write, no revalidate.
+ *   - `source === "SEEDED"` => ALWAYS `SEEDED_NOT_DELETABLE`, regardless of
+ *     references — seeded ingredients are never deletable, override-only
+ *     (FR-3/FR-4/AC-3).
+ *   - `source === "CUSTOM"` and referenced by >=1 recipe line and/or a
+ *     pantry item => `REFERENCED`, with a friendly listing naming every
+ *     referencing recipe and mentioning pantry presence — never a raw FK
+ *     error.
+ *   - `source === "CUSTOM"` and unreferenced => deletes the row,
+ *     revalidates `/ingredients`, returns `{ id }`.
+ *   - Race backstop (AC-4): the referencing pre-check runs first so the
+ *     friendly path is normal, but if a reference is inserted concurrently
+ *     (between the check and the delete) the DB's `ON DELETE RESTRICT`
+ *     constraint still fires on the delete itself — that violation is
+ *     caught here and mapped to the same `REFERENCED` shape rather than
+ *     surfacing as an unhandled exception.
+ */
+export async function deleteIngredient(id: number): Promise<ActionResult<{ id: number }>> {
+  const existing = await getIngredientRecordById(id);
+  if (!existing) {
+    return {
+      ok: false,
+      error: { code: "NOT_FOUND", message: `Ingredient ${id} was not found.` },
+    };
+  }
+
+  if (existing.source === "SEEDED") {
+    return {
+      ok: false,
+      error: {
+        code: "SEEDED_NOT_DELETABLE",
+        message: "Seeded ingredients cannot be deleted. Edit its nutrition to override it instead.",
+      },
+    };
+  }
+
+  const references = await getIngredientReferences(id);
+  if (references.recipes.length > 0 || references.inPantry) {
+    return { ok: false, error: { code: "REFERENCED", message: referencedMessage(references) } };
+  }
+
+  try {
+    await removeIngredientRecord(id);
+  } catch {
+    // Race backstop: the pre-check above reported no references, but the
+    // DB's ON DELETE RESTRICT constraint fired anyway — a reference was
+    // inserted concurrently, between the check and this delete.
+    return {
+      ok: false,
+      error: {
+        code: "REFERENCED",
+        message: "Cannot delete this ingredient — it is referenced by other records.",
+      },
+    };
+  }
+
+  revalidatePath("/ingredients");
+  return { ok: true, data: { id } };
 }

@@ -134,3 +134,40 @@ export async function updateIngredientNutritionRecord(
     db.$client.close();
   }
 }
+
+/**
+ * S-303 data-layer entry points for `app/actions/ingredient-actions.ts`'s
+ * `deleteIngredient` (docs/stories/S-303). Same per-call `createDb()`
+ * pattern as every function above — no module-scope singleton.
+ */
+
+/**
+ * Wraps `ingredientRepo.getReferencesTo` — the friendly referencing-records
+ * pre-check the action runs before attempting a delete (architecture.md §6:
+ * "FK RESTRICT violations are pre-empted by an explicit referencing-records
+ * query").
+ */
+export async function getIngredientReferences(
+  id: number,
+): Promise<{ recipes: Array<{ id: number; name: string }>; inPantry: boolean }> {
+  const db = createDb();
+  try {
+    return await ingredientRepo.getReferencesTo(db, id);
+  } finally {
+    db.$client.close();
+  }
+}
+
+/**
+ * Wraps `ingredientRepo.remove`. Dumb persistence only — no reference
+ * checking here; the calling action owns the pre-check and the FK
+ * RESTRICT-as-backstop error handling (architecture.md §6).
+ */
+export async function removeIngredientRecord(id: number): Promise<void> {
+  const db = createDb();
+  try {
+    await ingredientRepo.remove(db, id);
+  } finally {
+    db.$client.close();
+  }
+}

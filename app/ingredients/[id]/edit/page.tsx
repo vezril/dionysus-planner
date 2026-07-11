@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { DeleteIngredientButton } from "@/app/ingredients/_components/delete-ingredient-button";
 import { IngredientForm } from "@/app/ingredients/_components/ingredient-form";
 import { getIngredientRecordById } from "@/data/ingredients";
 
@@ -48,6 +49,7 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
           densityGPerMl: ingredient.densityGPerMl,
         }}
       />
+      {ingredient.source === "CUSTOM" ? <DeleteIngredientButton ingredientId={ingredient.id} /> : null}
     </div>
   );
 }
