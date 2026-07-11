@@ -1,6 +1,6 @@
 # S-501: What Can I Cook view
 
-**Epic:** E-5 What Can I Cook | **Status:** TODO | **Depends on:** S-104, S-304, S-401
+**Epic:** E-5 What Can I Cook | **Status:** DONE (2026-07-11) | **Depends on:** S-104, S-304, S-401
 **Covers:** FR-20, FR-21, FR-22, FR-24 (UI integration), FR-29 (first-run state)
 
 ## Context

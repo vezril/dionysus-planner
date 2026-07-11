@@ -101,8 +101,19 @@ test.describe("S-105 app shell", () => {
   // owns the recipe-appears-in-the-list assertion instead; this file keeps
   // only the generic heading check for /recipes (below), same treatment as
   // /ingredients.
+  //
+  // S-501 supersedes the empty-state contract for /what-can-i-cook for
+  // the same reason as /pantry and /recipes above: once the real RSC
+  // lands, this route's emptiness depends on BOTH the pantry and the
+  // recipe list being empty, and tests/e2e/what-can-i-cook.spec.ts (plus
+  // every pantry/recipe-mutating spec file) writes to one or both from a
+  // worker running in parallel with this file — asserting "/what-can-i-cook
+  // is empty" here would race non-deterministically. tests/e2e/what-can-i-
+  // cook.spec.ts owns this route's real (non-empty) content assertions
+  // instead; this file keeps only the generic heading check below, same
+  // treatment as /ingredients and /recipes.
   const EMPTY_STATE_SECTIONS = SECTIONS.filter(
-    ({ path }) => path !== "/ingredients" && path !== "/pantry" && path !== "/recipes",
+    ({ path }) => path !== "/ingredients" && path !== "/pantry" && path !== "/recipes" && path !== "/what-can-i-cook",
   );
 
   for (const { path, heading } of EMPTY_STATE_SECTIONS) {
@@ -140,6 +151,17 @@ test.describe("S-105 app shell", () => {
   // S-304 supersedes this test — see the EMPTY_STATE_SECTIONS comment
   // above for why. The FR-29 CTA-copy assertion now lives in
   // tests/e2e/pantry.spec.ts's first (serial, pre-mutation) test.
+
+  test("AC2: /what-can-i-cook renders its heading (S-501 supersedes the empty-state contract here — see the EMPTY_STATE_SECTIONS comment above; tests/e2e/what-can-i-cook.spec.ts owns the real content assertions)", async ({
+    page,
+  }) => {
+    const response = await page.goto("/what-can-i-cook");
+    expect(response?.ok()).toBe(true);
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "What Can I Cook", exact: true })
+    ).toBeVisible();
+  });
 
   test("AC2: /recipes renders its heading (S-401 supersedes the empty-state contract here — see the EMPTY_STATE_SECTIONS comment above; tests/e2e/recipe-create.spec.ts owns the real content assertions)", async ({
     page,
