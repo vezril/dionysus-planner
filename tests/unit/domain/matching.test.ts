@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { toCanonical, resolveQuantityForComparison } from "@/domain/units";
-// eslint-disable-next-line import/no-unresolved -- domain/matching.ts does
+ 
 // not exist yet (S-104 is RED-by-design until the implementer builds it).
-import { computeCookableAndNearMatch } from "@/domain/matching";
+import { computeCookableAndNearMatch, type RankedRecipe, type UnsatisfiedLine } from "@/domain/matching";
 
 /**
  * S-104: domain matching & near-match ranking.
@@ -162,12 +162,12 @@ function recipe(id: number, name: string, lines: RecipeLine[]): RecipeWithLines 
 
 /** Finds an unsatisfied entry for a given recipe id + ingredient id inside a nearMatch result. */
 function findUnsatisfied(
-  nearMatch: any[],
+  nearMatch: RankedRecipe[],
   recipeId: number,
   ingredientId: number,
 ) {
   const entry = nearMatch.find((r) => r.id === recipeId);
-  return entry?.unsatisfiedLines.find((l: any) => l.ingredientId === ingredientId);
+  return entry?.unsatisfiedLines.find((l: UnsatisfiedLine) => l.ingredientId === ingredientId);
 }
 
 function idsOf(recipes: Array<{ id: number }>): number[] {
@@ -381,12 +381,12 @@ describe("computeCookableAndNearMatch — per-ingredient aggregation for unsatis
       recipeLine({ ingredientId: 80, displayQuantity: 100, displayUnit: "g" }),
     ]);
     const result = computeCookableAndNearMatch(pantry, [twoLineRice], 3);
-    const entry = result.nearMatch.find((r: any) => r.id === 16);
+    const entry = result.nearMatch.find((r) => r.id === 16);
     expect(entry).toBeDefined();
     if (!entry) throw new Error("expected recipe 16 in nearMatch");
     // Exactly one unsatisfied entry for ingredient 80, not two.
     const entriesForIngredient80 = entry.unsatisfiedLines.filter(
-      (l: any) => l.ingredientId === 80,
+      (l: UnsatisfiedLine) => l.ingredientId === 80,
     );
     expect(entriesForIngredient80).toHaveLength(1);
     expect(entry.unsatisfiedLines).toHaveLength(1);
@@ -415,10 +415,10 @@ describe("computeCookableAndNearMatch — per-ingredient aggregation for unsatis
       recipeLine({ ingredientId: 90, displayQuantity: 500, displayUnit: "g" }), // second: 500 g
     ]);
     const result = computeCookableAndNearMatch(pantry, [mixedUnitsRecipe], 3);
-    const entry = result.nearMatch.find((r: any) => r.id === 18);
+    const entry = result.nearMatch.find((r) => r.id === 18);
     expect(entry).toBeDefined();
     if (!entry) throw new Error("expected recipe 18 in nearMatch");
-    const unsatisfied = entry.unsatisfiedLines.find((l: any) => l.ingredientId === 90);
+    const unsatisfied = entry.unsatisfiedLines.find((l: UnsatisfiedLine) => l.ingredientId === 90);
     expect(unsatisfied).toBeDefined();
     if (!unsatisfied) throw new Error("expected an unsatisfied entry for ingredient 90");
     // required 1000 + 500 = 1500 g; held 300 g; shortfall = 1200 g = 1.2 kg.
@@ -441,7 +441,7 @@ describe("computeCookableAndNearMatch — per-ingredient aggregation for unsatis
     ]);
     const result = computeCookableAndNearMatch(pantry, [crossClassDuplicate], 3);
     expect(idsOf(result.cookable)).toEqual([]);
-    const entry = result.nearMatch.find((r: any) => r.id === 19);
+    const entry = result.nearMatch.find((r) => r.id === 19);
     expect(entry).toBeDefined();
     if (!entry) throw new Error("expected recipe 19 in nearMatch");
     expect(entry.unsatisfiedLines).toHaveLength(1);
@@ -465,7 +465,7 @@ describe("computeCookableAndNearMatch — near-match ranking (FR-21)", () => {
     // Deliberately passed out of "expected" order to prove sorting, not
     // fixture-array order, drives the result.
     const result = computeCookableAndNearMatch(pantry, [missesTwo, missesOne], 3);
-    expect(result.nearMatch.map((r: any) => r.id)).toEqual([100, 101]);
+    expect(result.nearMatch.map((r) => r.id)).toEqual([100, 101]);
   });
 
   it("ties on count broken by ascending MEAN shortfall proportion: a 20%-short recipe ranks above a fully-missing one (PRD FR-21 AC / story AC-7)", () => {
@@ -480,7 +480,7 @@ describe("computeCookableAndNearMatch — near-match ranking (FR-21)", () => {
       recipeLine({ ingredientId: 401, displayQuantity: 100, displayUnit: "g" }),
     ]);
     const result = computeCookableAndNearMatch(pantry, [delta, gamma], 3);
-    expect(result.nearMatch.map((r: any) => r.id)).toEqual([102, 103]); // Gamma (0.2) before Delta (1.0)
+    expect(result.nearMatch.map((r) => r.id)).toEqual([102, 103]); // Gamma (0.2) before Delta (1.0)
   });
 
   it("ties on BOTH count and mean shortfall proportion broken alphabetically by recipe name", () => {
@@ -492,7 +492,7 @@ describe("computeCookableAndNearMatch — near-match ranking (FR-21)", () => {
       recipeLine({ ingredientId: 501, displayQuantity: 100, displayUnit: "g" }),
     ]);
     const result = computeCookableAndNearMatch(pantry, [banana, apple], 3);
-    expect(result.nearMatch.map((r: any) => r.name)).toEqual(["Apple Pie", "Banana Bread"]);
+    expect(result.nearMatch.map((r) => r.name)).toEqual(["Apple Pie", "Banana Bread"]);
   });
 
   it("mean shortfall proportion is averaged across ALL unsatisfied lines of a recipe (one fully-missing + one 50% short -> mean 0.75)", () => {
@@ -502,7 +502,7 @@ describe("computeCookableAndNearMatch — near-match ranking (FR-21)", () => {
       recipeLine({ ingredientId: 601, displayQuantity: 100, displayUnit: "g" }), // 50 g held of 100 g: proportion 0.5
     ]);
     const result = computeCookableAndNearMatch(pantry, [multiLine], 3);
-    const entry = result.nearMatch.find((r: any) => r.id === 106);
+    const entry = result.nearMatch.find((r) => r.id === 106);
     expect(entry).toBeDefined();
     if (!entry) throw new Error("expected recipe 106 in nearMatch");
     expect(entry.meanShortfallProportion).toBeCloseTo((1.0 + 0.5) / 2, 10);

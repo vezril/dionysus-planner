@@ -1,6 +1,6 @@
 # S-202: Repositories (data ↔ domain mapping)
 
-**Epic:** E-2 Data layer | **Status:** TODO | **Depends on:** S-201, S-102
+**Epic:** E-2 Data layer | **Status:** DONE (2026-07-11) | **Depends on:** S-201, S-102
 **Covers:** FR-9 (canonical + display persistence), FR-5 (search query), FR-24 (ID-keyed reads) / NFR-3 (single-join query shapes)
 
 ## Context

@@ -1,5 +1,7 @@
 import Database from "better-sqlite3";
+import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { runMigrations } from "@/data/migrate";
+import * as schema from "@/data/schema";
 
 /**
  * Test-only helper (S-201): opens a fresh in-memory SQLite database, applies
@@ -19,6 +21,22 @@ export function createMigratedMemoryDb(): Database.Database {
   runMigrations(sqlite);
   sqlite.pragma("foreign_keys = ON");
   return sqlite;
+}
+
+/**
+ * S-202 repository-test helper: a migrated `:memory:` database wrapped in a
+ * Drizzle instance (mirrors `data/db.ts`'s `createDb()` shape, minus path
+ * resolution), for calling repository functions directly the way `data/
+ * db.ts`'s `createDb()` output would be used at runtime. `sqlite` is
+ * exposed alongside `db` so tests can spy on `sqlite.prepare` (query-count
+ * guard, S-202 AC-4/NFR-3) or assert directly via raw SQL/PRAGMA.
+ */
+export type MigratedDrizzleDb = BetterSQLite3Database<typeof schema>;
+
+export function createMigratedDrizzleDb(): { db: MigratedDrizzleDb; sqlite: Database.Database } {
+  const sqlite = createMigratedMemoryDb();
+  const db = drizzle(sqlite, { schema });
+  return { db, sqlite };
 }
 
 export interface TableInfoRow {
