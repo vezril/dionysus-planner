@@ -1,6 +1,6 @@
 # S-204: Seed data content — ~300 curated ingredients
 
-**Epic:** E-2 Data layer | **Status:** TODO | **Depends on:** none (JSON schema contract from architecture §8; can start immediately, in parallel with all app code)
+**Epic:** E-2 Data layer | **Status:** DONE (2026-07-11) | **Depends on:** none (JSON schema contract from architecture §8; can start immediately, in parallel with all app code)
 **Covers:** FR-1 / A-5, NFR-9 (bundled data), Success Criterion #1
 
 ## Context
