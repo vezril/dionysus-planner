@@ -26,11 +26,28 @@ const recipeLineSchema = z.object({
   unit: z.enum(UNIT_KEYS),
 });
 
+/**
+ * S-405 (docs/stories/S-405-recipe-tags.md) optional `tags` field: each
+ * entry is trimmed; an entry that is empty/whitespace-only AFTER trimming
+ * is a validation failure (same "reject, don't silently drop" posture the
+ * schema already takes for a 0-length `lines` array), surfaced under
+ * `fieldErrors.tags`. Trimmed tags are then deduplicated by EXACT
+ * (case-sensitive) string equality — tags are free text and are NEVER
+ * lowercase-folded (Dev Notes: "do not lowercase-fold silently; store as
+ * typed"), so "Quick" and "quick" are two distinct tags, not a duplicate
+ * pair.
+ */
+const tagsSchema = z
+  .array(z.string().trim().min(1, "Tags cannot be empty."))
+  .optional()
+  .transform((tags) => (tags ? Array.from(new Set(tags)) : tags));
+
 export const recipeSchema = z.object({
   name: z.string().trim().min(1),
   servings: z.number().int().min(1),
   instructions: z.string().optional(),
   lines: z.array(recipeLineSchema).min(1, "Add at least one ingredient line."),
+  tags: tagsSchema,
 });
 
 export type RecipeSchemaInput = z.infer<typeof recipeSchema>;

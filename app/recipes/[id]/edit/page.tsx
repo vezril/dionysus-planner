@@ -32,7 +32,7 @@ export default async function EditRecipePage({ params }: { params: Promise<{ id:
     notFound();
   }
 
-  const { recipe, lines } = detail;
+  const { recipe, lines, tags } = detail;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
@@ -49,6 +49,7 @@ export default async function EditRecipePage({ params }: { params: Promise<{ id:
             quantity: line.displayQuantity,
             unit: line.displayUnit,
           })),
+          tags,
         }}
       />
       <DeleteRecipeButton recipeId={recipe.id} />

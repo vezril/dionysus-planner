@@ -30,6 +30,14 @@
  *     instructions and renders exactly one `recipe-line-row` per existing
  *     line, pre-filled with that line's ingredient name/displayQuantity/
  *     displayUnit (FR-14 AC1).
+ *
+ * S-405 (docs/stories/S-405-recipe-tags.md, tests/e2e/recipe-tags.spec.ts):
+ *   - A "Tags" free-text textbox. Pressing Enter while it is focused and
+ *     non-empty commits its trimmed value as a `data-testid=
+ *     "recipe-tag-chip"` chip and clears the input; each chip has a
+ *     `getByRole("button", { name: \`Remove tag ${tag}\` })` inside it.
+ *   - Saving submits every currently-committed chip as `tags`.
+ *   - `initialValues.tags` (edit mode) pre-fills the committed chip list.
  */
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -89,6 +97,7 @@ export interface RecipeEditorInitialValues {
   servings: number;
   instructions: string;
   lines: RecipeEditorInitialLine[];
+  tags?: string[];
 }
 
 interface RecipeEditorProps {
@@ -113,6 +122,9 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
   );
   const [linesError, setLinesError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [tags, setTags] = useState<string[]>(() => initialValues?.tags ?? []);
+  const [tagDraft, setTagDraft] = useState("");
+  const [tagsError, setTagsError] = useState<string | null>(null);
 
   const {
     register,
@@ -154,9 +166,23 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
     updateLine(key, { ingredientId: option.id, ingredientQuery: option.name, options: [] });
   }
 
+  function commitTagDraft() {
+    const trimmed = tagDraft.trim();
+    if (trimmed === "") {
+      return;
+    }
+    setTags((previous) => (previous.includes(trimmed) ? previous : [...previous, trimmed]));
+    setTagDraft("");
+  }
+
+  function removeTag(tag: string) {
+    setTags((previous) => previous.filter((existing) => existing !== tag));
+  }
+
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
     setLinesError(null);
+    setTagsError(null);
 
     const completedLines = lines
       .filter((line) => line.ingredientId !== null && line.quantity !== "" && line.unit !== "")
@@ -171,6 +197,7 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
       servings: Number(values.servings),
       instructions: values.instructions,
       lines: completedLines,
+      tags,
     };
 
     const parsed = recipeSchema.safeParse(payload);
@@ -196,6 +223,9 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
   function applyFieldErrors(fieldErrors: Record<string, string[]>) {
     if (fieldErrors.lines?.length) {
       setLinesError(fieldErrors.lines[0]);
+    }
+    if (fieldErrors.tags?.length) {
+      setTagsError(fieldErrors.tags[0]);
     }
     if (fieldErrors.name?.length) {
       setError("name", { type: "server", message: fieldErrors.name[0] });
@@ -310,6 +340,48 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
           ))}
 
           {linesError ? <p className="text-sm text-destructive">{linesError}</p> : null}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="recipe-tags" className="text-sm font-medium text-foreground">
+            Tags
+          </label>
+          <Input
+            id="recipe-tags"
+            type="text"
+            aria-label="Tags"
+            className="max-w-sm"
+            value={tagDraft}
+            onChange={(event) => setTagDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                commitTagDraft();
+              }
+            }}
+          />
+          {tags.length > 0 ? (
+            <ul className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <li
+                  key={tag}
+                  data-testid="recipe-tag-chip"
+                  className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-1 text-sm"
+                >
+                  <span>{tag}</span>
+                  <button
+                    type="button"
+                    aria-label={`Remove tag ${tag}`}
+                    onClick={() => removeTag(tag)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {tagsError ? <p className="text-sm text-destructive">{tagsError}</p> : null}
         </div>
 
         {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}

@@ -17,7 +17,7 @@
  */
 import { eq } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { ingredient, recipe, recipeLine } from "@/data/schema";
+import { ingredient, recipe, recipeLine, recipeTag } from "@/data/schema";
 import * as schema from "@/data/schema";
 import type { UnitClass } from "@/domain/types";
 import type { IngredientRecord } from "@/data/repositories/ingredientRepo";
@@ -51,6 +51,15 @@ export interface RecipeWriteInput {
   servings: number;
   instructions: string;
   lines: RecipeLineInput[];
+  /**
+   * S-405 (docs/stories/S-405-recipe-tags.md) — the recipe's full tag set.
+   * Omitted entirely (as every pre-S-405 caller/test still does) means
+   * "zero tags", mirroring `lines`' own "the write is the whole truth"
+   * posture; callers that DO care about tags pass the full deduplicated,
+   * trimmed set (ADR-005's ownership of trim/dedupe stays with the schema,
+   * not here — this layer is dumb persistence, per S-202 Dev Notes).
+   */
+  tags?: string[];
 }
 
 export interface RecipeUpdateInput {
@@ -58,6 +67,12 @@ export interface RecipeUpdateInput {
   servings?: number;
   instructions?: string;
   lines: RecipeLineInput[];
+  /**
+   * S-405 full replace-set semantics, same as `lines`: omitted entirely
+   * means the recipe's tag set becomes empty (clearing any previously-saved
+   * tags) — never a partial/diff patch.
+   */
+  tags?: string[];
 }
 
 export interface DensityIngredientProjection {
@@ -121,7 +136,7 @@ export async function getById(db: Db, id: number): Promise<RecipeRecord | null> 
 export async function createWithLines(
   db: Db,
   input: RecipeWriteInput,
-): Promise<RecipeRecord & { lines: RecipeLineRecord[] }> {
+): Promise<RecipeRecord & { lines: RecipeLineRecord[]; tags: string[] }> {
   return db.transaction((tx) => {
     const timestamp = nowIso();
     const [recipeRow] = tx
@@ -152,7 +167,12 @@ export async function createWithLines(
       return toLineRecord(lineRow);
     });
 
-    return { ...toRecipeRecord(recipeRow), lines };
+    const tags = input.tags ?? [];
+    for (const tag of tags) {
+      tx.insert(recipeTag).values({ recipeId: recipeRow.id, tag }).run();
+    }
+
+    return { ...toRecipeRecord(recipeRow), lines, tags };
   });
 }
 
@@ -221,7 +241,7 @@ export async function updateWithLines(
   db: Db,
   id: number,
   input: RecipeUpdateInput,
-): Promise<RecipeRecord & { lines: RecipeLineRecord[] }> {
+): Promise<RecipeRecord & { lines: RecipeLineRecord[]; tags: string[] }> {
   return db.transaction((tx) => {
     const patch: Partial<typeof recipe.$inferInsert> = { updatedAt: nowIso() };
     if (input.name !== undefined) patch.name = input.name;
@@ -248,10 +268,42 @@ export async function updateWithLines(
       return toLineRecord(lineRow);
     });
 
-    return { ...toRecipeRecord(recipeRow), lines };
+    tx.delete(recipeTag).where(eq(recipeTag.recipeId, id)).run();
+    const tags = input.tags ?? [];
+    for (const tag of tags) {
+      tx.insert(recipeTag).values({ recipeId: id, tag }).run();
+    }
+
+    return { ...toRecipeRecord(recipeRow), lines, tags };
   });
 }
 
 export async function remove(db: Db, id: number): Promise<void> {
   await db.delete(recipe).where(eq(recipe.id, id));
+}
+
+/** S-405 — reads the current tag set for a recipe (order not guaranteed). */
+export async function getTags(db: Db, recipeId: number): Promise<string[]> {
+  const rows = await db.select({ tag: recipeTag.tag }).from(recipeTag).where(eq(recipeTag.recipeId, recipeId));
+  return rows.map((row) => row.tag);
+}
+
+/**
+ * S-405 — reads EVERY `recipe_tag` row in one query, grouped by
+ * `recipeId`, for `data/recipes.ts#listRecipeSummaries` to merge onto
+ * `getAllWithLines`'s result without per-recipe queries (same anti-N+1
+ * posture as `getAllWithLines` itself, AC-4/NFR-3).
+ */
+export async function getAllTags(db: Db): Promise<Map<number, string[]>> {
+  const rows = await db.select({ recipeId: recipeTag.recipeId, tag: recipeTag.tag }).from(recipeTag);
+  const byRecipeId = new Map<number, string[]>();
+  for (const row of rows) {
+    const existing = byRecipeId.get(row.recipeId);
+    if (existing) {
+      existing.push(row.tag);
+    } else {
+      byRecipeId.set(row.recipeId, [row.tag]);
+    }
+  }
+  return byRecipeId;
 }

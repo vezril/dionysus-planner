@@ -27,3 +27,26 @@ export function filterByNameSubstring<T extends { name: string }>(items: T[], qu
   }
   return items.filter((item) => item.name.toLowerCase().includes(needle));
 }
+
+/**
+ * S-405 (docs/stories/S-405-recipe-tags.md AC2, FR-16) — pure tag-AND
+ * intersection predicate. An item matches iff its `tags` array contains
+ * EVERY string in `selectedTags` (extra tags beyond the selection never
+ * disqualify); an empty `selectedTags` matches every item, in original
+ * order, mirroring `filterByNameSubstring`'s empty-query rule. Matching is
+ * EXACT, case-sensitive string equality — tags are free text that this app
+ * deliberately never lowercase-folds (Dev Notes: "do not lowercase-fold
+ * silently; store as typed").
+ *
+ * Generic over any item shape carrying at least a `tags: string[]` field
+ * (recipe summaries/detail rows) — not recipe-specific, same "extend this
+ * module" pattern `filterByNameSubstring` established for S-404. Pure:
+ * never mutates `items`, any item, or any item's `tags` array; returns a
+ * NEW array.
+ */
+export function filterByTagsAll<T extends { tags: string[] }>(items: T[], selectedTags: string[]): T[] {
+  if (selectedTags.length === 0) {
+    return [...items];
+  }
+  return items.filter((item) => selectedTags.every((tag) => item.tags.includes(tag)));
+}

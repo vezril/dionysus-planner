@@ -7,6 +7,16 @@ import { describe, expect, it } from "vitest";
 // contract.
 import { filterByNameSubstring } from "@/domain/listFilters";
 
+// S-405 (docs/stories/S-405-recipe-tags.md) — `filterByTagsAll` DOES NOT
+// EXIST YET either; this named import fails to resolve (or, if the module
+// resolves but the export is missing, is `undefined` at call time) until
+// the implementer adds it to `domain/listFilters.ts` alongside
+// `filterByNameSubstring`. The `describe` blocks for it live at the bottom
+// of this file, per the S-404 story's own Dev Notes ("S-405/S-406 extend
+// it... with their own describe blocks below this one, in this same
+// file") — the blocks above this point (S-404's own) are untouched.
+import { filterByTagsAll } from "@/domain/listFilters";
+
 /**
  * S-404: recipe list search — pure substring-filter predicate.
  *
@@ -160,6 +170,163 @@ describe("filterByNameSubstring — purity (no mutation of input)", () => {
     const original = itemsOf(["Pasta"]);
     const snapshot = [...original];
     filterByNameSubstring(original, "chick");
+    expect(original).toEqual(snapshot);
+  });
+});
+
+/**
+ * S-405: recipe tag filtering — pure tag-AND intersection predicate.
+ *
+ * Traces to docs/stories/S-405-recipe-tags.md AC2 ("Given the recipe list,
+ * when one or more tags are selected in the tag filter, then only recipes
+ * carrying ALL selected tags remain visible... composing with the FR-25
+ * name search") and the story's own readiness-gate fix: the tag-AND
+ * intersection predicate must live here as a framework-free, unit-tested
+ * pure helper — `app/recipes`'s client list (and its e2e coverage in
+ * tests/e2e/recipe-tags.spec.ts) merely WIRES this predicate to clickable
+ * tag-filter chips; it does not re-implement the intersection logic.
+ *
+ * ============================ PINNED API SHAPE ============================
+ * filterByTagsAll<T extends { tags: string[] }>(items: T[], selectedTags: string[]): T[]
+ *
+ * - Generic over any item shape carrying at least a `tags: string[]` field
+ *   (recipe summaries/detail rows — the same "extend this module" pattern
+ *   `filterByNameSubstring` established for S-404).
+ * - Match rule: AND-intersection — an item matches iff its `tags` array
+ *   contains EVERY string in `selectedTags` (story task: "item matches iff
+ *   it carries ALL selected tags"). An item carrying tags BEYOND the
+ *   selection still matches (extra tags never disqualify — story task:
+ *   "item with extra tags still matches"). Missing even one selected tag
+ *   excludes the item (story task: "missing any one selected tag fails").
+ * - `selectedTags` empty (`[]`) matches EVERY item, in original order —
+ *   never treated as "matches nothing" (story task: "empty selection
+ *   matches all"), mirroring `filterByNameSubstring`'s empty-query rule.
+ * - A `selectedTags` entry that no item's `tags` array contains anywhere
+ *   returns an empty array (`[]`), never `undefined`/`null`, never throws.
+ * - Matching is EXACT, case-sensitive string equality — tags are free text
+ *   that this app deliberately never lowercase-folds when storing
+ *   (docs/stories/S-405-recipe-tags.md Dev Notes: "do not lowercase-fold
+ *   silently; store as typed"); a differently-cased selected tag (e.g.
+ *   "quick" selected against a stored "Quick") does NOT match, since
+ *   folding here would silently treat two distinct stored tag values as
+ *   the same tag, contradicting that storage guarantee.
+ * - Pure: never mutates `items`, any item, or any item's `tags` array —
+ *   returns a NEW array, never the same reference as `items`.
+ * ===========================================================================
+ */
+describe("filterByTagsAll — AND-intersection over selected tags (S-405 AC2, FR-16)", () => {
+  interface TaggedItem {
+    id: number;
+    tags: string[];
+  }
+
+  function item(id: number, tags: string[]): TaggedItem {
+    return { id, tags };
+  }
+
+  function idsOf(items: TaggedItem[]): number[] {
+    return items.map((entry) => entry.id);
+  }
+
+  it("an item matches only when it carries EVERY selected tag (AND, not OR)", () => {
+    const items = [item(1, ["quick", "vegetarian"]), item(2, ["quick"]), item(3, ["vegetarian"])];
+    const result = filterByTagsAll(items, ["quick", "vegetarian"]);
+    expect(idsOf(result)).toEqual([1]);
+  });
+
+  it("an item carrying tags BEYOND the selection still matches (extra tags never disqualify)", () => {
+    const items = [item(1, ["quick", "vegetarian", "one-pot"])];
+    const result = filterByTagsAll(items, ["quick", "vegetarian"]);
+    expect(idsOf(result)).toEqual([1]);
+  });
+
+  it("missing even one selected tag excludes the item", () => {
+    const items = [item(1, ["quick"]), item(2, ["quick", "vegetarian"])];
+    const result = filterByTagsAll(items, ["quick", "vegetarian"]);
+    expect(idsOf(result)).toEqual([2]);
+  });
+
+  it("an item with no tags at all never matches a non-empty selection", () => {
+    const items = [item(1, [])];
+    const result = filterByTagsAll(items, ["quick"]);
+    expect(result).toEqual([]);
+  });
+
+  it("preserves the original relative order of matching items", () => {
+    const items = [item(3, ["quick"]), item(1, ["quick", "vegetarian"]), item(2, ["quick"])];
+    const result = filterByTagsAll(items, ["quick"]);
+    expect(idsOf(result)).toEqual([3, 1, 2]);
+  });
+});
+
+describe("filterByTagsAll — empty selection returns everything (story task: \"empty selection matches all\")", () => {
+  it("an empty selectedTags array returns all items, unfiltered, in original order", () => {
+    const items = [
+      { id: 1, tags: ["quick"] },
+      { id: 2, tags: [] },
+      { id: 3, tags: ["vegetarian", "quick"] },
+    ];
+    const result = filterByTagsAll(items, []);
+    expect(result.map((entry: { id: number }) => entry.id)).toEqual([1, 2, 3]);
+  });
+});
+
+describe("filterByTagsAll — an unknown selected tag returns an empty array (story task: \"unknown tag → empty\")", () => {
+  it("a selected tag no item carries returns [] even when other selected tags DO match something", () => {
+    const items = [
+      { id: 1, tags: ["quick", "vegetarian"] },
+      { id: 2, tags: ["quick"] },
+    ];
+    const result = filterByTagsAll(items, ["quick", "no-such-tag"]);
+    expect(result).toEqual([]);
+  });
+
+  it("a single unknown selected tag against a non-empty item list returns []", () => {
+    const items = [{ id: 1, tags: ["quick"] }];
+    const result = filterByTagsAll(items, ["no-such-tag"]);
+    expect(result).toEqual([]);
+  });
+});
+
+describe("filterByTagsAll — exact, case-sensitive match (tags are never silently case-folded — story Dev Notes)", () => {
+  it("does NOT match a differently-cased stored tag against a selected tag of the same word", () => {
+    const items = [{ id: 1, tags: ["Quick"] }];
+    const result = filterByTagsAll(items, ["quick"]);
+    expect(result).toEqual([]);
+  });
+
+  it("matches when the stored tag's case exactly matches the selected tag's case", () => {
+    const items = [{ id: 1, tags: ["Quick"] }];
+    const result = filterByTagsAll(items, ["Quick"]);
+    expect(result.map((entry: { id: number }) => entry.id)).toEqual([1]);
+  });
+});
+
+describe("filterByTagsAll — purity (no mutation of input)", () => {
+  it("does not mutate the input items array or any item's tags array", () => {
+    const original = [
+      { id: 1, tags: ["quick", "vegetarian"] },
+      { id: 2, tags: ["quick"] },
+    ];
+    const snapshot = original.map((entry) => ({ ...entry, tags: [...entry.tags] }));
+
+    const result = filterByTagsAll(original, ["quick"]);
+
+    expect(original).toEqual(snapshot);
+    expect(original).toHaveLength(2);
+    expect(result[0]).toBe(original[0]);
+  });
+
+  it("returns a NEW array instance, never the same reference as the input", () => {
+    const original = [{ id: 1, tags: ["quick"] }];
+    const result = filterByTagsAll(original, []);
+    expect(result).not.toBe(original);
+  });
+
+  it("does not mutate the input array even when selectedTags matches nothing", () => {
+    const original = [{ id: 1, tags: ["quick"] }];
+    const snapshot = original.map((entry) => ({ ...entry, tags: [...entry.tags] }));
+    filterByTagsAll(original, ["no-such-tag"]);
     expect(original).toEqual(snapshot);
   });
 });

@@ -16,12 +16,16 @@ import type { RecipeNutrition } from "@/domain/nutrition";
 export interface RecipeSummary {
   id: number;
   name: string;
+  /** S-405 (docs/stories/S-405-recipe-tags.md AC1) — this recipe's own tags. */
+  tags: string[];
 }
 
 export interface RecipeDetail {
   recipe: RecipeRecord;
   lines: Array<RecipeLineRecord & { ingredient: IngredientRecord }>;
   nutrition: RecipeNutrition;
+  /** S-405 — the recipe's current tags, exactly matching what was last saved. */
+  tags: string[];
 }
 
 export interface RecipeWriteInputPayload {
@@ -29,6 +33,8 @@ export interface RecipeWriteInputPayload {
   servings: number;
   instructions: string;
   lines: RecipeLineInput[];
+  /** S-405 — full replace-set tags (see `recipeRepo.RecipeWriteInput.tags`). */
+  tags?: string[];
 }
 
 /**
@@ -39,7 +45,7 @@ export interface RecipeWriteInputPayload {
  */
 export async function createRecipeWithLines(
   input: RecipeWriteInputPayload,
-): Promise<RecipeRecord & { lines: RecipeLineRecord[] }> {
+): Promise<RecipeRecord & { lines: RecipeLineRecord[]; tags: string[] }> {
   const db = createDb();
   try {
     return await recipeRepo.createWithLines(db, input);
@@ -70,7 +76,7 @@ export async function getRecipeRecordById(id: number): Promise<RecipeRecord | nu
 export async function updateRecipeWithLines(
   id: number,
   input: RecipeWriteInputPayload,
-): Promise<RecipeRecord & { lines: RecipeLineRecord[] }> {
+): Promise<RecipeRecord & { lines: RecipeLineRecord[]; tags: string[] }> {
   const db = createDb();
   try {
     return await recipeRepo.updateWithLines(db, id, input);
@@ -99,7 +105,12 @@ export async function listRecipeSummaries(): Promise<RecipeSummary[]> {
   const db = createDb();
   try {
     const recipes = await recipeRepo.getAllWithLines(db);
-    return recipes.map((recipe) => ({ id: recipe.id, name: recipe.name }));
+    const tagsByRecipeId = await recipeRepo.getAllTags(db);
+    return recipes.map((recipe) => ({
+      id: recipe.id,
+      name: recipe.name,
+      tags: tagsByRecipeId.get(recipe.id) ?? [],
+    }));
   } finally {
     db.$client.close();
   }
@@ -124,6 +135,8 @@ export async function getRecipeDetail(id: number): Promise<RecipeDetail | null> 
       return null;
     }
 
+    const tags = await recipeRepo.getTags(db, id);
+
     const { lines, ...recipe } = recipeWithLines;
 
     const ingredientsById = Object.fromEntries(
@@ -144,7 +157,7 @@ export async function getRecipeDetail(id: number): Promise<RecipeDetail | null> 
       ingredientsById,
     );
 
-    return { recipe, lines, nutrition };
+    return { recipe, lines, nutrition, tags };
   } finally {
     db.$client.close();
   }

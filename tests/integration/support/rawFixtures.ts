@@ -137,3 +137,21 @@ export function insertRawPantryItem(
 export function countRows(sqlite: Database.Database, table: string): number {
   return (sqlite.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;
 }
+
+/**
+ * S-405 (docs/stories/S-405-recipe-tags.md) fixture builder: inserts a
+ * `recipe_tag` row directly via raw SQL (bypassing the recipe-tags write
+ * path under test), mirroring this file's existing pattern for
+ * ingredient/recipe/recipe_line/pantry_item raw inserts.
+ */
+export function insertRawRecipeTag(sqlite: Database.Database, recipeId: number, tag: string): void {
+  sqlite.prepare(`INSERT INTO recipe_tag (recipeId, tag) VALUES (?, ?)`).run(recipeId, tag);
+}
+
+/** Reads back the tags stored for a recipe, sorted for order-independent assertions. */
+export function getRawRecipeTags(sqlite: Database.Database, recipeId: number): string[] {
+  const rows = sqlite.prepare(`SELECT tag FROM recipe_tag WHERE recipeId = ? ORDER BY tag`).all(recipeId) as Array<{
+    tag: string;
+  }>;
+  return rows.map((row) => row.tag);
+}

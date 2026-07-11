@@ -27,11 +27,11 @@ export interface ActionError {
 }
 
 export type CreateRecipeResult =
-  | { ok: true; data: RecipeRecord & { lines: RecipeLineRecord[] } }
+  | { ok: true; data: RecipeRecord & { lines: RecipeLineRecord[]; tags: string[] } }
   | { ok: false; error: ActionError };
 
 export type UpdateRecipeResult =
-  | { ok: true; data: RecipeRecord & { lines: RecipeLineRecord[] } }
+  | { ok: true; data: RecipeRecord & { lines: RecipeLineRecord[]; tags: string[] } }
   | { ok: false; error: ActionError };
 
 export type DeleteRecipeResult = { ok: true; data: { id: number } } | { ok: false; error: ActionError };
@@ -99,6 +99,7 @@ export async function createRecipe(input: unknown): Promise<CreateRecipeResult> 
       servings: data.servings,
       instructions: data.instructions ?? "",
       lines,
+      tags: data.tags ?? [],
     });
 
     revalidatePath("/recipes");
@@ -150,6 +151,7 @@ export async function updateRecipe(id: number, input: unknown): Promise<UpdateRe
       servings: data.servings,
       instructions: data.instructions ?? "",
       lines,
+      tags: data.tags ?? [],
     });
 
     revalidatePath("/recipes");

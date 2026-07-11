@@ -1,6 +1,6 @@
 # S-405: Recipe tags & tag filtering
 
-**Epic:** E-4 Recipes & Nutrition | **Status:** TODO | **Depends on:** S-401, S-404
+**Epic:** E-4 Recipes & Nutrition | **Status:** DONE (2026-07-11) | **Depends on:** S-401, S-404
 **Covers:** FR-16 (SHOULD)
 
 ## Context

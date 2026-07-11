@@ -45,7 +45,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  const { recipe, lines, nutrition } = detail;
+  const { recipe, lines, nutrition, tags } = detail;
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
@@ -61,6 +61,20 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
       <p data-testid="recipe-instructions" className="whitespace-pre-wrap text-sm">
         {recipe.instructions}
       </p>
+
+      {tags.length > 0 ? (
+        <div data-testid="recipe-tags" className="flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              data-testid="recipe-tag"
+              className="rounded-full border border-border bg-muted px-2.5 py-1 text-sm"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-medium">Ingredients</h2>
