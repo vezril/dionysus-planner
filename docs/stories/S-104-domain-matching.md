@@ -1,6 +1,6 @@
 # S-104: Domain matching & near-match ranking
 
-**Epic:** E-1 Foundation | **Status:** TODO | **Depends on:** S-102
+**Epic:** E-1 Foundation | **Status:** DONE (2026-07-11) | **Depends on:** S-102
 **Covers:** FR-20, FR-21, FR-22, FR-24 / NFR-3 (algorithmic shape)
 
 ## Context
