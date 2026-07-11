@@ -71,7 +71,14 @@ test.describe("S-105 app shell", () => {
     ).toBeVisible();
   });
 
-  for (const { path, heading } of SECTIONS) {
+  // S-301 supersedes the empty-state contract for /ingredients: the
+  // catalog is seeded (351 rows, S-204) at boot via instrumentation.ts, so
+  // this route is NEVER empty on a fresh install. Its detailed, non-empty
+  // catalog assertions live in tests/e2e/ingredients.spec.ts; this loop
+  // keeps the generic "still-empty" sections only.
+  const EMPTY_STATE_SECTIONS = SECTIONS.filter(({ path }) => path !== "/ingredients");
+
+  for (const { path, heading } of EMPTY_STATE_SECTIONS) {
     test(`AC2: ${path} renders its heading and a defined empty state, not an error`, async ({
       page,
     }) => {
@@ -91,6 +98,17 @@ test.describe("S-105 app shell", () => {
       await expect(cta.first()).toBeVisible();
     });
   }
+
+  test("AC2: /ingredients renders its heading (S-301 supersedes the empty-state contract here — the seeded catalog means this route is never empty on a fresh install; see tests/e2e/ingredients.spec.ts for the real catalog assertions)", async ({
+    page,
+  }) => {
+    const response = await page.goto("/ingredients");
+    expect(response?.ok()).toBe(true);
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Ingredients", exact: true })
+    ).toBeVisible();
+  });
 
   test("AC2: /pantry empty-state CTA matches FR-29's example copy", async ({
     page,

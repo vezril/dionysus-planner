@@ -1,6 +1,6 @@
 # S-301: Ingredient catalog view & search
 
-**Epic:** E-3 Ingredients & Pantry | **Status:** TODO | **Depends on:** S-105, S-202, S-203
+**Epic:** E-3 Ingredients & Pantry | **Status:** DONE (2026-07-11) | **Depends on:** S-105, S-202, S-203
 **Covers:** FR-1 (display half), FR-5
 
 ## Context
