@@ -1,6 +1,6 @@
 # S-102: Domain units & conversion engine
 
-**Epic:** E-1 Foundation | **Status:** TODO | **Depends on:** S-101
+**Epic:** E-1 Foundation | **Status:** DONE (2026-07-11) | **Depends on:** S-101
 **Covers:** FR-9, FR-10, FR-11, FR-12 / NFR-7 (conversion error ≤1%)
 
 ## Context
