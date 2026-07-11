@@ -17,6 +17,16 @@ import { filterByNameSubstring } from "@/domain/listFilters";
 // file") — the blocks above this point (S-404's own) are untouched.
 import { filterByTagsAll } from "@/domain/listFilters";
 
+// S-406 (docs/stories/S-406-recipe-list-sort-filter.md) — `sortRecipes` and
+// `matchesStatus` DO NOT EXIST YET either; these named imports fail to
+// resolve (or are `undefined` at call time) until the implementer adds them
+// to `domain/listFilters.ts` per the story's own task list ("IMPL:
+// `sortRecipes(items, key, direction)` comparator and `matchesStatus(item,
+// status)` predicate in `domain/listFilters.ts`"). Their `describe` blocks
+// live at the bottom of this file, extending the same module the same way
+// S-405's `filterByTagsAll` blocks do above.
+import { sortRecipes, matchesStatus } from "@/domain/listFilters";
+
 /**
  * S-404: recipe list search — pure substring-filter predicate.
  *
@@ -328,5 +338,350 @@ describe("filterByTagsAll — purity (no mutation of input)", () => {
     const snapshot = original.map((entry) => ({ ...entry, tags: [...entry.tags] }));
     filterByTagsAll(original, ["no-such-tag"]);
     expect(original).toEqual(snapshot);
+  });
+});
+
+/**
+ * S-406: recipe list sort — pure tri-key comparator over server-annotated
+ * list items.
+ *
+ * Traces to docs/stories/S-406-recipe-list-sort-filter.md AC2 ("Given the
+ * sort control, when the user selects name, servings, or
+ * calories-per-serving (asc/desc), then the list reorders accordingly,
+ * client-side... recipes with incomplete calories sort to the end under
+ * calorie sort (deterministic rule)") and the story's own readiness-gate
+ * fix: the comparator must live here as a framework-free, unit-tested pure
+ * helper — `app/recipes`'s client list (and its e2e coverage in
+ * tests/e2e/recipe-list-controls.spec.ts) merely WIRES this comparator to a
+ * sort `<Select>`; it does not re-implement ordering logic.
+ *
+ * ============================ PINNED API SHAPE ============================
+ * sortRecipes<T extends { name: string; servings: number; caloriesPerServing: number | null }>(
+ *   items: T[],
+ *   key: "name" | "servings" | "caloriesPerServing",
+ *   direction: "asc" | "desc",
+ * ): T[]
+ *
+ * - Generic over any item shape carrying at least `name`, `servings`, and
+ *   `caloriesPerServing` (`data/recipes.ts`'s `AnnotatedRecipeSummary` —
+ *   tests/integration/recipe-list-data.test.ts pins that producer — but this
+ *   comparator itself takes no dependency on that module).
+ * - `key: "name"` — orders by `name`, CASE-INSENSITIVELY (mirrors
+ *   `filterByNameSubstring`'s own case-insensitive posture for this same
+ *   list), `"asc"` A→Z, `"desc"` Z→A.
+ * - `key: "servings"` — orders by the numeric `servings` field, `"asc"`
+ *   ascending, `"desc"` descending.
+ * - `key: "caloriesPerServing"` — orders by the numeric
+ *   `caloriesPerServing` field among items where it is a `number`, `"asc"`
+ *   ascending / `"desc"` descending among those; but ANY item whose
+ *   `caloriesPerServing` is `null` (nutrition-incomplete, FR-19) sorts to
+ *   the very END of the result, in EITHER direction — the readiness-gate's
+ *   deterministic rule ("recipes with incomplete calories sort to the end
+ *   regardless of direction"). Incomplete items are never split to the
+ *   front, never interleaved among the complete items.
+ * - Ties (equal `servings`, or equal `caloriesPerServing`, under those two
+ *   keys) break by `name` ascending (case-insensitive), REGARDLESS of the
+ *   requested direction — a single deterministic secondary order, not
+ *   direction-reversed. Multiple `null`-`caloriesPerServing` items among
+ *   themselves are likewise ordered by `name` ascending (deterministic tie
+ *   behavior within the trailing incomplete group).
+ * - Pure: never mutates `items` or any item; returns a NEW array, never the
+ *   same reference as `items`.
+ * ===========================================================================
+ */
+describe("sortRecipes — key: name (S-406 AC2, FR-27)", () => {
+  interface Item {
+    id: number;
+    name: string;
+    servings: number;
+    caloriesPerServing: number | null;
+  }
+
+  function item(id: number, name: string, servings = 4, caloriesPerServing: number | null = 100): Item {
+    return { id, name, servings, caloriesPerServing };
+  }
+
+  function namesOf(items: Item[]): string[] {
+    return items.map((entry) => entry.name);
+  }
+
+  it('"asc" orders names A→Z', () => {
+    const items = [item(1, "Pasta"), item(2, "Chicken Stir-Fry"), item(3, "Ants on a Log")];
+    const result = sortRecipes(items, "name", "asc");
+    expect(namesOf(result)).toEqual(["Ants on a Log", "Chicken Stir-Fry", "Pasta"]);
+  });
+
+  it('"desc" orders names Z→A', () => {
+    const items = [item(1, "Pasta"), item(2, "Chicken Stir-Fry"), item(3, "Ants on a Log")];
+    const result = sortRecipes(items, "name", "desc");
+    expect(namesOf(result)).toEqual(["Pasta", "Chicken Stir-Fry", "Ants on a Log"]);
+  });
+
+  it("orders case-insensitively — a lowercase-leading name interleaves by letter, not banished by case", () => {
+    const items = [item(1, "Zucchini Bread"), item(2, "apple Pie"), item(3, "Banana Bread")];
+    const result = sortRecipes(items, "name", "asc");
+    expect(namesOf(result)).toEqual(["apple Pie", "Banana Bread", "Zucchini Bread"]);
+  });
+});
+
+describe("sortRecipes — key: servings", () => {
+  interface Item {
+    id: number;
+    name: string;
+    servings: number;
+    caloriesPerServing: number | null;
+  }
+
+  function item(id: number, name: string, servings: number, caloriesPerServing: number | null = 100): Item {
+    return { id, name, servings, caloriesPerServing };
+  }
+
+  it('"asc" orders by increasing servings', () => {
+    const items = [item(1, "Big Batch", 12), item(2, "Solo Meal", 1), item(3, "Family Dinner", 4)];
+    const result = sortRecipes(items, "servings", "asc");
+    expect(result.map((entry) => entry.servings)).toEqual([1, 4, 12]);
+  });
+
+  it('"desc" orders by decreasing servings', () => {
+    const items = [item(1, "Big Batch", 12), item(2, "Solo Meal", 1), item(3, "Family Dinner", 4)];
+    const result = sortRecipes(items, "servings", "desc");
+    expect(result.map((entry) => entry.servings)).toEqual([12, 4, 1]);
+  });
+
+  it("ties on equal servings break by name ascending, in EITHER direction (deterministic secondary order)", () => {
+    const items = [item(1, "Zebra Stew", 4), item(2, "Apple Crisp", 4), item(3, "Mango Salad", 4)];
+
+    const asc = sortRecipes(items, "servings", "asc");
+    expect(asc.map((entry) => entry.name)).toEqual(["Apple Crisp", "Mango Salad", "Zebra Stew"]);
+
+    const desc = sortRecipes(items, "servings", "desc");
+    expect(desc.map((entry) => entry.name)).toEqual(["Apple Crisp", "Mango Salad", "Zebra Stew"]);
+  });
+});
+
+describe(
+  "sortRecipes — key: caloriesPerServing — incomplete (null) items ALWAYS sort last (readiness-gate rule)",
+  () => {
+    interface Item {
+      id: number;
+      name: string;
+      servings: number;
+      caloriesPerServing: number | null;
+    }
+
+    function item(id: number, name: string, caloriesPerServing: number | null): Item {
+      return { id, name, servings: 4, caloriesPerServing };
+    }
+
+    it('"asc": numeric ascending among complete items, incomplete item trails at the end', () => {
+      const items = [
+        item(1, "High Cal", 800),
+        item(2, "Incomplete", null),
+        item(3, "Low Cal", 200),
+        item(4, "Mid Cal", 500),
+      ];
+      const result = sortRecipes(items, "caloriesPerServing", "asc");
+      expect(result.map((entry) => entry.name)).toEqual(["Low Cal", "Mid Cal", "High Cal", "Incomplete"]);
+    });
+
+    it('"desc": numeric descending among complete items, incomplete item STILL trails at the end (never the front)', () => {
+      const items = [
+        item(1, "High Cal", 800),
+        item(2, "Incomplete", null),
+        item(3, "Low Cal", 200),
+        item(4, "Mid Cal", 500),
+      ];
+      const result = sortRecipes(items, "caloriesPerServing", "desc");
+      expect(result.map((entry) => entry.name)).toEqual(["High Cal", "Mid Cal", "Low Cal", "Incomplete"]);
+    });
+
+    it("multiple incomplete items order by name ascending among themselves, trailing every complete item", () => {
+      const items = [item(1, "Zeta Incomplete", null), item(2, "Complete", 300), item(3, "Alpha Incomplete", null)];
+
+      const asc = sortRecipes(items, "caloriesPerServing", "asc");
+      expect(asc.map((entry) => entry.name)).toEqual(["Complete", "Alpha Incomplete", "Zeta Incomplete"]);
+
+      const desc = sortRecipes(items, "caloriesPerServing", "desc");
+      expect(desc.map((entry) => entry.name)).toEqual(["Complete", "Alpha Incomplete", "Zeta Incomplete"]);
+    });
+
+    it("ties on equal caloriesPerServing values break by name ascending", () => {
+      const items = [item(1, "Zebra Bowl", 400), item(2, "Apple Bowl", 400), item(3, "Mango Bowl", 400)];
+      const result = sortRecipes(items, "caloriesPerServing", "asc");
+      expect(result.map((entry) => entry.name)).toEqual(["Apple Bowl", "Mango Bowl", "Zebra Bowl"]);
+    });
+
+    it("all-null caloriesPerServing still produces a deterministic, name-ascending order (no crash)", () => {
+      const items = [item(1, "Zebra", null), item(2, "Apple", null)];
+      const result = sortRecipes(items, "caloriesPerServing", "desc");
+      expect(result.map((entry) => entry.name)).toEqual(["Apple", "Zebra"]);
+    });
+  },
+);
+
+describe("sortRecipes — purity (no mutation of input)", () => {
+  interface Item {
+    id: number;
+    name: string;
+    servings: number;
+    caloriesPerServing: number | null;
+  }
+
+  it("does not mutate the input items array or its element order", () => {
+    const original: Item[] = [
+      { id: 1, name: "Pasta", servings: 4, caloriesPerServing: 500 },
+      { id: 2, name: "Ants on a Log", servings: 2, caloriesPerServing: 100 },
+    ];
+    const snapshot = original.map((entry) => ({ ...entry }));
+
+    sortRecipes(original, "name", "asc");
+
+    expect(original).toEqual(snapshot);
+  });
+
+  it("returns a NEW array instance, never the same reference as the input", () => {
+    const original: Item[] = [{ id: 1, name: "Pasta", servings: 4, caloriesPerServing: 500 }];
+    const result = sortRecipes(original, "name", "asc");
+    expect(result).not.toBe(original);
+  });
+});
+
+describe("sortRecipes — edge cases", () => {
+  it("an empty array returns an empty array for any key/direction", () => {
+    expect(sortRecipes([], "name", "asc")).toEqual([]);
+    expect(sortRecipes([], "caloriesPerServing", "desc")).toEqual([]);
+  });
+
+  it("a single-item array returns an equivalent single-item array", () => {
+    const items = [{ id: 1, name: "Solo", servings: 1, caloriesPerServing: 300 }];
+    const result = sortRecipes(items, "servings", "desc");
+    expect(result).toEqual(items);
+  });
+});
+
+/**
+ * S-406: recipe list cookability status filter — pure membership predicate
+ * over the server-computed `cookability` annotation.
+ *
+ * Traces to docs/stories/S-406-recipe-list-sort-filter.md AC3 ("Given the
+ * status filter, when 'Cookable Now' (or All / Near Match / Missing More)
+ * is selected, then only that subset shows, consistent with FR-20's
+ * classification at filter time... FR-26") — this predicate does NOT
+ * reclassify anything itself (FR-20's cookable/near-match/missing-more
+ * classification is `domain/matching.ts#computeCookableAndNearMatch`'s job,
+ * wired server-side per Flow D and pinned at
+ * tests/integration/recipe-list-data.test.ts); it only checks whether an
+ * ALREADY-annotated item's `cookability` field matches a selected filter
+ * value.
+ *
+ * ============================ PINNED API SHAPE ============================
+ * matchesStatus<T extends { cookability: "COOKABLE" | "NEAR_MATCH" | "MISSING_MORE" }>(
+ *   item: T,
+ *   status: "ALL" | "COOKABLE" | "NEAR_MATCH" | "MISSING_MORE",
+ * ): boolean
+ *
+ * - `status: "ALL"` — `true` for every item, regardless of `cookability`
+ *   (mirrors `filterByNameSubstring`'s/`filterByTagsAll`'s own "empty
+ *   selection matches everything" convention for this list).
+ * - `status: "COOKABLE" | "NEAR_MATCH" | "MISSING_MORE"` — `true` iff
+ *   `item.cookability` is EXACTLY that value, `false` otherwise. No partial
+ *   or fuzzy matching.
+ * - A single-item PREDICATE (not a list filter) — callers narrow a list via
+ *   `items.filter((item) => matchesStatus(item, status))`, the same
+ *   composition pattern `recipe-catalog.tsx` already uses for
+ *   `filterByNameSubstring`/`filterByTagsAll` in sequence (story AC4:
+ *   composes with search/tags/sort without a server round-trip).
+ * - Pure: never mutates `item`.
+ * ===========================================================================
+ */
+describe("matchesStatus — \"ALL\" matches every cookability value (S-406 AC3)", () => {
+  interface Item {
+    id: number;
+    cookability: "COOKABLE" | "NEAR_MATCH" | "MISSING_MORE";
+  }
+
+  it.each([
+    ["COOKABLE", 1],
+    ["NEAR_MATCH", 2],
+    ["MISSING_MORE", 3],
+  ] as const)("cookability=%s matches status \"ALL\"", (cookability, id) => {
+    const item: Item = { id, cookability };
+    expect(matchesStatus(item, "ALL")).toBe(true);
+  });
+});
+
+describe("matchesStatus — \"COOKABLE\" narrows to only COOKABLE items", () => {
+  interface Item {
+    id: number;
+    cookability: "COOKABLE" | "NEAR_MATCH" | "MISSING_MORE";
+  }
+
+  it("returns true for a COOKABLE item", () => {
+    expect(matchesStatus<Item>({ id: 1, cookability: "COOKABLE" }, "COOKABLE")).toBe(true);
+  });
+
+  it("returns false for a NEAR_MATCH item", () => {
+    expect(matchesStatus<Item>({ id: 2, cookability: "NEAR_MATCH" }, "COOKABLE")).toBe(false);
+  });
+
+  it("returns false for a MISSING_MORE item", () => {
+    expect(matchesStatus<Item>({ id: 3, cookability: "MISSING_MORE" }, "COOKABLE")).toBe(false);
+  });
+});
+
+describe("matchesStatus — \"NEAR_MATCH\" narrows to only NEAR_MATCH items", () => {
+  interface Item {
+    id: number;
+    cookability: "COOKABLE" | "NEAR_MATCH" | "MISSING_MORE";
+  }
+
+  it("returns true for a NEAR_MATCH item", () => {
+    expect(matchesStatus<Item>({ id: 1, cookability: "NEAR_MATCH" }, "NEAR_MATCH")).toBe(true);
+  });
+
+  it("returns false for a COOKABLE item", () => {
+    expect(matchesStatus<Item>({ id: 2, cookability: "COOKABLE" }, "NEAR_MATCH")).toBe(false);
+  });
+
+  it("returns false for a MISSING_MORE item", () => {
+    expect(matchesStatus<Item>({ id: 3, cookability: "MISSING_MORE" }, "NEAR_MATCH")).toBe(false);
+  });
+});
+
+describe("matchesStatus — \"MISSING_MORE\" narrows to only MISSING_MORE items", () => {
+  interface Item {
+    id: number;
+    cookability: "COOKABLE" | "NEAR_MATCH" | "MISSING_MORE";
+  }
+
+  it("returns true for a MISSING_MORE item", () => {
+    expect(matchesStatus<Item>({ id: 1, cookability: "MISSING_MORE" }, "MISSING_MORE")).toBe(true);
+  });
+
+  it("returns false for a COOKABLE item", () => {
+    expect(matchesStatus<Item>({ id: 2, cookability: "COOKABLE" }, "MISSING_MORE")).toBe(false);
+  });
+
+  it("returns false for a NEAR_MATCH item", () => {
+    expect(matchesStatus<Item>({ id: 3, cookability: "NEAR_MATCH" }, "MISSING_MORE")).toBe(false);
+  });
+});
+
+describe("matchesStatus — composes as a list-narrowing predicate via Array#filter (S-406 AC4)", () => {
+  interface Item {
+    id: number;
+    name: string;
+    cookability: "COOKABLE" | "NEAR_MATCH" | "MISSING_MORE";
+  }
+
+  it("filtering a mixed list down to COOKABLE only keeps the cookable items, in original order", () => {
+    const items: Item[] = [
+      { id: 1, name: "Chicken Bowl", cookability: "COOKABLE" },
+      { id: 2, name: "Rice Soup", cookability: "NEAR_MATCH" },
+      { id: 3, name: "Garlic Broth Feast", cookability: "MISSING_MORE" },
+      { id: 4, name: "Salad", cookability: "COOKABLE" },
+    ];
+    const result = items.filter((item) => matchesStatus(item, "COOKABLE"));
+    expect(result.map((entry) => entry.name)).toEqual(["Chicken Bowl", "Salad"]);
   });
 });

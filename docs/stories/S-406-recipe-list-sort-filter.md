@@ -1,6 +1,6 @@
 # S-406: Recipe list annotations, sort & cookability filter
 
-**Epic:** E-4 Recipes & Nutrition | **Status:** TODO | **Depends on:** S-404, S-103, S-104, S-501
+**Epic:** E-4 Recipes & Nutrition | **Status:** DONE (2026-07-11) | **Depends on:** S-404, S-103, S-104, S-501
 **Covers:** FR-26 (SHOULD), FR-27 (SHOULD)
 
 ## Context

@@ -3,33 +3,65 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { filterByNameSubstring, filterByTagsAll } from "@/domain/listFilters";
-import type { RecipeSummary } from "@/data/recipes";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  filterByNameSubstring,
+  filterByTagsAll,
+  matchesStatus,
+  sortRecipes,
+  type CookabilityStatusFilter,
+  type RecipeSortKey,
+  type SortDirection,
+} from "@/domain/listFilters";
+import type { AnnotatedRecipeSummary, CookabilityStatus } from "@/data/recipes";
+
+const SORT_BY_OPTIONS: Array<{ value: RecipeSortKey; label: string }> = [
+  { value: "name", label: "Name" },
+  { value: "servings", label: "Servings" },
+  { value: "caloriesPerServing", label: "Calories per serving" },
+];
+
+const SORT_DIRECTION_OPTIONS: Array<{ value: SortDirection; label: string }> = [
+  { value: "asc", label: "Ascending" },
+  { value: "desc", label: "Descending" },
+];
+
+const COOKABILITY_FILTER_OPTIONS: Array<{ value: CookabilityStatusFilter; label: string }> = [
+  { value: "ALL", label: "All" },
+  { value: "COOKABLE", label: "Cookable Now" },
+  { value: "NEAR_MATCH", label: "Near Match" },
+  { value: "MISSING_MORE", label: "Missing More" },
+];
+
+const COOKABILITY_BADGE_LABEL: Record<CookabilityStatus, string> = {
+  COOKABLE: "Cookable Now",
+  NEAR_MATCH: "Near Match",
+  MISSING_MORE: "Missing More",
+};
 
 /**
- * Client search island (ADR-002 — ONLY the search box + its filtered list
- * are a client component; the initial render is still the server-rendered
- * HTML for the full list, since Next.js SSRs this component using the
- * `recipes` prop passed straight from the RSC page — no self-HTTP-call on
- * first load, per ADR-004/the story's Dev Notes). Mirrors
+ * Client search/sort/filter island (ADR-002 — ONLY this list island is a
+ * client component; the initial render is still the server-rendered HTML
+ * for the full list, since Next.js SSRs this component using the `recipes`
+ * prop passed straight from the RSC page — no self-HTTP-call on first load,
+ * per ADR-004/the story's Dev Notes). Mirrors
  * `app/ingredients/_components/ingredient-catalog.tsx`'s S-301 precedent.
  *
- * Filtering is client-side, in-memory, over the already-loaded list via
- * `domain/listFilters.ts#filterByNameSubstring` — the matching logic itself
- * is unit-tested in isolation there; this component only wires it to a
- * controlled `<input>` (docs/stories/S-404-recipe-list-search.md, no
- * per-keystroke round-trip per architecture.md §6 Flow D).
- *
- * S-405 (docs/stories/S-405-recipe-tags.md AC2, tests/e2e/recipe-tags.spec.ts)
- * adds a tag filter on top, composing with the name search: both
- * `filterByNameSubstring` and `filterByTagsAll` apply in sequence, over the
- * same already-loaded list — the tag-AND intersection logic itself is
- * unit-tested in isolation at `domain/listFilters.ts`; this component only
- * wires it to clickable, toggleable tag chips.
+ * Filtering/sorting is client-side, in-memory, over the already-loaded
+ * server-annotated list (architecture.md §6 Flow D) via `domain/listFilters
+ * .ts`'s pure helpers — the matching/ordering logic itself is unit-tested in
+ * isolation there; this component only wires it to controlled inputs:
+ * `filterByNameSubstring` (S-404 name search), `filterByTagsAll` (S-405 tag
+ * chips), `matchesStatus` (S-406 cookability filter combobox), and
+ * `sortRecipes` (S-406 sort-by/sort-direction comboboxes) all compose in
+ * sequence, without a server round-trip (S-406 AC4).
  */
-export function RecipeCatalog({ recipes }: { recipes: RecipeSummary[] }) {
+export function RecipeCatalog({ recipes }: { recipes: AnnotatedRecipeSummary[] }) {
   const [query, setQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sortKey, setSortKey] = useState<RecipeSortKey>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [statusFilter, setStatusFilter] = useState<CookabilityStatusFilter>("ALL");
 
   const allTags = useMemo(() => {
     const seen = new Set<string>();
@@ -43,8 +75,10 @@ export function RecipeCatalog({ recipes }: { recipes: RecipeSummary[] }) {
 
   const filtered = useMemo(() => {
     const byName = filterByNameSubstring(recipes, query);
-    return filterByTagsAll(byName, selectedTags);
-  }, [recipes, query, selectedTags]);
+    const byTags = filterByTagsAll(byName, selectedTags);
+    const byStatus = byTags.filter((recipe) => matchesStatus(recipe, statusFilter));
+    return sortRecipes(byStatus, sortKey, sortDirection);
+  }, [recipes, query, selectedTags, statusFilter, sortKey, sortDirection]);
 
   function toggleTag(tag: string) {
     setSelectedTags((previous) =>
@@ -92,6 +126,59 @@ export function RecipeCatalog({ recipes }: { recipes: RecipeSummary[] }) {
         </div>
       ) : null}
 
+      <div className="flex flex-wrap gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-foreground">Sort by</span>
+          <Select value={sortKey} onValueChange={(value) => setSortKey(value as RecipeSortKey)}>
+            <SelectTrigger aria-label="Sort by" className="w-56">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_BY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-foreground">Sort direction</span>
+          <Select value={sortDirection} onValueChange={(value) => setSortDirection(value as SortDirection)}>
+            <SelectTrigger aria-label="Sort direction" className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_DIRECTION_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-foreground">Cookability</span>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as CookabilityStatusFilter)}
+          >
+            <SelectTrigger aria-label="Cookability" className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COOKABILITY_FILTER_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       {filtered.length === 0 ? (
         <p data-testid="recipe-no-results" className="text-sm text-muted-foreground">
           No recipes match &ldquo;{query}&rdquo;.
@@ -100,9 +187,17 @@ export function RecipeCatalog({ recipes }: { recipes: RecipeSummary[] }) {
         <ul className="flex flex-col divide-y divide-border">
           {filtered.map((recipe) => (
             <li key={recipe.id} data-testid="recipe-row" className="py-3">
-              <Link href={`/recipes/${recipe.id}`} className="font-medium text-foreground hover:underline">
-                {recipe.name}
-              </Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link href={`/recipes/${recipe.id}`} className="font-medium text-foreground hover:underline">
+                  {recipe.name}
+                </Link>
+                <span
+                  data-testid="cookability-badge"
+                  className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                >
+                  {COOKABILITY_BADGE_LABEL[recipe.cookability]}
+                </span>
+              </div>
               {recipe.tags.length > 0 ? (
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {recipe.tags.map((tag) => (

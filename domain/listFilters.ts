@@ -50,3 +50,82 @@ export function filterByTagsAll<T extends { tags: string[] }>(items: T[], select
   }
   return items.filter((item) => selectedTags.every((tag) => item.tags.includes(tag)));
 }
+
+export type RecipeSortKey = "name" | "servings" | "caloriesPerServing";
+export type SortDirection = "asc" | "desc";
+export type CookabilityStatusFilter = "ALL" | "COOKABLE" | "NEAR_MATCH" | "MISSING_MORE";
+
+/**
+ * S-406 (docs/stories/S-406-recipe-list-sort-filter.md AC2, FR-27) — pure
+ * tri-key comparator over server-annotated list items. Orders by `key`
+ * (`"name"` case-insensitive, `"servings"`/`"caloriesPerServing"` numeric) in
+ * `direction`. Under `"caloriesPerServing"`, any item whose value is `null`
+ * (nutrition-incomplete, FR-19) sorts to the very END, in EITHER direction —
+ * the readiness-gate's deterministic rule. Ties (equal `servings`/
+ * `caloriesPerServing`, or multiple trailing `null` items) break by `name`
+ * ascending (case-insensitive), regardless of the requested direction.
+ *
+ * Generic over any item shape carrying at least `name`, `servings`, and
+ * `caloriesPerServing` (`data/recipes.ts`'s `AnnotatedRecipeSummary`) — this
+ * comparator itself takes no dependency on that module. Pure: never mutates
+ * `items`; returns a NEW array.
+ */
+export function sortRecipes<T extends { name: string; servings: number; caloriesPerServing: number | null }>(
+  items: T[],
+  key: RecipeSortKey,
+  direction: SortDirection,
+): T[] {
+  const directionFactor = direction === "asc" ? 1 : -1;
+  const byNameAscending = (a: T, b: T) => a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+
+  return [...items].sort((a, b) => {
+    if (key === "name") {
+      return directionFactor * byNameAscending(a, b);
+    }
+
+    if (key === "servings") {
+      if (a.servings !== b.servings) {
+        return directionFactor * (a.servings - b.servings);
+      }
+      return byNameAscending(a, b);
+    }
+
+    // key === "caloriesPerServing"
+    const aIncomplete = a.caloriesPerServing === null;
+    const bIncomplete = b.caloriesPerServing === null;
+    if (aIncomplete && bIncomplete) {
+      return byNameAscending(a, b);
+    }
+    if (aIncomplete) {
+      return 1;
+    }
+    if (bIncomplete) {
+      return -1;
+    }
+    if (a.caloriesPerServing !== b.caloriesPerServing) {
+      return directionFactor * (a.caloriesPerServing! - b.caloriesPerServing!);
+    }
+    return byNameAscending(a, b);
+  });
+}
+
+/**
+ * S-406 (docs/stories/S-406-recipe-list-sort-filter.md AC3, FR-26) — a
+ * single-item predicate mapping an already-annotated item's `cookability`
+ * field to membership in a selected status filter. `"ALL"` matches every
+ * item, regardless of `cookability` (mirrors `filterByNameSubstring`'s/
+ * `filterByTagsAll`'s own "empty selection matches everything" convention).
+ * Any other status matches iff `item.cookability` is EXACTLY that value.
+ * Does not reclassify anything itself — that's
+ * `domain/matching.ts#computeCookableAndNearMatch`'s job. Pure: never
+ * mutates `item`.
+ */
+export function matchesStatus<T extends { cookability: "COOKABLE" | "NEAR_MATCH" | "MISSING_MORE" }>(
+  item: T,
+  status: CookabilityStatusFilter,
+): boolean {
+  if (status === "ALL") {
+    return true;
+  }
+  return item.cookability === status;
+}

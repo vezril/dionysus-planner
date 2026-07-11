@@ -9,9 +9,12 @@
 import { createDb } from "@/data/db";
 import * as recipeRepo from "@/data/repositories/recipeRepo";
 import type { RecipeLineInput, RecipeRecord, RecipeLineRecord } from "@/data/repositories/recipeRepo";
+import * as ingredientRepo from "@/data/repositories/ingredientRepo";
 import type { IngredientRecord } from "@/data/repositories/ingredientRepo";
+import * as pantryRepo from "@/data/repositories/pantryRepo";
 import { computeRecipeNutrition } from "@/domain/nutrition";
 import type { RecipeNutrition } from "@/domain/nutrition";
+import { computeCookableAndNearMatch } from "@/domain/matching";
 
 export interface RecipeSummary {
   id: number;
@@ -158,6 +161,78 @@ export async function getRecipeDetail(id: number): Promise<RecipeDetail | null> 
     );
 
     return { recipe, lines, nutrition, tags };
+  } finally {
+    db.$client.close();
+  }
+}
+
+export type CookabilityStatus = "COOKABLE" | "NEAR_MATCH" | "MISSING_MORE";
+
+export interface AnnotatedRecipeSummary extends RecipeSummary {
+  servings: number;
+  caloriesPerServing: number | null;
+  cookability: CookabilityStatus;
+}
+
+/**
+ * S-406 (docs/stories/S-406-recipe-list-sort-filter.md, architecture.md §6
+ * Flow D) — the annotated list loader for `app/recipes/page.tsx`. Runs the
+ * same two-query scan `data/whatCanICook.ts#getWhatCanICook` runs
+ * (`pantryRepo.getAllAsIndex` + `recipeRepo.getAllWithLines`) folded through
+ * `domain/matching.computeCookableAndNearMatch` for cookability, plus a bulk
+ * ingredient-catalog read folded through `domain/nutrition
+ * .computeRecipeNutrition` per recipe for `caloriesPerServing` — the two
+ * annotations are computed INDEPENDENTLY of each other. `threshold` is a
+ * required, explicit parameter (mirrors `getWhatCanICook`'s own contract);
+ * this function does not call `resolveDefaultThreshold()` itself — the
+ * caller (`app/recipes/page.tsx`) resolves the default and passes it in
+ * (architecture §4 OQ-1). Per ADR-011, nothing is cached: computed fresh on
+ * every call. Does not filter/sort/paginate — that's `domain/listFilters
+ * .ts#sortRecipes`/`matchesStatus`'s job, client-side.
+ */
+export async function listRecipeSummariesAnnotated(threshold: number): Promise<AnnotatedRecipeSummary[]> {
+  const db = createDb();
+  try {
+    const recipes = await recipeRepo.getAllWithLines(db);
+    const tagsByRecipeId = await recipeRepo.getAllTags(db);
+    const pantryIndex = await pantryRepo.getAllAsIndex(db);
+    const ingredients = await ingredientRepo.listAll(db);
+
+    const ingredientsById = Object.fromEntries(ingredients.map((ingredient) => [ingredient.id, ingredient]));
+
+    const matchResult = computeCookableAndNearMatch(pantryIndex, recipes, threshold);
+    const cookabilityByRecipeId = new Map<number, CookabilityStatus>();
+    for (const recipe of matchResult.cookable) {
+      cookabilityByRecipeId.set(recipe.id, "COOKABLE");
+    }
+    for (const recipe of matchResult.nearMatch) {
+      cookabilityByRecipeId.set(recipe.id, "NEAR_MATCH");
+    }
+
+    return recipes.map((recipe) => {
+      const nutrition = computeRecipeNutrition(
+        {
+          id: recipe.id,
+          servings: recipe.servings,
+          lines: recipe.lines.map((line) => ({
+            id: line.id,
+            ingredientId: line.ingredientId,
+            quantityCanonical: line.quantityCanonical,
+            entryUnitClass: line.entryUnitClass,
+          })),
+        },
+        ingredientsById,
+      );
+
+      return {
+        id: recipe.id,
+        name: recipe.name,
+        tags: tagsByRecipeId.get(recipe.id) ?? [],
+        servings: recipe.servings,
+        caloriesPerServing: nutrition.perServing.calories.value,
+        cookability: cookabilityByRecipeId.get(recipe.id) ?? "MISSING_MORE",
+      };
+    });
   } finally {
     db.$client.close();
   }
