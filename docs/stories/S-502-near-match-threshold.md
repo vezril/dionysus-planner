@@ -1,6 +1,6 @@
 # S-502: Adjustable near-match threshold
 
-**Epic:** E-5 What Can I Cook | **Status:** TODO | **Depends on:** S-501
+**Epic:** E-5 What Can I Cook | **Status:** DONE (2026-07-11) | **Depends on:** S-501
 **Covers:** FR-23 (SHOULD)
 
 ## Context

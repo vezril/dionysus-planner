@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getWhatCanICook } from "@/data/whatCanICook";
 import { getIngredientCatalog } from "@/data/ingredients";
 import { resolveDefaultThreshold } from "@/app/lib/threshold";
-import type { RankedRecipe, UnsatisfiedLine } from "@/domain/matching";
+import { NearMatchPanel } from "./_components/near-match-panel";
 
 /**
  * "What Can I Cook" — the app's front door (docs/stories/S-501-what-can-
@@ -25,46 +25,21 @@ import type { RankedRecipe, UnsatisfiedLine } from "@/domain/matching";
  *
  * Flow C's render rule (NFR-2): recipes beyond the active threshold are
  * summarized by count only (`missing-more-tail`) — never rendered as rows.
+ *
+ * S-502: the Near Match section + missing-more tail + threshold control
+ * live in `NearMatchPanel`, a client island (ADR-002) seeded with this RSC
+ * render's result and re-fetching `/api/what-can-i-cook?threshold=` on
+ * change (ADR-004) — the `h1` and Cookable Now section above stay
+ * server-rendered and never re-render on a threshold change (no
+ * navigation, §6 Flow C).
  */
 export const dynamic = "force-dynamic";
-
-function formatQuantity(value: number): string {
-  return Number(value.toFixed(2)).toString();
-}
-
-function UnsatisfiedLineText({ line, nameFor }: { line: UnsatisfiedLine; nameFor: (id: number) => string }) {
-  const name = nameFor(line.ingredientId);
-
-  if (line.status === "UNRESOLVED") {
-    return <>{`${name}: unresolved — cannot compare units`}</>;
-  }
-
-  return <>{`need ${formatQuantity(line.shortfallDisplayQuantity)} ${line.displayUnit} more ${name}`}</>;
-}
-
-function NearMatchRow({ recipe, nameFor }: { recipe: RankedRecipe; nameFor: (id: number) => string }) {
-  return (
-    <li data-testid="near-match-recipe-row" className="flex flex-col gap-2 rounded-lg border border-border p-4">
-      <Link href={`/recipes/${recipe.id}`} className="font-medium underline underline-offset-2">
-        {recipe.name}
-      </Link>
-      <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
-        {recipe.unsatisfiedLines.map((line) => (
-          <li key={line.ingredientId} data-testid="unsatisfied-line">
-            <UnsatisfiedLineText line={line} nameFor={nameFor} />
-          </li>
-        ))}
-      </ul>
-    </li>
-  );
-}
 
 export default async function WhatCanICookPage() {
   const threshold = resolveDefaultThreshold();
   const [result, catalog] = await Promise.all([getWhatCanICook(threshold), getIngredientCatalog()]);
 
-  const ingredientNameById = new Map(catalog.map((entry) => [entry.id, entry.name]));
-  const nameFor = (id: number) => ingredientNameById.get(id) ?? "an ingredient";
+  const ingredientNames = Object.fromEntries(catalog.map((entry) => [entry.id, entry.name]));
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8 p-6">
@@ -93,23 +68,12 @@ export default async function WhatCanICookPage() {
         )}
       </section>
 
-      <section data-testid="near-match-section" className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Near Match</h2>
-        {result.nearMatch.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No near matches right now.</p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {result.nearMatch.map((recipe) => (
-              <NearMatchRow key={recipe.id} recipe={recipe} nameFor={nameFor} />
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <div data-testid="missing-more-tail" className="text-sm text-muted-foreground">
-        <span data-testid="missing-more-count">{result.missingMoreCount}</span>{" "}
-        {result.missingMoreCount === 1 ? "recipe needs" : "recipes need"} too many ingredients to show here.
-      </div>
+      <NearMatchPanel
+        initialThreshold={threshold}
+        initialNearMatch={result.nearMatch}
+        initialMissingMoreCount={result.missingMoreCount}
+        ingredientNames={ingredientNames}
+      />
     </div>
   );
 }
