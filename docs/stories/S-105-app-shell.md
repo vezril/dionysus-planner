@@ -1,6 +1,6 @@
 # S-105: App shell, navigation & error boundaries
 
-**Epic:** E-1 Foundation | **Status:** TODO | **Depends on:** S-101
+**Epic:** E-1 Foundation | **Status:** DONE (2026-07-11) | **Depends on:** S-101
 **Covers:** FR-29 (shell-level groundwork) / NFR-2, NFR-8
 
 ## Context

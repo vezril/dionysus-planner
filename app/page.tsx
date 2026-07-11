@@ -1,13 +1,7 @@
-import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
 
+// architecture.md §5: root `page.tsx` redirects to /what-can-i-cook, the
+// JTBD-1 "front door" (S-105 AC1).
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
-      <h1 className="text-2xl font-semibold">Dionysus Planner</h1>
-      <p className="text-muted-foreground text-sm">
-        Scaffold placeholder — real routes land in later stories (S-105+).
-      </p>
-      <Button>Get started</Button>
-    </main>
-  );
+  redirect("/what-can-i-cook");
 }
