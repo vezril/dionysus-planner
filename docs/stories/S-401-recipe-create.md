@@ -1,6 +1,6 @@
 # S-401: Recipe creation
 
-**Epic:** E-4 Recipes & Nutrition | **Status:** TODO | **Depends on:** S-301, S-202
+**Epic:** E-4 Recipes & Nutrition | **Status:** DONE (2026-07-11) | **Depends on:** S-301, S-202
 **Covers:** FR-13 / (FR-9 pattern applied to recipe lines)
 
 ## Context
