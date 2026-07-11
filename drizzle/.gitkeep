@@ -1,0 +1,2 @@
+Generated SQL migrations (drizzle-kit output, committed) land here once
+`pnpm drizzle:generate` is run against a real schema (S-201).

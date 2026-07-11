@@ -1,6 +1,6 @@
 # S-101: Project scaffold & toolchain
 
-**Epic:** E-1 Foundation | **Status:** TODO | **Depends on:** none
+**Epic:** E-1 Foundation | **Status:** DONE (2026-07-11) | **Depends on:** none
 **Covers:** A-6 (locked stack) / NFR-8 (viewport tooling), NFR-10 (browser matrix tooling), NFR-4 (standalone output groundwork)
 
 ## Context

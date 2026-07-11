@@ -1,0 +1,4 @@
+Integration specs (Vitest, real better-sqlite3 against :memory:/temp DBs,
+real Drizzle migrations — architecture.md §3 ADR-007) land here once
+S-201's schema/migrations exist. `pnpm test:integration` intentionally
+passes with zero tests until then (see vitest.config.ts passWithNoTests).
