@@ -28,7 +28,9 @@ export default async function RecipesPage() {
         <ul className="flex flex-col divide-y divide-border">
           {recipes.map((recipe) => (
             <li key={recipe.id} data-testid="recipe-row" className="py-3">
-              <span className="font-medium text-foreground">{recipe.name}</span>
+              <Link href={`/recipes/${recipe.id}`} className="font-medium text-foreground hover:underline">
+                {recipe.name}
+              </Link>
             </li>
           ))}
         </ul>

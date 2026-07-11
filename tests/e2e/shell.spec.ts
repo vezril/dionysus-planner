@@ -171,17 +171,11 @@ test.describe("S-105 app shell", () => {
     }
   });
 
-  // Deferred: /recipes/[id] doesn't exist until S-403. Kept as a fixme so
-  // the not-found.tsx boundary isn't silently forgotten, per S-105's own
-  // task list. Do NOT make this pass by hand-wiring a fake detail route —
-  // it should start passing only once S-403 builds the real one.
-  test.fixme(
-    "AC4: /recipes/999999 renders not-found.tsx (formal coverage lands with S-403)",
-    async ({ page }) => {
-      await page.goto("/recipes/999999");
-      await expect(page.getByText(/not found/i)).toBeVisible();
-    }
-  );
+  // Formerly a `test.fixme` placeholder deferring the not-found.tsx half of
+  // AC4 until /recipes/[id] existed. S-403 now builds that route — real
+  // coverage lives in tests/e2e/recipe-detail.spec.ts's "AC6: an unknown
+  // recipe id renders the not-found boundary" test, so the placeholder is
+  // retired here rather than left as a stale duplicate.
 });
 
 test.describe("S-105 app shell at 375px (NFR-8)", () => {

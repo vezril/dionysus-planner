@@ -1,6 +1,6 @@
 # S-403: Recipe detail with computed nutrition
 
-**Epic:** E-4 Recipes & Nutrition | **Status:** TODO | **Depends on:** S-401, S-103, S-302
+**Epic:** E-4 Recipes & Nutrition | **Status:** DONE (2026-07-11) | **Depends on:** S-401, S-103, S-302
 **Covers:** FR-17, FR-18, FR-19 (display integration) / NFR-7 (display rounding)
 
 ## Context

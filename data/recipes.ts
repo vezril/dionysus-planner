@@ -9,10 +9,19 @@
 import { createDb } from "@/data/db";
 import * as recipeRepo from "@/data/repositories/recipeRepo";
 import type { RecipeLineInput, RecipeRecord, RecipeLineRecord } from "@/data/repositories/recipeRepo";
+import type { IngredientRecord } from "@/data/repositories/ingredientRepo";
+import { computeRecipeNutrition } from "@/domain/nutrition";
+import type { RecipeNutrition } from "@/domain/nutrition";
 
 export interface RecipeSummary {
   id: number;
   name: string;
+}
+
+export interface RecipeDetail {
+  recipe: RecipeRecord;
+  lines: Array<RecipeLineRecord & { ingredient: IngredientRecord }>;
+  nutrition: RecipeNutrition;
 }
 
 export interface RecipeWriteInputPayload {
@@ -51,6 +60,51 @@ export async function listRecipeSummaries(): Promise<RecipeSummary[]> {
   try {
     const recipes = await recipeRepo.getAllWithLines(db);
     return recipes.map((recipe) => ({ id: recipe.id, name: recipe.name }));
+  } finally {
+    db.$client.close();
+  }
+}
+
+/**
+ * Assembles a recipe detail view for `app/recipes/[id]/page.tsx`
+ * (docs/stories/S-403-recipe-detail-nutrition.md, architecture.md §6 Flow
+ * B): one joined query (`recipeRepo.getWithLinesAndIngredients`) folded
+ * straight into `domain/nutrition.computeRecipeNutrition`. Computed fresh
+ * on every call — no caching (ADR-011).
+ *
+ * Returns `null` for a nonexistent recipe id, mirroring
+ * `getWithLinesAndIngredients`'s own null-for-missing-id contract; the page
+ * loader calls `notFound()` on that.
+ */
+export async function getRecipeDetail(id: number): Promise<RecipeDetail | null> {
+  const db = createDb();
+  try {
+    const recipeWithLines = await recipeRepo.getWithLinesAndIngredients(db, id);
+    if (!recipeWithLines) {
+      return null;
+    }
+
+    const { lines, ...recipe } = recipeWithLines;
+
+    const ingredientsById = Object.fromEntries(
+      lines.map((line) => [line.ingredient.id, line.ingredient]),
+    );
+
+    const nutrition = computeRecipeNutrition(
+      {
+        id: recipe.id,
+        servings: recipe.servings,
+        lines: lines.map((line) => ({
+          id: line.id,
+          ingredientId: line.ingredientId,
+          quantityCanonical: line.quantityCanonical,
+          entryUnitClass: line.entryUnitClass,
+        })),
+      },
+      ingredientsById,
+    );
+
+    return { recipe, lines, nutrition };
   } finally {
     db.$client.close();
   }
