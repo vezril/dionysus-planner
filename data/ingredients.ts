@@ -56,3 +56,81 @@ export async function getIngredientCatalog(query?: string): Promise<IngredientSu
     db.$client.close();
   }
 }
+
+/**
+ * S-302 data-layer entry points for `app/actions/ingredient-actions.ts`
+ * (docs/stories/S-302). Same per-call `createDb()` pattern as
+ * `getIngredientCatalog` above — no module-scope singleton, connection
+ * closed before returning. These functions are dumb persistence only (no
+ * validation, no `overridden`-flag business rules): the calling action
+ * owns the Zod re-validation (ADR-005) and the `overridden` transition
+ * decision (architecture.md §4/§6), and passes the fully-resolved patch
+ * (including the `overridden` value to persist) down to `ingredientRepo`.
+ */
+
+export interface IngredientNutritionFields {
+  name: string;
+  unitClass: "MASS" | "VOLUME" | "COUNT";
+  caloriesPerRef: number;
+  proteinPerRef: number;
+  carbsPerRef: number;
+  fatPerRef: number;
+  fiberPerRef?: number | null;
+  sugarPerRef?: number | null;
+  sodiumMgPerRef?: number | null;
+  densityGPerMl?: number | null;
+}
+
+export async function getIngredientRecordById(id: number): Promise<IngredientRecord | null> {
+  const db = createDb();
+  try {
+    return await ingredientRepo.getById(db, id);
+  } finally {
+    db.$client.close();
+  }
+}
+
+export async function createIngredientRecord(input: IngredientNutritionFields): Promise<IngredientRecord> {
+  const db = createDb();
+  try {
+    return await ingredientRepo.create(db, {
+      seedKey: null,
+      name: input.name,
+      unitClass: input.unitClass,
+      densityGPerMl: input.densityGPerMl ?? null,
+      caloriesPerRef: input.caloriesPerRef,
+      proteinPerRef: input.proteinPerRef,
+      carbsPerRef: input.carbsPerRef,
+      fatPerRef: input.fatPerRef,
+      fiberPerRef: input.fiberPerRef ?? null,
+      sugarPerRef: input.sugarPerRef ?? null,
+      sodiumMgPerRef: input.sodiumMgPerRef ?? null,
+      source: "CUSTOM",
+    });
+  } finally {
+    db.$client.close();
+  }
+}
+
+export async function updateIngredientNutritionRecord(
+  id: number,
+  patch: IngredientNutritionFields & { overridden: boolean },
+): Promise<IngredientRecord> {
+  const db = createDb();
+  try {
+    return await ingredientRepo.update(db, id, {
+      name: patch.name,
+      densityGPerMl: patch.densityGPerMl ?? null,
+      caloriesPerRef: patch.caloriesPerRef,
+      proteinPerRef: patch.proteinPerRef,
+      carbsPerRef: patch.carbsPerRef,
+      fatPerRef: patch.fatPerRef,
+      fiberPerRef: patch.fiberPerRef ?? null,
+      sugarPerRef: patch.sugarPerRef ?? null,
+      sodiumMgPerRef: patch.sodiumMgPerRef ?? null,
+      overridden: patch.overridden,
+    });
+  } finally {
+    db.$client.close();
+  }
+}

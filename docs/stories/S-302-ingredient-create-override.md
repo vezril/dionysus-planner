@@ -1,6 +1,6 @@
 # S-302: Ingredient create & nutrition override
 
-**Epic:** E-3 Ingredients & Pantry | **Status:** TODO | **Depends on:** S-301
+**Epic:** E-3 Ingredients & Pantry | **Status:** DONE (2026-07-11) | **Depends on:** S-301
 **Covers:** FR-2, FR-3 / (FR-12 data entry: density field)
 
 ## Context

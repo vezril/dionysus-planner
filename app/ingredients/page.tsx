@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getIngredientCatalog } from "@/data/ingredients";
 import { IngredientCatalog } from "@/app/ingredients/_components/ingredient-catalog";
 
@@ -23,7 +24,12 @@ export default async function IngredientsPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Ingredients</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">Ingredients</h1>
+        <Link href="/ingredients/new" className="text-sm font-medium text-primary hover:underline">
+          Add ingredient
+        </Link>
+      </div>
       <IngredientCatalog ingredients={ingredients} />
     </div>
   );
