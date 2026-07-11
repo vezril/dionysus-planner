@@ -1,6 +1,6 @@
 # S-203: Idempotent seed runner, boot hook & health endpoint
 
-**Epic:** E-2 Data layer | **Status:** TODO | **Depends on:** S-201, S-202
+**Epic:** E-2 Data layer | **Status:** DONE (2026-07-11) | **Depends on:** S-201, S-202
 **Covers:** FR-28, FR-1 (mechanism half) / NFR-1, NFR-9
 
 ## Context
