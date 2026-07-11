@@ -361,6 +361,9 @@ RUN pnpm build          # next.config.ts has output: 'standalone' + serverExtern
 FROM node:22-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# Docker injects HOSTNAME=<container-id>; Next standalone binds to it, breaking
+# the localhost HEALTHCHECK. Discovered by real execution in S-601 — keep this.
+ENV HOSTNAME=0.0.0.0
 ENV DB_PATH=/data/dionysus.db
 ENV PORT=3000
 ENV NEAR_MATCH_DEFAULT_THRESHOLD=3

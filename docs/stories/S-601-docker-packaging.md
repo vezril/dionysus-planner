@@ -1,6 +1,6 @@
 # S-601: Docker packaging, compose & smoke test
 
-**Epic:** E-6 Packaging | **Status:** TODO | **Depends on:** S-203 (boot flow + health), S-105
+**Epic:** E-6 Packaging | **Status:** DONE (2026-07-11) | **Depends on:** S-203 (boot flow + health), S-105
 **Covers:** FR-28 (restart semantics in-container), FR-1 (seeded on first container run) / NFR-1, NFR-4, NFR-5, NFR-9
 
 ## Context

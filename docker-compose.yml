@@ -1,0 +1,23 @@
+# Reference compose file (architecture.md §7, §9 Risk #5).
+#
+# IMPORTANT — do not horizontally scale this service. `better-sqlite3` is
+# a synchronous, single-process SQLite driver; the "no interleaved
+# partial writes" safety property (NFR-6) holds ONLY because Next.js runs
+# as exactly one Node process against the DB file. Adding a `replicas:`
+# key (Compose) or Node `cluster` mode would allow concurrent writers
+# against the same SQLite file and silently corrupt data. There is
+# deliberately no `replicas` example anywhere in this file — do not add
+# one.
+services:
+  app:
+    build: .
+    image: dionysus-planner:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./dionysus-data:/data
+    environment:
+      DB_PATH: /data/dionysus.db
+      PORT: "3000"
+      NEAR_MATCH_DEFAULT_THRESHOLD: "3"
+    restart: unless-stopped

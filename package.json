@@ -16,7 +16,8 @@
     "test:e2e": "playwright test",
     "db:migrate": "tsx data/migrate.ts",
     "db:seed": "tsx data/seed/seed.ts",
-    "drizzle:generate": "drizzle-kit generate"
+    "drizzle:generate": "drizzle-kit generate",
+    "docker:smoke": "bash scripts/docker-smoke.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
