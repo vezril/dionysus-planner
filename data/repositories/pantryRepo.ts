@@ -6,7 +6,7 @@
  */
 import { eq } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { pantryItem } from "@/data/schema";
+import { ingredient, pantryItem } from "@/data/schema";
 import * as schema from "@/data/schema";
 import type { UnitClass } from "@/domain/types";
 
@@ -93,6 +93,35 @@ export async function updateQuantity(
 
 export async function remove(db: Db, id: number): Promise<void> {
   await db.delete(pantryItem).where(eq(pantryItem.id, id));
+}
+
+export interface PantryListRow {
+  id: number;
+  ingredientId: number;
+  ingredientName: string;
+  displayQuantity: number;
+  displayUnit: string;
+}
+
+/**
+ * The full pantry list joined with the ingredient's display name (for
+ * `app/pantry/page.tsx`, S-304) — a single join, no per-row lookup. Ordered
+ * by ingredient name for a stable, readable listing.
+ */
+export async function getAllWithIngredientNames(db: Db): Promise<PantryListRow[]> {
+  const rows = await db
+    .select({
+      id: pantryItem.id,
+      ingredientId: pantryItem.ingredientId,
+      ingredientName: ingredient.name,
+      displayQuantity: pantryItem.displayQuantity,
+      displayUnit: pantryItem.displayUnit,
+    })
+    .from(pantryItem)
+    .innerJoin(ingredient, eq(ingredient.id, pantryItem.ingredientId))
+    .orderBy(ingredient.name);
+
+  return rows;
 }
 
 export async function getAllAsIndex(db: Db): Promise<Map<number, PantryIndexEntry>> {

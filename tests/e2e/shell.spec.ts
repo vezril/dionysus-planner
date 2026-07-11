@@ -76,7 +76,34 @@ test.describe("S-105 app shell", () => {
   // this route is NEVER empty on a fresh install. Its detailed, non-empty
   // catalog assertions live in tests/e2e/ingredients.spec.ts; this loop
   // keeps the generic "still-empty" sections only.
-  const EMPTY_STATE_SECTIONS = SECTIONS.filter(({ path }) => path !== "/ingredients");
+  //
+  // S-304 supersedes the empty-state contract for /pantry too, for a
+  // different reason: unlike ingredients, the pantry legitimately starts
+  // empty on a fresh install, BUT this whole e2e run shares one
+  // persistent SQLite file/server across every spec file
+  // (playwright.config.ts's `webServer` + `fullyParallel`), and
+  // tests/e2e/pantry.spec.ts is the first spec that WRITES to the pantry.
+  // Asserting "/pantry is empty" here would race non-deterministically
+  // against pantry.spec.ts's add-item tests running in another worker.
+  // pantry.spec.ts owns the empty-state assertion instead (as its first,
+  // serial-ordered test, per its own file header) alongside every other
+  // pantry-state assertion, so this file no longer touches pantry
+  // content at all.
+  //
+  // S-401 supersedes the empty-state contract for /recipes for the same
+  // reason as /pantry above: tests/e2e/recipe-create.spec.ts writes a
+  // recipe (and the story requires `/recipes` to render its first real,
+  // non-placeholder content — "the recipe... appears in the recipe list",
+  // FR-13) from a worker running in parallel with this file
+  // (playwright.config.ts's `fullyParallel`, one shared `.dev-data` DB
+  // across the whole run) — asserting "/recipes is empty" here would race
+  // non-deterministically against that spec's save flow. recipe-create.spec.ts
+  // owns the recipe-appears-in-the-list assertion instead; this file keeps
+  // only the generic heading check for /recipes (below), same treatment as
+  // /ingredients.
+  const EMPTY_STATE_SECTIONS = SECTIONS.filter(
+    ({ path }) => path !== "/ingredients" && path !== "/pantry" && path !== "/recipes",
+  );
 
   for (const { path, heading } of EMPTY_STATE_SECTIONS) {
     test(`AC2: ${path} renders its heading and a defined empty state, not an error`, async ({
@@ -110,15 +137,19 @@ test.describe("S-105 app shell", () => {
     ).toBeVisible();
   });
 
-  test("AC2: /pantry empty-state CTA matches FR-29's example copy", async ({
+  // S-304 supersedes this test — see the EMPTY_STATE_SECTIONS comment
+  // above for why. The FR-29 CTA-copy assertion now lives in
+  // tests/e2e/pantry.spec.ts's first (serial, pre-mutation) test.
+
+  test("AC2: /recipes renders its heading (S-401 supersedes the empty-state contract here — see the EMPTY_STATE_SECTIONS comment above; tests/e2e/recipe-create.spec.ts owns the real content assertions)", async ({
     page,
   }) => {
-    await page.goto("/pantry");
-    const emptyState = page.getByTestId("empty-state");
-    const cta = emptyState
-      .getByRole("link", { name: "Add your first pantry item" })
-      .or(emptyState.getByRole("button", { name: "Add your first pantry item" }));
-    await expect(cta).toBeVisible();
+    const response = await page.goto("/recipes");
+    expect(response?.ok()).toBe(true);
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Recipes", exact: true })
+    ).toBeVisible();
   });
 
   test("AC2: persistent nav reaches all four primary sections", async ({

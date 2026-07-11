@@ -1,6 +1,6 @@
 # S-304: Pantry view & add item (upsert with increment/replace)
 
-**Epic:** E-3 Ingredients & Pantry | **Status:** TODO | **Depends on:** S-301, S-102
+**Epic:** E-3 Ingredients & Pantry | **Status:** DONE (2026-07-11) | **Depends on:** S-301, S-102
 **Covers:** FR-6, FR-9, FR-29 (pantry empty state) / FR-11 (increment rejection consistency), FR-12 (increment via density)
 
 ## Context
