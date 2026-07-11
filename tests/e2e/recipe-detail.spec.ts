@@ -294,6 +294,24 @@ test.describe("S-403 recipe detail — nutrition display", () => {
   }) => {
     const recipeName = `E2E Override Propagation ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
+    // The e2e DB persists across runs, so a previous run's override of Carrot
+    // survives. Pin the starting value explicitly (an idempotent override to
+    // 25) instead of assuming a pristine seed — same FR-3 flow, deterministic.
+    const setCarrotCalories = async (value: string) => {
+      await page.goto("/ingredients");
+      const searchBox = page.getByRole("textbox", { name: "Search ingredients" });
+      await searchBox.fill(CARROT);
+      const carrotRow = page.getByTestId("ingredient-row").filter({ hasText: CARROT }).first();
+      await expect(carrotRow).toBeVisible();
+      const editHref = await carrotRow.getByRole("link").first().getAttribute("href");
+      await page.goto(editHref!);
+      await page.getByRole("spinbutton", { name: "Calories" }).fill(value);
+      await page.getByRole("button", { name: "Save" }).click();
+      await expect(page).toHaveURL("/ingredients");
+    };
+
+    await setCarrotCalories("25");
+
     const detailHref = await createRecipeAndOpenDetail(page, {
       name: recipeName,
       servings: "1",
@@ -305,16 +323,7 @@ test.describe("S-403 recipe detail — nutrition display", () => {
     await expect(page.getByTestId("nutrition-total-calories")).toHaveText("50 kcal");
 
     // Override Carrot's calories via S-302's edit form (S-302 flow).
-    await page.goto("/ingredients");
-    const searchBox = page.getByRole("textbox", { name: "Search ingredients" });
-    await searchBox.fill(CARROT);
-    const carrotRow = page.getByTestId("ingredient-row").filter({ hasText: CARROT }).first();
-    await expect(carrotRow).toBeVisible();
-    const editHref = await carrotRow.getByRole("link").first().getAttribute("href");
-    await page.goto(editHref!);
-
-    await page.getByRole("spinbutton", { name: "Calories" }).fill("40");
-    await page.getByRole("button", { name: "Save" }).click();
+    await setCarrotCalories("40");
 
     // Revisit the SAME recipe detail page — no manual invalidation step.
     await page.goto(detailHref);

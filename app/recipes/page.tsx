@@ -2,13 +2,15 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { listRecipeSummaries } from "@/data/recipes";
+import { RecipeCatalog } from "@/app/recipes/_components/recipe-catalog";
 
 /**
- * Recipe list (S-401 AC1 — this story's first real, non-placeholder
- * content; the full search/sort/filter feature set is S-404/S-406's job).
- * Server Component (ADR-002 — read-only view) rendered fresh on every
- * request (`force-dynamic`) so a recipe saved via `/recipes/new` shows up
- * immediately without relying on client-side cache invalidation timing.
+ * Recipe list (S-401 AC1's first real, non-placeholder content; S-404 adds
+ * the client-side name search island on top — full search/sort/filter/tag
+ * feature set is S-404/S-405/S-406's job). Server Component (ADR-002 —
+ * read-only view) rendered fresh on every request (`force-dynamic`) so a
+ * recipe saved via `/recipes/new` shows up immediately without relying on
+ * client-side cache invalidation timing.
  */
 export const dynamic = "force-dynamic";
 
@@ -25,15 +27,7 @@ export default async function RecipesPage() {
           </Button>
         </EmptyState>
       ) : (
-        <ul className="flex flex-col divide-y divide-border">
-          {recipes.map((recipe) => (
-            <li key={recipe.id} data-testid="recipe-row" className="py-3">
-              <Link href={`/recipes/${recipe.id}`} className="font-medium text-foreground hover:underline">
-                {recipe.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <RecipeCatalog recipes={recipes} />
       )}
     </div>
   );

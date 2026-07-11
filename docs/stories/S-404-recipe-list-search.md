@@ -1,6 +1,6 @@
 # S-404: Recipe list & name search
 
-**Epic:** E-4 Recipes & Nutrition | **Status:** TODO | **Depends on:** S-401
+**Epic:** E-4 Recipes & Nutrition | **Status:** DONE (2026-07-11) | **Depends on:** S-401
 **Covers:** FR-25, FR-29 (recipes empty state)
 
 ## Context
