@@ -1,6 +1,6 @@
 # S-201: Database connection, schema & migrations
 
-**Epic:** E-2 Data layer | **Status:** TODO | **Depends on:** S-101, S-102
+**Epic:** E-2 Data layer | **Status:** DONE (2026-07-11) | **Depends on:** S-101, S-102
 **Covers:** FR-6 (unique pantry row constraint), FR-4/FR-15 (FK semantics), FR-13 (servings CHECK) / NFR-5, NFR-6
 
 ## Context

@@ -44,9 +44,13 @@ const eslintConfig = [
     ],
   },
   {
-    // Everywhere except /data/**: no drizzle-orm / better-sqlite3.
+    // Everywhere except /data/** and the integration test tier: no
+    // drizzle-orm / better-sqlite3. ADR-007 mandates the integration
+    // suite spin up real better-sqlite3 :memory: databases directly
+    // (tests/integration/** and its support/ helpers), so the blanket
+    // /data/**-only rule is scoped to exclude that tier too.
     files: ["**/*.{ts,tsx}"],
-    ignores: ["data/**"],
+    ignores: ["data/**", "tests/integration/**"],
     rules: {
       "no-restricted-imports": ["error", { paths: dataOnlyImports, patterns: dataOnlyPatterns }],
     },

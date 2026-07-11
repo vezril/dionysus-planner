@@ -10,6 +10,8 @@
 
 import type { UnitClass } from "./types";
 
+export type { UnitClass } from "./types";
+
 /**
  * Fixed unit table (architecture.md §4). Not a database table — a
  * versioned code constant. `toCanonicalFactor` is the multiplier that
