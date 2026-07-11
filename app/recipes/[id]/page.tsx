@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRecipeDetail } from "@/data/recipes";
 import { formatNutritionForDisplay } from "@/domain/nutrition";
@@ -48,7 +49,12 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">{recipe.name}</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">{recipe.name}</h1>
+        <Link href={`/recipes/${recipe.id}/edit`} className="text-sm font-medium text-primary underline">
+          Edit recipe
+        </Link>
+      </div>
       <p data-testid="recipe-servings" className="text-sm text-muted-foreground">
         Servings: {recipe.servings}
       </p>

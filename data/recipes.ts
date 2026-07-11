@@ -49,6 +49,46 @@ export async function createRecipeWithLines(
 }
 
 /**
+ * S-402 data-layer entry points for `app/actions/recipe-actions.ts`'s
+ * `updateRecipe`/`deleteRecipe` (docs/stories/S-402-recipe-edit-delete.md).
+ * Same per-call `createDb()` pattern as every function in this file — no
+ * module-scope singleton, connection closed before returning. Dumb
+ * persistence only: the calling action owns the Zod re-validation
+ * (ADR-005), the `toCanonical` conversion, and the NOT_FOUND existence
+ * check (via `getRecipeRecordById`) before calling these.
+ */
+
+export async function getRecipeRecordById(id: number): Promise<RecipeRecord | null> {
+  const db = createDb();
+  try {
+    return await recipeRepo.getById(db, id);
+  } finally {
+    db.$client.close();
+  }
+}
+
+export async function updateRecipeWithLines(
+  id: number,
+  input: RecipeWriteInputPayload,
+): Promise<RecipeRecord & { lines: RecipeLineRecord[] }> {
+  const db = createDb();
+  try {
+    return await recipeRepo.updateWithLines(db, id, input);
+  } finally {
+    db.$client.close();
+  }
+}
+
+export async function removeRecipeRecord(id: number): Promise<void> {
+  const db = createDb();
+  try {
+    await recipeRepo.remove(db, id);
+  } finally {
+    db.$client.close();
+  }
+}
+
+/**
  * Lean summary list for `app/recipes/page.tsx` (S-401 AC1 — the list's
  * first real, non-placeholder content). Reuses `recipeRepo.getAllWithLines`
  * (the same single-query join Flow C/D rely on) rather than adding a

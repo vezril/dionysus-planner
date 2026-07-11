@@ -113,6 +113,11 @@ function toIngredientRecord(row: typeof ingredient.$inferSelect): IngredientReco
   };
 }
 
+export async function getById(db: Db, id: number): Promise<RecipeRecord | null> {
+  const [row] = await db.select().from(recipe).where(eq(recipe.id, id));
+  return row ? toRecipeRecord(row) : null;
+}
+
 export async function createWithLines(
   db: Db,
   input: RecipeWriteInput,
