@@ -1,6 +1,6 @@
 # S-305: Pantry item edit & remove
 
-**Epic:** E-3 Ingredients & Pantry | **Status:** TODO | **Depends on:** S-304
+**Epic:** E-3 Ingredients & Pantry | **Status:** DONE (2026-07-11) | **Depends on:** S-304
 **Covers:** FR-7, FR-8
 
 ## Context

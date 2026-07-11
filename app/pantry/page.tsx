@@ -1,6 +1,7 @@
 import { getPantryList } from "@/data/pantry";
 import { EmptyState } from "@/components/empty-state";
 import { PantryItemForm } from "@/app/pantry/_components/PantryItemForm";
+import { PantryRow } from "@/app/pantry/_components/PantryRow";
 
 /**
  * S-304: Pantry view (RSC list via `data/pantry.ts` -> `pantryRepo`,
@@ -35,16 +36,7 @@ export default async function PantryPage() {
           </div>
           <ul className="flex flex-col divide-y divide-border">
             {items.map((item) => (
-              <li
-                key={item.id}
-                data-testid="pantry-row"
-                className="flex items-center justify-between gap-4 py-3"
-              >
-                <span className="font-medium text-foreground">{item.ingredientName}</span>
-                <span className="text-sm text-muted-foreground">
-                  {item.displayQuantity} {item.displayUnit}
-                </span>
-              </li>
+              <PantryRow key={item.id} item={item} />
             ))}
           </ul>
         </>

@@ -19,7 +19,7 @@
  * the alternative.
  */
 import { revalidatePath } from "next/cache";
-import { pantryItemSchema } from "@/domain/validation/pantryItem.schema";
+import { pantryItemSchema, pantryItemUpdateSchema } from "@/domain/validation/pantryItem.schema";
 import { resolveQuantityForComparison, toCanonical } from "@/domain/units";
 import type { PantryItemRecord } from "@/data/repositories/pantryRepo";
 import {
@@ -161,6 +161,38 @@ export async function addOrUpdatePantryItem(input: unknown): Promise<PantryActio
   const record = await updatePantryItemQuantity(existing.id, {
     quantityCanonical: existing.quantityCanonical + convertedOntoExistingBasis,
     entryUnitClass: existing.entryUnitClass,
+    displayQuantity: quantity,
+    displayUnit: unit,
+  });
+  revalidatePath("/pantry");
+  return { ok: true, data: record };
+}
+
+/**
+ * S-305: rewrites an EXISTING pantry row's quantity/unit by `id` (edit flow,
+ * FR-7/FR-9). Unlike `addOrUpdatePantryItem`'s increment path, editing to a
+ * unit in a different class than the row's current class is legal (Dev
+ * Notes: "it simply changes `entryUnitClass`") — there is no class check
+ * here, only the shared `pantryItemUpdateSchema` re-validation (ADR-005).
+ * `quantityCanonical`/`entryUnitClass` are always derived via `toCanonical`
+ * (never hand-duplicated math); `displayQuantity`/`displayUnit` are stored
+ * verbatim (FR-9). On invalid input the existing row is left untouched.
+ */
+export async function updatePantryItem(
+  id: number,
+  input: { quantity: number; unit: string },
+): Promise<PantryActionResult> {
+  const parsed = pantryItemUpdateSchema.safeParse(input);
+  if (!parsed.success) {
+    return validationError(parsed.error.flatten().fieldErrors);
+  }
+
+  const { quantity, unit } = parsed.data;
+  const canonical = toCanonical(quantity, unit);
+
+  const record = await updatePantryItemQuantity(id, {
+    quantityCanonical: canonical.quantityCanonical,
+    entryUnitClass: canonical.entryUnitClass,
     displayQuantity: quantity,
     displayUnit: unit,
   });

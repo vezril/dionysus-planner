@@ -27,3 +27,13 @@ export const pantryItemSchema = z.object({
 });
 
 export type PantryItemSchemaInput = z.infer<typeof pantryItemSchema>;
+
+/**
+ * S-305 `updatePantryItem` input shape — an existing pantry row is
+ * identified by `id` (not by ingredient), so there's no `ingredientId`/
+ * `mode` to validate here, only the same `quantity`/`unit` rules shared
+ * with `pantryItemSchema` (ADR-005: one schema, no hand-duplicated rules).
+ */
+export const pantryItemUpdateSchema = pantryItemSchema.pick({ quantity: true, unit: true });
+
+export type PantryItemUpdateSchemaInput = z.infer<typeof pantryItemUpdateSchema>;
