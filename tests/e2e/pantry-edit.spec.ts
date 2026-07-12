@@ -112,8 +112,32 @@ async function addPantryItem(page: Page, ingredientName: string, quantity: strin
   await expect(pantryRowFor(page, ingredientName)).toHaveCount(1);
 }
 
+/**
+ * The shared e2e DB persists across runs; a leftover "Almonds, raw" row from
+ * a prior run turns addPantryItem's clean add into a NEEDS_CHOICE upsert
+ * (dialog stays open). Remove leftovers first so the suite is idempotent.
+ */
+async function removeLeftoverFixtureRows(page: Page, names: string[]): Promise<void> {
+  await page.goto("/pantry");
+  for (const name of names) {
+    const row = pantryRowFor(page, name);
+    if ((await row.count()) > 0) {
+      await row.first().getByRole("button", { name: "Remove" }).click();
+      const confirm = page.getByRole("dialog", { name: /remove/i });
+      await confirm.getByRole("button", { name: "Confirm remove" }).click();
+      await expect(row).toHaveCount(0);
+    }
+  }
+}
+
 test.describe("S-305 pantry item edit & remove", () => {
   test.describe.configure({ mode: "serial" });
+
+  test.beforeAll(async ({ browser }) => {
+    const page = await browser.newPage();
+    await removeLeftoverFixtureRows(page, ["Almonds, raw", "Blueberries, fresh"]);
+    await page.close();
+  });
 
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== "chromium", "detailed pantry edit/remove ACs verified once on chromium");

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getWhatCanICook } from "@/data/whatCanICook";
 import { getIngredientCatalog } from "@/data/ingredients";
 import { resolveDefaultThreshold } from "@/app/lib/threshold";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
 import { NearMatchPanel } from "./_components/near-match-panel";
 
 /**
@@ -26,6 +28,12 @@ import { NearMatchPanel } from "./_components/near-match-panel";
  * Flow C's render rule (NFR-2): recipes beyond the active threshold are
  * summarized by count only (`missing-more-tail`) — never rendered as rows.
  *
+ * FR-29: an empty Cookable Now section (nothing fully stocked yet —
+ * including the true first-run "zero recipes, zero pantry items" case)
+ * renders the shared `EmptyState` with a real CTA (link to `/pantry`), the
+ * same bar `/pantry` and `/recipes` already hold themselves to, rather than
+ * descriptive-only prose with no actionable control.
+ *
  * S-502: the Near Match section + missing-more tail + threshold control
  * live in `NearMatchPanel`, a client island (ADR-002) seeded with this RSC
  * render's result and re-fetching `/api/what-can-i-cook?threshold=` on
@@ -48,9 +56,11 @@ export default async function WhatCanICookPage() {
       <section data-testid="cookable-now-section" className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Cookable Now</h2>
         {result.cookable.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Nothing is fully stocked yet — check Near Match below, or add pantry items.
-          </p>
+          <EmptyState description="Nothing is fully stocked yet — check Near Match below, or add pantry items to get there.">
+            <Button asChild>
+              <Link href="/pantry">Add pantry items</Link>
+            </Button>
+          </EmptyState>
         ) : (
           <ul className="flex flex-col gap-2">
             {result.cookable.map((recipe) => (

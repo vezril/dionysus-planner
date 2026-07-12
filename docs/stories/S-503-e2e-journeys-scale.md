@@ -1,6 +1,6 @@
 # S-503: End-to-end journeys, first-run & scale verification
 
-**Epic:** E-5 What Can I Cook | **Status:** TODO | **Depends on:** S-303, S-305, S-402, S-403, S-406, S-502
+**Epic:** E-5 What Can I Cook | **Status:** DONE (2026-07-11) | **Depends on:** S-303, S-305, S-402, S-403, S-406, S-502
 **Covers:** FR-29 (full first-run sweep), UJ-1–UJ-5 / NFR-2, NFR-3, NFR-8, NFR-10
 
 ## Context

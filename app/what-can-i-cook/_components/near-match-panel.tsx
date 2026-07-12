@@ -13,9 +13,17 @@
  * Mirrors S-501's `near-match-section`/`missing-more-tail` DOM contract
  * (`near-match-recipe-row`, `unsatisfied-line`, `missing-more-count`)
  * exactly, so `tests/e2e/what-can-i-cook.spec.ts` keeps passing unchanged.
+ *
+ * FR-29: an empty Near Match result (nothing to show at the active
+ * threshold) renders the shared `EmptyState` with a real CTA (link to
+ * `/recipes/new`) instead of descriptive-only prose with no actionable
+ * control — the same bar `/pantry` and `/recipes` already hold themselves
+ * to.
  */
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
 import { Slider } from "@/components/ui/slider";
 import type { RankedRecipe, UnsatisfiedLine } from "@/domain/matching";
 
@@ -109,7 +117,11 @@ export function NearMatchPanel({
       <section data-testid="near-match-section" className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Near Match</h2>
         {nearMatch.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No near matches right now.</p>
+          <EmptyState description="No near matches right now — add a recipe or stock more of your pantry to see one here.">
+            <Button asChild>
+              <Link href="/recipes/new">Add your first recipe</Link>
+            </Button>
+          </EmptyState>
         ) : (
           <ul className="flex flex-col gap-3">
             {nearMatch.map((recipe) => (

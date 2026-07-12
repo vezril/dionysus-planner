@@ -281,7 +281,9 @@ test.describe("S-501 what can i cook", () => {
     await expect(nearMatchRowFor(page, MISSING_MORE_RECIPE_NAME)).toHaveCount(0);
 
     const countAfter = await missingMoreCount(page);
-    expect(countAfter).toBe(countBefore + 1);
+    // ">= 1 more", not "exactly 1": wcic-threshold.spec.ts's own missing-more
+    // fixture can land in the same window on the shared persistent DB.
+    expect(countAfter).toBeGreaterThan(countBefore);
   });
 });
 

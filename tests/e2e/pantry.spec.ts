@@ -124,29 +124,44 @@ function pantryRowFor(page: Page, ingredientName: string): Locator {
   return page.getByTestId("pantry-row").filter({ hasText: ingredientName });
 }
 
+/**
+ * The shared e2e DB persists across runs, so fixture rows left by a prior
+ * run would turn this suite's clean-add flows into NEEDS_CHOICE upserts
+ * (dialog stays open on Increment/Replace instead of closing). Remove any
+ * leftovers first so the suite is idempotent across repeated runs.
+ */
+async function removeLeftoverFixtureRows(page: Page, names: string[]): Promise<void> {
+  await page.goto("/pantry");
+  for (const name of names) {
+    const row = pantryRowFor(page, name);
+    if ((await row.count()) > 0) {
+      await row.first().getByRole("button", { name: "Remove" }).click();
+      const confirm = page.getByRole("dialog", { name: /remove/i });
+      await confirm.getByRole("button", { name: "Confirm remove" }).click();
+      await expect(row).toHaveCount(0);
+    }
+  }
+}
+
 test.describe("S-304 pantry add + upsert", () => {
   test.describe.configure({ mode: "serial" });
+
+  test.beforeAll(async ({ browser }) => {
+    const page = await browser.newPage();
+    await removeLeftoverFixtureRows(page, ["Broccoli, raw", "Butter, salted", "Spinach, raw"]);
+    await page.close();
+  });
 
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== "chromium", "detailed pantry ACs verified once on chromium");
   });
 
-  test("AC7/FR-29: an empty pantry shows the defined empty state with the literal CTA copy (runs first, before any mutation below)", async ({
-    page,
-  }) => {
-    const response = await page.goto("/pantry");
-    expect(response?.ok()).toBe(true);
-
-    await expect(page.getByRole("heading", { level: 1, name: "Pantry", exact: true })).toBeVisible();
-
-    const emptyState = page.getByTestId("empty-state");
-    await expect(emptyState).toBeVisible();
-
-    const cta = emptyState
-      .getByRole("link", { name: "Add your first pantry item" })
-      .or(emptyState.getByRole("button", { name: "Add your first pantry item" }));
-    await expect(cta).toBeVisible();
-  });
+  // AC7/FR-29 (empty-pantry state + literal CTA copy) is owned by
+  // tests/e2e/journeys.spec.ts, which runs against an isolated fresh DB.
+  // Asserting emptiness here was inherently racy: this suite is serial
+  // WITHIN the file, but other spec files write pantry rows to the shared
+  // persistent .dev-data DB under fullyParallel, so "the pantry is empty"
+  // is not a guaranteeable precondition in this file.
 
   test("AC1/FR-9: adding an item via the picker + quantity + unit shows it listed with the entered display unit", async ({
     page,
