@@ -14,7 +14,7 @@
 - [x] 2.2 Add immutability guard: fail before building/pushing if `ghcr.io/vezril/dionysus-planner:<version>` already exists (manifest inspect).
 - [x] 2.3 Build and push image tagged `<version>` and `latest` (docker/build-push-action, `cache-from/to: type=gha`, linux/amd64).
 - [x] 2.4 Create GitHub Release with generated notes after successful publish (`gh release create` or softprops action).
-- [ ] 2.5 After merge: push tag `v1.0.0`, verify `docker pull ghcr.io/vezril/dionysus-planner:1.0.0` works and the GitHub Release exists; verify re-running the same tag is refused.
+- [x] 2.5 After merge: push tag `v1.0.0`, verify `docker pull ghcr.io/vezril/dionysus-planner:1.0.0` works and the GitHub Release exists; verify re-running the same tag is refused.
 
 ## 3. Branch protection wiring
 
