@@ -47,7 +47,7 @@ function UnsatisfiedLineText({ line, nameFor }: { line: UnsatisfiedLine; nameFor
 function NearMatchRow({ recipe, nameFor }: { recipe: RankedRecipe; nameFor: (id: number) => string }) {
   return (
     <li data-testid="near-match-recipe-row" className="flex flex-col gap-2 rounded-lg border border-status-near/30 p-4">
-      <Link href={`/recipes/${recipe.id}`} className="font-medium underline underline-offset-2">
+      <Link href={`/recipes/${recipe.id}`} className="break-words font-medium underline underline-offset-2">
         {recipe.name}
       </Link>
       <ul className="flex flex-col gap-1 text-sm">

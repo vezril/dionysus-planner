@@ -69,7 +69,10 @@ export default async function WhatCanICookPage() {
                 data-testid="cookable-recipe-row"
                 className="rounded-lg border border-status-cookable/40 p-4"
               >
-                <Link href={`/recipes/${recipe.id}`} className="font-medium underline underline-offset-2">
+                <Link
+                  href={`/recipes/${recipe.id}`}
+                  className="break-words font-medium underline underline-offset-2"
+                >
                   {recipe.name}
                 </Link>
               </li>

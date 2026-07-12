@@ -134,11 +134,11 @@ export function RecipeCatalog({ recipes }: { recipes: AnnotatedRecipeSummary[] }
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
         <div className="flex flex-col gap-1">
           <span className="text-sm font-medium text-foreground">Sort by</span>
           <Select value={sortKey} onValueChange={(value) => setSortKey(value as RecipeSortKey)}>
-            <SelectTrigger aria-label="Sort by" className="w-56">
+            <SelectTrigger aria-label="Sort by" className="w-full sm:w-56">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -154,7 +154,7 @@ export function RecipeCatalog({ recipes }: { recipes: AnnotatedRecipeSummary[] }
         <div className="flex flex-col gap-1">
           <span className="text-sm font-medium text-foreground">Sort direction</span>
           <Select value={sortDirection} onValueChange={(value) => setSortDirection(value as SortDirection)}>
-            <SelectTrigger aria-label="Sort direction" className="w-40">
+            <SelectTrigger aria-label="Sort direction" className="w-full sm:w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -173,7 +173,7 @@ export function RecipeCatalog({ recipes }: { recipes: AnnotatedRecipeSummary[] }
             value={statusFilter}
             onValueChange={(value) => setStatusFilter(value as CookabilityStatusFilter)}
           >
-            <SelectTrigger aria-label="Cookability" className="w-44">
+            <SelectTrigger aria-label="Cookability" className="w-full sm:w-44">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -196,7 +196,10 @@ export function RecipeCatalog({ recipes }: { recipes: AnnotatedRecipeSummary[] }
           {filtered.map((recipe) => (
             <li key={recipe.id} data-testid="recipe-row" className="py-3">
               <div className="flex flex-wrap items-center gap-2">
-                <Link href={`/recipes/${recipe.id}`} className="font-medium text-foreground hover:underline">
+                <Link
+                  href={`/recipes/${recipe.id}`}
+                  className="break-words font-medium text-foreground hover:underline"
+                >
                   {recipe.name}
                 </Link>
                 <span
