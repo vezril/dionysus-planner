@@ -6,7 +6,7 @@
 - [x] 1.2 Add job `checks`: `pnpm lint`, `npx tsc --noEmit`, `pnpm test:unit`, `pnpm test:integration`. Verified by: intentionally failing lint on a scratch branch fails the job (or by first real green run).
 - [x] 1.3 Add job `e2e`: `pnpm build`, Playwright browser install `--with-deps` (cached on Playwright version), `pnpm test:e2e` (all projects incl. isolated-chromium), upload `playwright-report/` as artifact on failure. Add a comment noting job names are wired into branch protection — renames must update the ruleset.
 - [x] 1.4 Add job `docker-smoke`: run `pnpm docker:smoke` (script unmodified); enable BuildKit GHA layer cache if the script's build step supports it without modification, otherwise plain build.
-- [ ] 1.5 Push branch, open PR, confirm all three jobs green; fix any CI-environment-only issues (browser deps, docker compose plugin availability) without weakening any gate.
+- [x] 1.5 Push branch, open PR, confirm all three jobs green; fix any CI-environment-only issues (browser deps, docker compose plugin availability) without weakening any gate.
 
 ## 2. Release workflow (release.yml)
 
@@ -18,8 +18,8 @@
 
 ## 3. Branch protection wiring
 
-- [ ] 3.1 After the first green CI run on the PR, update ruleset 18819474 via `gh api` to add `required_status_checks` for `checks`, `e2e`, `docker-smoke` (integration_id/context names exactly as reported by the run).
-- [ ] 3.2 Verify: `gh api repos/vezril/dionysus-planner/rules/branches/main` lists the required checks; confirm a PR with a pending check shows merge blocked.
+- [x] 3.1 After the first green CI run on the PR, update ruleset 18819474 via `gh api` to add `required_status_checks` for `checks`, `e2e`, `docker-smoke` (integration_id/context names exactly as reported by the run).
+- [x] 3.2 Verify: `gh api repos/vezril/dionysus-planner/rules/branches/main` lists the required checks; confirm a PR with a pending check shows merge blocked.
 
 ## 4. Docs
 
