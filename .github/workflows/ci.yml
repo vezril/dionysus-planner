@@ -1,0 +1,92 @@
+# PR gate for main (openspec change: cicd-docker-pipeline, spec: ci-pr-gate).
+#
+# NOTE: the job names `checks`, `e2e`, and `docker-smoke` are wired into the
+# protect-main ruleset as REQUIRED STATUS CHECKS. Renaming a job here without
+# updating the ruleset in the same PR will block all merges into main.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable corepack (pnpm version from package.json packageManager pin)
+        run: corepack enable
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+      - run: pnpm install --frozen-lockfile
+      - name: Lint (incl. layer-boundary rules)
+        run: pnpm lint
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: pnpm test:unit
+      - name: Integration tests
+        run: pnpm test:integration
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+      - run: pnpm install --frozen-lockfile
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Build
+        run: pnpm build
+      - name: E2E (full matrix + isolated-server project)
+        run: pnpm test:e2e
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  docker-smoke:
+    name: docker-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # scripts/docker-smoke.sh is the single source of truth for the
+      # container gate (build, <=500MB budget, 10s health, seed count,
+      # durability across recreate, --network=none offline boot). CI runs
+      # it unmodified; sqlite3 and docker are preinstalled on ubuntu-latest.
+      - name: Docker build + smoke suite
+        run: bash scripts/docker-smoke.sh

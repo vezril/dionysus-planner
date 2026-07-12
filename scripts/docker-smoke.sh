@@ -97,6 +97,26 @@ SEED_COUNT=$(node -e "console.log(require('${ROOT_DIR}/data/seed/seed-data.json'
 log "Bundled seed-data.json length: ${SEED_COUNT}"
 
 NAME1="dionysus-smoke-fresh-$$"
+# --- volume DB access helpers -------------------------------------------
+# The container runs as root, so the volume's dionysus.db is root-owned on
+# Linux hosts/CI runners and the host sqlite3 CLI cannot write (or sometimes
+# even read) it. Run all SQL inside a throwaway container using the image's
+# own node + better-sqlite3 instead — one code path that works identically
+# on macOS Docker Desktop and Linux runners, in the app's real environment.
+db_exec() {
+  docker run --rm -v "$VOL:/data" --entrypoint node "$IMAGE" -e '
+const db = require("better-sqlite3")("/data/dionysus.db");
+db.exec(process.argv[1]);
+db.close();' "$1"
+}
+db_scalar() {
+  docker run --rm -v "$VOL:/data" --entrypoint node "$IMAGE" -e '
+const db = require("better-sqlite3")("/data/dionysus.db");
+const row = db.prepare(process.argv[1]).raw().get();
+console.log(String(row[0]));
+db.close();' "$1"
+}
+
 CONTAINERS+=("$NAME1")
 docker run -d --name "$NAME1" -p "${HOST_PORT}:3000" -v "$VOL:/data" "$IMAGE" >/dev/null
 ELAPSED=$(wait_healthy "$NAME1" "$HEALTH_TIMEOUT_S")
@@ -113,8 +133,8 @@ if curl -sSf "http://localhost:${HOST_PORT}/api/ingredients" >/dev/null 2>&1; th
   INGREDIENT_COUNT=$(curl -sS "http://localhost:${HOST_PORT}/api/ingredients" | python3 -c "import json,sys; print(len(json.load(sys.stdin)))")
   log "Seeded ingredient count (via GET /api/ingredients): ${INGREDIENT_COUNT}"
 else
-  INGREDIENT_COUNT=$(sqlite3 "$VOL/dionysus.db" "SELECT count(*) FROM ingredient;")
-  log "Seeded ingredient count (via sqlite3 CLI on volume — /api/ingredients not present): ${INGREDIENT_COUNT}"
+  INGREDIENT_COUNT=$(db_scalar "SELECT count(*) FROM ingredient;")
+  log "Seeded ingredient count (via in-container query — /api/ingredients not present): ${INGREDIENT_COUNT}"
 fi
 [ "$INGREDIENT_COUNT" = "$SEED_COUNT" ] || {
   echo "FAILED: ingredient count ($INGREDIENT_COUNT) != bundled seed-data.json length ($SEED_COUNT)" >&2
@@ -127,7 +147,7 @@ docker rm -f "$NAME1" >/dev/null 2>&1
 CONTAINERS=()
 
 TS=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
-sqlite3 "$VOL/dionysus.db" "
+db_exec "
 UPDATE ingredient SET caloriesPerRef = 999.0, overridden = 1, updatedAt = '$TS' WHERE id = 1;
 INSERT INTO pantry_item (ingredientId, quantityCanonical, entryUnitClass, displayQuantity, displayUnit, updatedAt)
   VALUES (2, 500, 'COUNT', 2, 'medium', '$TS');
@@ -143,16 +163,16 @@ docker run -d --name "$NAME2" -p "${HOST_PORT}:3000" -v "$VOL:/data" "$IMAGE" >/
 ELAPSED=$(wait_healthy "$NAME2" "$HEALTH_TIMEOUT_S")
 log "Recreated container healthy within ${ELAPSED}s"
 
-COUNT_AFTER=$(sqlite3 "$VOL/dionysus.db" "SELECT count(*) FROM ingredient;")
+COUNT_AFTER=$(db_scalar "SELECT count(*) FROM ingredient;")
 [ "$COUNT_AFTER" = "$SEED_COUNT" ] || {
   echo "FAILED: ingredient count changed after restart ($COUNT_AFTER != $SEED_COUNT) — seed is not idempotent" >&2
   exit 1
 }
-OVERRIDE_ROW=$(sqlite3 "$VOL/dionysus.db" "SELECT caloriesPerRef || '|' || overridden FROM ingredient WHERE id = 1;")
+OVERRIDE_ROW=$(db_scalar "SELECT caloriesPerRef || '|' || overridden FROM ingredient WHERE id = 1;")
 [ "$OVERRIDE_ROW" = "999.0|1" ] || { echo "FAILED: override not preserved after restart ($OVERRIDE_ROW)" >&2; exit 1; }
-PANTRY_ROW=$(sqlite3 "$VOL/dionysus.db" "SELECT count(*) FROM pantry_item;")
+PANTRY_ROW=$(db_scalar "SELECT count(*) FROM pantry_item;")
 [ "$PANTRY_ROW" = "1" ] || { echo "FAILED: pantry item not preserved after restart" >&2; exit 1; }
-RECIPE_ROW=$(sqlite3 "$VOL/dionysus.db" "SELECT count(*) FROM recipe WHERE name = 'Smoke Test Soup';")
+RECIPE_ROW=$(db_scalar "SELECT count(*) FROM recipe WHERE name = 'Smoke Test Soup';")
 [ "$RECIPE_ROW" = "1" ] || { echo "FAILED: recipe not preserved after restart" >&2; exit 1; }
 log "Durability + idempotent re-seed verified: count unchanged, override intact, pantry item + recipe preserved"
 
