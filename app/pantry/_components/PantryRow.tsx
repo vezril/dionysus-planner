@@ -19,8 +19,11 @@ export function PantryRow({ item }: { item: PantryListRow }) {
   const [removeOpen, setRemoveOpen] = useState(false);
 
   return (
-    <li data-testid="pantry-row" className="flex items-center justify-between gap-4 py-3">
-      <span className="font-medium text-foreground">{item.ingredientName}</span>
+    <li
+      data-testid="pantry-row"
+      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3"
+    >
+      <span className="min-w-0 break-words font-medium text-foreground">{item.ingredientName}</span>
       <span className="text-sm text-muted-foreground font-mono tabular-nums">
         {item.displayQuantity} {item.displayUnit}
       </span>

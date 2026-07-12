@@ -1,9 +1,15 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 /**
- * S-105 primary navigation. Server Component — plain always-visible
- * stacked/wrapping list of links, no client-side toggle needed to satisfy
- * NFR-8 at 375px (see story Dev Notes: "a mobile toggle... is OPTIONAL").
+ * S-105 primary navigation, restyled as a persistent left sidebar
+ * (openspec: sidebar-nav). Client Component — the only one in the app
+ * shell — because active-route highlighting needs `usePathname()`.
+ *
+ * Always visible, full labels at every viewport width (narrower on mobile
+ * than desktop, never hidden/collapsed/drawered) — satisfies NFR-8.
  *
  * Labels intentionally match each destination's <h1> text exactly so the
  * nav link's accessible name equals the page heading (shell.spec.ts).
@@ -16,19 +22,32 @@ const NAV_ITEMS = [
 ] as const;
 
 export function MainNav() {
+  const pathname = usePathname();
+
   return (
-    <nav aria-label="Main" className="border-b bg-background">
-      <ul className="flex flex-wrap gap-1 p-2">
-        {NAV_ITEMS.map((item) => (
-          <li key={item.href}>
-            <Link
-              href={item.href}
-              className="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              {item.label}
-            </Link>
-          </li>
-        ))}
+    <nav
+      aria-label="Main"
+      className="flex w-32 shrink-0 flex-col gap-1 border-r border-border bg-card p-2 sm:w-56 sm:p-4"
+    >
+      <ul className="flex flex-col gap-1">
+        {NAV_ITEMS.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                aria-current={isActive ? "page" : undefined}
+                className={
+                  isActive
+                    ? "glow-primary flex items-center rounded-md border-l-2 border-primary bg-primary/10 px-2 py-2 text-xs font-medium text-primary sm:px-3 sm:text-sm"
+                    : "flex items-center rounded-md border-l-2 border-transparent px-2 py-2 text-xs font-medium text-foreground hover:bg-muted sm:px-3 sm:text-sm"
+                }
+              >
+                {item.label}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );
