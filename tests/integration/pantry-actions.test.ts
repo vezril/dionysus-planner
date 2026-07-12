@@ -175,7 +175,8 @@ describe("app/actions/pantry-actions", () => {
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.error.code).toBe("NEEDS_CHOICE");
-        expect(result.error.existing.quantityCanonical).toBe(100);
+        expect(result.error.existing).toBeDefined();
+        expect(result.error.existing?.quantityCanonical).toBe(100);
       }
 
       const readBack = openRawDb();
@@ -284,7 +285,8 @@ describe("app/actions/pantry-actions", () => {
       if (!result.ok) {
         expect(result.error.code).toBe("INCREMENT_REJECTED_NO_DENSITY");
         expect(result.error.message).toMatch(/replace/i);
-        expect(result.error.existing.quantityCanonical).toBe(100);
+        expect(result.error.existing).toBeDefined();
+        expect(result.error.existing?.quantityCanonical).toBe(100);
       }
 
       const readBack = openRawDb();
@@ -395,7 +397,9 @@ describe("app/actions/pantry-actions", () => {
 
     it("rejects a missing/non-positive ingredientId with fieldErrors (no ingredient selected)", async () => {
       const { addOrUpdatePantryItem } = await import("@/app/actions/pantry-actions");
-      // @ts-expect-error — exercising the runtime rejection of a client bypassing its own required-field validation.
+      // Exercising the runtime rejection of a client bypassing its own
+      // required-field validation (the action accepts this shape at the type
+      // level, so no @ts-expect-error is needed — Zod rejects it at runtime).
       const result = await addOrUpdatePantryItem({ ingredientId: undefined, quantity: 1, unit: "g" });
 
       expect(result.ok).toBe(false);
