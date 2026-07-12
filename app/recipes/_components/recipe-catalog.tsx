@@ -33,6 +33,14 @@ const COOKABILITY_FILTER_OPTIONS: Array<{ value: CookabilityStatusFilter; label:
   { value: "MISSING_MORE", label: "Missing More" },
 ];
 
+// ui-theme: status colors are semantic tokens (design.md Decision 3); glow
+// allowlist includes status badges (Decision 4).
+const COOKABILITY_BADGE_CLASS: Record<string, string> = {
+  COOKABLE: "border-status-cookable/60 text-status-cookable glow-cookable",
+  NEAR_MATCH: "border-status-near/60 text-status-near glow-near",
+  MISSING_MORE: "border-border text-muted-foreground",
+};
+
 const COOKABILITY_BADGE_LABEL: Record<CookabilityStatus, string> = {
   COOKABLE: "Cookable Now",
   NEAR_MATCH: "Near Match",
@@ -193,7 +201,7 @@ export function RecipeCatalog({ recipes }: { recipes: AnnotatedRecipeSummary[] }
                 </Link>
                 <span
                   data-testid="cookability-badge"
-                  className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                  className={`rounded-full border bg-muted px-2 py-0.5 text-xs ${COOKABILITY_BADGE_CLASS[recipe.cookability]}`}
                 >
                   {COOKABILITY_BADGE_LABEL[recipe.cookability]}
                 </span>

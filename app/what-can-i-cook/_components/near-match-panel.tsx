@@ -46,13 +46,17 @@ function UnsatisfiedLineText({ line, nameFor }: { line: UnsatisfiedLine; nameFor
 
 function NearMatchRow({ recipe, nameFor }: { recipe: RankedRecipe; nameFor: (id: number) => string }) {
   return (
-    <li data-testid="near-match-recipe-row" className="flex flex-col gap-2 rounded-lg border border-border p-4">
+    <li data-testid="near-match-recipe-row" className="flex flex-col gap-2 rounded-lg border border-status-near/30 p-4">
       <Link href={`/recipes/${recipe.id}`} className="font-medium underline underline-offset-2">
         {recipe.name}
       </Link>
-      <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
+      <ul className="flex flex-col gap-1 text-sm">
         {recipe.unsatisfiedLines.map((line) => (
-          <li key={line.ingredientId} data-testid="unsatisfied-line">
+          <li
+            key={line.ingredientId}
+            data-testid="unsatisfied-line"
+            className={`font-mono tabular-nums ${line.status === "UNRESOLVED" ? "text-destructive" : "text-status-near"}`}
+          >
             <UnsatisfiedLineText line={line} nameFor={nameFor} />
           </li>
         ))}
@@ -115,7 +119,7 @@ export function NearMatchPanel({
       </div>
 
       <section data-testid="near-match-section" className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Near Match</h2>
+        <h2 className="text-lg font-medium text-status-near">Near Match</h2>
         {nearMatch.length === 0 ? (
           <EmptyState description="No near matches right now — add a recipe or stock more of your pantry to see one here.">
             <Button asChild>
