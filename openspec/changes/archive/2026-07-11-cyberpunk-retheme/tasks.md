@@ -17,4 +17,4 @@
 
 - [x] 3.1 Full local gate: `pnpm lint && npx tsc --noEmit && pnpm test:unit && pnpm test:integration && pnpm build && pnpm test:e2e` — all green with zero test-file edits.
 - [x] 3.2 Visual sweep in the browser (dev server): every route, every dialog (pantry add/edit/remove, ingredient create/edit/delete, recipe editor, threshold slider), at desktop AND 375px — no light remnants, no unreadable text, Radix popovers/selects look intentional.
-- [ ] 3.3 Ship via PR through the CI gate.
+- [x] 3.3 Ship via PR through the CI gate.
