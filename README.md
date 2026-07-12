@@ -12,7 +12,7 @@ implementation plan.
 Images are published to GHCR on every release tag:
 
 ```bash
-docker pull ghcr.io/vezril/dionysus-planner:latest
+docker pull ghcr.io/vezril/dionysus-planner:latest   # or: calvinference/dionysus-planner:latest (Docker Hub mirror)
 docker run -d -p 3000:3000 -v ./dionysus-data:/data ghcr.io/vezril/dionysus-planner:latest
 ```
 
