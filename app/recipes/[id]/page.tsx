@@ -88,7 +88,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
                 className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3"
               >
                 <span className="font-medium text-foreground">{line.ingredient.name}</span>
-                <span data-testid="recipe-line-quantity" className="text-sm text-muted-foreground">
+                <span data-testid="recipe-line-quantity" className="font-mono text-sm tabular-nums text-muted-foreground">
                   {line.displayQuantity} {line.displayUnit}
                 </span>
                 {isUnresolved ? (
@@ -108,7 +108,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
           {NUTRIENT_ROWS.map((row) => (
             <div key={row.key} className="flex items-center justify-between gap-4 text-sm">
               <span className="text-muted-foreground">{row.label}</span>
-              <span data-testid={`nutrition-total-${row.testid}`}>
+              <span data-testid={`nutrition-total-${row.testid}`} className="font-mono tabular-nums">
                 {formatNutritionForDisplay(nutrition.totals[row.key].value, row.kind)}
               </span>
             </div>
@@ -120,7 +120,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
           {NUTRIENT_ROWS.map((row) => (
             <div key={row.key} className="flex items-center justify-between gap-4 text-sm">
               <span className="text-muted-foreground">{row.label}</span>
-              <span data-testid={`nutrition-per-serving-${row.testid}`}>
+              <span data-testid={`nutrition-per-serving-${row.testid}`} className="font-mono tabular-nums">
                 {formatNutritionForDisplay(nutrition.perServing[row.key].value, row.kind)}
               </span>
             </div>

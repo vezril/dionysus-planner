@@ -21,7 +21,7 @@ export function PantryRow({ item }: { item: PantryListRow }) {
   return (
     <li data-testid="pantry-row" className="flex items-center justify-between gap-4 py-3">
       <span className="font-medium text-foreground">{item.ingredientName}</span>
-      <span className="text-sm text-muted-foreground">
+      <span className="text-sm text-muted-foreground font-mono tabular-nums">
         {item.displayQuantity} {item.displayUnit}
       </span>
       <div className="flex shrink-0 gap-2">

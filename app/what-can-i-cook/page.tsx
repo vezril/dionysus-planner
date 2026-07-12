@@ -54,7 +54,7 @@ export default async function WhatCanICookPage() {
       <h1 className="text-2xl font-semibold">What Can I Cook</h1>
 
       <section data-testid="cookable-now-section" className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Cookable Now</h2>
+        <h2 className="text-lg font-medium text-status-cookable">Cookable Now</h2>
         {result.cookable.length === 0 ? (
           <EmptyState description="Nothing is fully stocked yet — check Near Match below, or add pantry items to get there.">
             <Button asChild>
@@ -67,7 +67,7 @@ export default async function WhatCanICookPage() {
               <li
                 key={recipe.id}
                 data-testid="cookable-recipe-row"
-                className="rounded-lg border border-border p-4"
+                className="rounded-lg border border-status-cookable/40 p-4"
               >
                 <Link href={`/recipes/${recipe.id}`} className="font-medium underline underline-offset-2">
                   {recipe.name}
