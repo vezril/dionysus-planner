@@ -90,3 +90,29 @@ jobs:
       # it unmodified; sqlite3 and docker are preinstalled on ubuntu-latest.
       - name: Docker build + smoke suite
         run: bash scripts/docker-smoke.sh
+
+  helm-lint:
+    # Not a required status check (openspec: helm-charts-k3s, task 3.4) —
+    # a cheap, fast sanity net so the chart can't silently bit-rot, not a
+    # merge gate. helm/kubectl are preinstalled on ubuntu-latest.
+    name: helm-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: helm lint
+        run: helm lint charts/dionysus-planner
+      - name: helm template (default values)
+        run: helm template dionysus-planner charts/dionysus-planner > /dev/null
+      - name: helm template (replicaCount override must have no effect)
+        run: |
+          cat > /tmp/override-values.yaml <<'EOF'
+          replicaCount: 5
+          EOF
+          helm template dionysus-planner charts/dionysus-planner -f /tmp/override-values.yaml \
+            | grep -A1 '^kind: Deployment$' > /dev/null
+          REPLICAS=$(helm template dionysus-planner charts/dionysus-planner -f /tmp/override-values.yaml \
+            | grep 'replicas:' | awk '{print $2}')
+          if [ "$REPLICAS" != "1" ]; then
+            echo "::error::replicas rendered as $REPLICAS, expected 1 (single-writer SQLite constraint)"
+            exit 1
+          fi

@@ -1,0 +1,45 @@
+# Default values for dionysus-planner.
+#
+# NOTE: there is deliberately NO `replicaCount` field anywhere in this
+# file or the templates. The application's SQLite storage is
+# single-writer (better-sqlite3, synchronous, in-process) — running more
+# than one replica against the same PersistentVolumeClaim will corrupt
+# the database. The Deployment template hardcodes replicas: 1. Do not
+# add a replica count override; if you need horizontal scale, this
+# application needs a different storage backend first.
+
+image:
+  repository: ghcr.io/vezril/dionysus-planner
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:
+  # FR-21/FR-23 near-match threshold default (prd.md, architecture.md §7).
+  nearMatchDefaultThreshold: 3
+
+persistence:
+  # k3s's bundled dynamic provisioner. A different StorageClass may be
+  # substituted, but note the local-path caveat in design.md: it binds
+  # the pod to whichever node first claims the volume.
+  storageClass: local-path
+  size: 1Gi
+  accessMode: ReadWriteOnce
+
+service:
+  type: ClusterIP
+  port: 3000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: false
+  className: traefik
+  host: ""
+  annotations: {}
+  tls: []
