@@ -20,6 +20,28 @@ Data (SQLite, WAL sidecars included) lives entirely in the mounted `/data`
 volume and survives container recreation. The app needs no outbound network
 at runtime. Alternatively use the checked-in `docker-compose.yml`.
 
+## Deploy (Helm / k3s)
+
+```bash
+helm install dionysus-planner charts/dionysus-planner
+kubectl port-forward svc/dionysus-planner 3000:3000
+```
+
+Works out of the box on a stock k3s cluster (uses the bundled `local-path`
+StorageClass; Traefik ingress is available but disabled by default — set
+`ingress.enabled=true` and `ingress.host=...` to turn it on). **This chart
+always runs exactly one replica** — there is no `replicaCount` value, and
+attempting to set one has no effect. The app's SQLite storage is
+single-writer; running more than one pod against the same volume would
+corrupt the database. Upgrades briefly take the app offline (`Recreate`
+strategy) rather than risk two pods holding the volume at once.
+
+Note: the default `local-path` StorageClass binds the volume — and
+therefore the pod — to whichever node it first schedules on. Fine for a
+single- or few-node home cluster; a multi-node cluster needing the pod to
+move freely would need a different StorageClass (e.g. Longhorn), set via
+`persistence.storageClass`.
+
 ## Getting started
 
 ```bash

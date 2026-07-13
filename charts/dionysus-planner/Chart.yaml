@@ -1,0 +1,17 @@
+apiVersion: v2
+name: dionysus-planner
+description: >-
+  Single-user, self-hosted pantry/recipe planner (Next.js + SQLite).
+  Deploys as a fixed single-replica workload — the app's SQLite storage
+  is single-writer and does not support horizontal scaling.
+type: application
+version: 0.1.0
+appVersion: "1.1.0"
+home: https://github.com/vezril/dionysus-planner
+sources:
+  - https://github.com/vezril/dionysus-planner
+keywords:
+  - meal-planner
+  - self-hosted
+  - nextjs
+  - sqlite
