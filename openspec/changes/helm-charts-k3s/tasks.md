@@ -27,4 +27,4 @@
 
 ## 5. Ship
 
-- [ ] 5.1 PR through the CI gate.
+- [x] 5.1 PR through the CI gate.
