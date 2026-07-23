@@ -2,101 +2,74 @@
 
 /**
  * Shared recipe editor client component (S-401 create, S-402 edit —
- * docs/stories/S-401-recipe-create.md, docs/stories/S-402-recipe-edit-
- * delete.md Dev Notes: "Reuses S-401's schema and editor component — do
- * not fork a second editor"). ADR-002 — forms with local state are client
- * components; both `createRecipe` and `updateRecipe` re-validate
- * independently (ADR-005), so this client-side `recipeSchema.safeParse`
- * call is UX-only, never trusted as authorization to write.
+ * rewritten under openspec: cooklang-recipe-editor). ADR-002 — forms with
+ * local state are client components; both `createRecipe` and
+ * `updateRecipe` re-validate independently (ADR-005), so this client-side
+ * `recipeSchema.safeParse` call is UX-only, never trusted as authorization
+ * to write.
  *
- * Pinned contract (tests/e2e/recipe-create.spec.ts, tests/e2e/recipe-edit
- * .spec.ts):
- *   - `<h1>` "New Recipe" (create mode) / matching /edit recipe/i (edit
- *     mode).
+ * The per-line ingredient picker form (S-401/S-402's original contract —
+ * `data-testid="recipe-line-row"` rows with an Ingredient/Quantity/Unit
+ * triple each) is GONE. Recipe name / Servings / Tags stay untouched. In
+ * their place: a single "Instructions" textarea where the whole recipe is
+ * typed as prose, with inline `@Name(id){quantity%unit}` mentions
+ * (design.md Decisions 1-3). Typing `@` opens an autocomplete (backed by
+ * the same `/api/ingredients?q=` endpoint the old picker used); selecting
+ * a result inserts the ingredient's name plus its catalog id as one atomic
+ * text operation — the mention's link to a real catalog row is captured
+ * at that moment, never re-derived from text later (FR-24).
+ *
+ * The dropdown is anchored below the textarea, not caret-following
+ * (design.md Decision 8 — true caret-coordinate tracking in a plain
+ * `<textarea>` needs a text-metrics "mirror div"; deferred as polish).
+ *
+ * Pinned contract (tests/e2e/recipe-create.spec.ts, recipe-edit.spec.ts):
+ *   - `<h1>` "New Recipe" (create) / matching /edit recipe/i (edit).
  *   - "Recipe name" textbox, "Servings" spinbutton, "Instructions"
- *     textbox.
- *   - "Add ingredient line" button appends a `data-testid="recipe-line-row"`
- *     row; each row has an "Ingredient" search textbox (backed by
- *     `/api/ingredients?q=`, S-301's reusable picker backend) whose results
- *     render as `data-testid="recipe-ingredient-option"`, a "Quantity"
- *     spinbutton, and a "Unit" combobox (shadcn Select, FR-10 unit set).
- *   - "Save recipe" submits (also reachable via /save/i, per the edit
- *     spec). 0 completed lines (or any other lines-level validation
- *     failure) blocks the save and renders an inline message matching
+ *     textbox (now the single mention-aware body field).
+ *   - Typing `@query` in "Instructions" opens a
+ *     `data-testid="mention-suggestions"` list of
+ *     `data-testid="mention-option"` buttons (backed by
+ *     `/api/ingredients?q=`); clicking one inserts `Name(id)` at the `@`
+ *     position, replacing the typed query.
+ *   - "Save recipe" submits. A body with zero valid mentions (or any
+ *     parse error) blocks the save and renders an inline message matching
  *     /at least (one|1) ingredient/i, staying on the current page.
- *   - Create mode: a successful save redirects to `/recipes`. Edit mode: a
- *     successful save redirects to `/recipes/<recipeId>` (FR-14 AC2).
- *   - `initialValues` (edit mode only) pre-fills name/servings/
- *     instructions and renders exactly one `recipe-line-row` per existing
- *     line, pre-filled with that line's ingredient name/displayQuantity/
- *     displayUnit (FR-14 AC1).
+ *   - Create mode: success redirects to `/recipes`. Edit mode: success
+ *     redirects to `/recipes/<recipeId>` (FR-14 AC2).
+ *   - `initialValues` (edit mode) pre-fills name/servings/body verbatim
+ *     (design.md Decision 6 — body IS the stored `instructions` text,
+ *     mentions and all, no reconstruction).
  *
- * S-405 (docs/stories/S-405-recipe-tags.md, tests/e2e/recipe-tags.spec.ts):
- *   - A "Tags" free-text textbox. Pressing Enter while it is focused and
- *     non-empty commits its trimmed value as a `data-testid=
- *     "recipe-tag-chip"` chip and clears the input; each chip has a
- *     `getByRole("button", { name: \`Remove tag ${tag}\` })` inside it.
- *   - Saving submits every currently-committed chip as `tags`.
- *   - `initialValues.tags` (edit mode) pre-fills the committed chip list.
+ * S-405 tags (tests/e2e/recipe-tags.spec.ts) — unchanged from before:
+ *   - A "Tags" free-text textbox. Enter commits a
+ *     `data-testid="recipe-tag-chip"` chip; each chip has a
+ *     `getByRole("button", { name: \`Remove tag ${tag}\` })`.
  */
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { createRecipe, updateRecipe } from "@/app/actions/recipe-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { recipeSchema } from "@/domain/validation/recipe.schema";
-import { UNITS } from "@/domain/units";
-
-const UNIT_KEYS = Object.keys(UNITS);
 
 interface IngredientOption {
   id: number;
   name: string;
 }
 
-interface LineState {
-  key: string;
-  ingredientQuery: string;
-  ingredientId: number | null;
-  quantity: string;
-  unit: string;
-  options: IngredientOption[];
-}
-
-let nextLineKey = 0;
-function newLine(seed?: Partial<Pick<LineState, "ingredientQuery" | "ingredientId" | "quantity" | "unit">>): LineState {
-  nextLineKey += 1;
-  return {
-    key: `line-${nextLineKey}`,
-    ingredientQuery: seed?.ingredientQuery ?? "",
-    ingredientId: seed?.ingredientId ?? null,
-    quantity: seed?.quantity ?? "",
-    unit: seed?.unit ?? "",
-    options: [],
-  };
-}
-
 interface FormValues {
   name: string;
   servings: string;
-  instructions: string;
-}
-
-export interface RecipeEditorInitialLine {
-  ingredientId: number;
-  ingredientName: string;
-  quantity: number;
-  unit: string;
+  body: string;
 }
 
 export interface RecipeEditorInitialValues {
   name: string;
   servings: number;
-  instructions: string;
-  lines: RecipeEditorInitialLine[];
+  body: string;
   tags?: string[];
 }
 
@@ -106,64 +79,103 @@ interface RecipeEditorProps {
   initialValues?: RecipeEditorInitialValues;
 }
 
+/**
+ * Finds the `@query` word the caret currently sits inside, if any — the
+ * boundary is the start of the current line or the previous whitespace
+ * character, whichever is closer, matching how `@mentions` are detected
+ * in plain-textarea implementations elsewhere (e.g. GitHub's comment box).
+ */
+function findMentionQueryAtCaret(text: string, caretIndex: number): { start: number; query: string } | null {
+  const uptoCaret = text.slice(0, caretIndex);
+  const atIndex = uptoCaret.lastIndexOf("@");
+  if (atIndex === -1) {
+    return null;
+  }
+  const between = uptoCaret.slice(atIndex + 1);
+  if (/[\n(){}]/.test(between)) {
+    // The @ is part of an already-completed mention (or unrelated text) —
+    // not a live query.
+    return null;
+  }
+  return { start: atIndex, query: between };
+}
+
 export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProps) {
   const router = useRouter();
-  const [lines, setLines] = useState<LineState[]>(() =>
-    initialValues
-      ? initialValues.lines.map((line) =>
-          newLine({
-            ingredientQuery: line.ingredientName,
-            ingredientId: line.ingredientId,
-            quantity: String(line.quantity),
-            unit: line.unit,
-          }),
-        )
-      : [],
-  );
-  const [linesError, setLinesError] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const [bodyError, setBodyError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>(() => initialValues?.tags ?? []);
   const [tagDraft, setTagDraft] = useState("");
   const [tagsError, setTagsError] = useState<string | null>(null);
+  const [mentionOptions, setMentionOptions] = useState<IngredientOption[]>([]);
+  const [mentionQueryStart, setMentionQueryStart] = useState<number | null>(null);
 
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
       name: initialValues?.name ?? "",
       servings: initialValues ? String(initialValues.servings) : "",
-      instructions: initialValues?.instructions ?? "",
+      body: initialValues?.body ?? "",
     },
   });
 
-  function addLine() {
-    setLines((previous) => [...previous, newLine()]);
-  }
+  const bodyRegistration = register("body");
+  const bodyValue = watch("body");
 
-  function updateLine(key: string, patch: Partial<LineState>) {
-    setLines((previous) => previous.map((line) => (line.key === key ? { ...line, ...patch } : line)));
-  }
+  async function handleBodyChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
+    void bodyRegistration.onChange(event);
+    const textarea = event.target;
+    const caretIndex = textarea.selectionStart ?? textarea.value.length;
+    const mentionQuery = findMentionQueryAtCaret(textarea.value, caretIndex);
 
-  async function handleIngredientQueryChange(key: string, query: string) {
-    updateLine(key, { ingredientQuery: query, ingredientId: null });
-    if (query.trim() === "") {
-      updateLine(key, { options: [] });
+    if (mentionQuery === null || mentionQuery.query.trim() === "") {
+      setMentionOptions([]);
+      setMentionQueryStart(null);
       return;
     }
+
+    setMentionQueryStart(mentionQuery.start);
     try {
-      const response = await fetch(`/api/ingredients?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/ingredients?q=${encodeURIComponent(mentionQuery.query)}`);
       const results = (await response.json()) as IngredientOption[];
-      updateLine(key, { options: results });
+      setMentionOptions(results);
     } catch {
-      updateLine(key, { options: [] });
+      setMentionOptions([]);
     }
   }
 
-  function selectIngredient(key: string, option: IngredientOption) {
-    updateLine(key, { ingredientId: option.id, ingredientQuery: option.name, options: [] });
+  function insertMention(option: IngredientOption) {
+    const textarea = textareaRef.current;
+    if (mentionQueryStart === null || !textarea) {
+      return;
+    }
+    const caretIndex = textarea.selectionStart ?? bodyValue.length;
+    const before = bodyValue.slice(0, mentionQueryStart);
+    const after = bodyValue.slice(caretIndex);
+    const inserted = `@${option.name}(${option.id})`;
+    const nextValue = `${before}${inserted}${after}`;
+
+    // Synchronous: setting textarea.value imperatively (in addition to the
+    // controlled React state below) guarantees the DOM reflects the new
+    // text and the cursor lands in the right place in THIS tick — a
+    // requestAnimationFrame-deferred reposition races with whatever the
+    // caller (a fast typist, or a test) does next.
+    textarea.value = nextValue;
+    const cursor = before.length + inserted.length;
+    textarea.focus();
+    textarea.setSelectionRange(cursor, cursor);
+
+    setValue("body", nextValue, { shouldDirty: true });
+    setMentionOptions([]);
+    setMentionQueryStart(null);
   }
 
   function commitTagDraft() {
@@ -181,29 +193,19 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
-    setLinesError(null);
+    setBodyError(null);
     setTagsError(null);
-
-    const completedLines = lines
-      .filter((line) => line.ingredientId !== null && line.quantity !== "" && line.unit !== "")
-      .map((line) => ({
-        ingredientId: line.ingredientId!,
-        quantity: Number(line.quantity),
-        unit: line.unit,
-      }));
 
     const payload = {
       name: values.name,
       servings: Number(values.servings),
-      instructions: values.instructions,
-      lines: completedLines,
+      body: values.body,
       tags,
     };
 
     const parsed = recipeSchema.safeParse(payload);
     if (!parsed.success) {
-      const fieldErrors = parsed.error.flatten().fieldErrors;
-      applyFieldErrors(fieldErrors);
+      applyFieldErrors(parsed.error.flatten().fieldErrors);
       return;
     }
 
@@ -221,8 +223,8 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
   });
 
   function applyFieldErrors(fieldErrors: Record<string, string[]>) {
-    if (fieldErrors.lines?.length) {
-      setLinesError(fieldErrors.lines[0]);
+    if (fieldErrors.body?.length) {
+      setBodyError(fieldErrors.body[0]);
     }
     if (fieldErrors.tags?.length) {
       setTagsError(fieldErrors.tags[0]);
@@ -232,9 +234,6 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
     }
     if (fieldErrors.servings?.length) {
       setError("servings", { type: "server", message: fieldErrors.servings[0] });
-    }
-    if (fieldErrors.instructions?.length) {
-      setError("instructions", { type: "server", message: fieldErrors.instructions[0] });
     }
   }
 
@@ -259,87 +258,41 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
           {errors.servings ? <p className="text-sm text-destructive">{errors.servings.message}</p> : null}
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="relative flex flex-col gap-1">
           <label htmlFor="recipe-instructions" className="text-sm font-medium text-foreground">
             Instructions
           </label>
-          <Textarea id="recipe-instructions" className="w-full max-w-xl" {...register("instructions")} />
-          {errors.instructions ? <p className="text-sm text-destructive">{errors.instructions.message}</p> : null}
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-foreground">Ingredient lines</span>
-            <Button type="button" variant="outline" onClick={addLine}>
-              Add ingredient line
-            </Button>
-          </div>
-
-          {lines.map((line) => (
-            <div
-              key={line.key}
-              data-testid="recipe-line-row"
-              className="flex w-full min-w-0 flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:flex-wrap sm:items-end"
+          <Textarea
+            id="recipe-instructions"
+            className="min-h-40 w-full max-w-2xl font-mono"
+            placeholder={"Fry the @onion in butter...\nType @ to link an ingredient."}
+            {...bodyRegistration}
+            ref={(node) => {
+              bodyRegistration.ref(node);
+              textareaRef.current = node;
+            }}
+            onChange={handleBodyChange}
+          />
+          {mentionOptions.length > 0 ? (
+            <ul
+              data-testid="mention-suggestions"
+              className="w-full max-w-2xl rounded-lg border border-border bg-popover shadow-md"
             >
-              <div className="relative flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground">Ingredient</span>
-                <Input
-                  type="text"
-                  aria-label="Ingredient"
-                  value={line.ingredientQuery}
-                  onChange={(event) => {
-                    void handleIngredientQueryChange(line.key, event.target.value);
-                  }}
-                  className="w-full"
-                />
-                {line.options.length > 0 ? (
-                  <ul className="absolute top-full z-10 mt-1 w-full rounded-lg border border-border bg-popover shadow-md">
-                    {line.options.map((option) => (
-                      <li key={option.id}>
-                        <button
-                          type="button"
-                          data-testid="recipe-ingredient-option"
-                          className="block w-full px-2.5 py-1.5 text-left text-sm hover:bg-muted"
-                          onClick={() => selectIngredient(line.key, option)}
-                        >
-                          {option.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-
-              <div className="flex min-w-0 flex-col gap-1 sm:w-28">
-                <span className="text-xs font-medium text-muted-foreground">Quantity</span>
-                <Input
-                  type="number"
-                  step="any"
-                  aria-label="Quantity"
-                  value={line.quantity}
-                  onChange={(event) => updateLine(line.key, { quantity: event.target.value })}
-                />
-              </div>
-
-              <div className="flex min-w-0 flex-col gap-1 sm:w-28">
-                <span className="text-xs font-medium text-muted-foreground">Unit</span>
-                <Select value={line.unit} onValueChange={(value) => updateLine(line.key, { unit: value })}>
-                  <SelectTrigger aria-label="Unit" className="w-full">
-                    <SelectValue placeholder="Unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {UNIT_KEYS.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          ))}
-
-          {linesError ? <p className="text-sm text-destructive">{linesError}</p> : null}
+              {mentionOptions.map((option) => (
+                <li key={option.id}>
+                  <button
+                    type="button"
+                    data-testid="mention-option"
+                    className="block w-full px-2.5 py-1.5 text-left text-sm hover:bg-muted"
+                    onClick={() => insertMention(option)}
+                  >
+                    {option.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {bodyError ? <p className="text-sm text-destructive">{bodyError}</p> : null}
         </div>
 
         <div className="flex flex-col gap-1">

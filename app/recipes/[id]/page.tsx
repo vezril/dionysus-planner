@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getRecipeDetail } from "@/data/recipes";
 import { formatNutritionForDisplay } from "@/domain/nutrition";
 import type { NutritionTotals } from "@/domain/nutrition";
+import { stripMentionIds } from "@/domain/cooklangParser";
 
 /**
  * Recipe detail with computed nutrition (docs/stories/S-403-recipe-detail-
@@ -58,8 +59,11 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
       <p data-testid="recipe-servings" className="text-sm text-muted-foreground">
         Servings: {recipe.servings}
       </p>
+      {/* openspec: cooklang-recipe-editor — the stored `instructions` text
+          carries @Name(id){qty%unit} mentions; readers never see the raw
+          numeric id (design.md Decision 7). */}
       <p data-testid="recipe-instructions" className="whitespace-pre-wrap text-sm">
-        {recipe.instructions}
+        {stripMentionIds(recipe.instructions)}
       </p>
 
       {tags.length > 0 ? (

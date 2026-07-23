@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 /**
  * S-403 Recipe detail with computed nutrition — end-to-end coverage
@@ -77,44 +77,34 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
  * ===========================================================================
  */
 
-async function ensureLineRowCount(page: Page, count: number): Promise<void> {
-  const addButton = page.getByRole("button", { name: "Add ingredient line" });
-  while ((await page.getByTestId("recipe-line-row").count()) < count) {
-    await addButton.click();
-  }
-}
-
-async function fillLine(
-  page: Page,
-  row: Locator,
-  ingredientName: string,
-  quantity: string,
-  unit: string,
-): Promise<void> {
-  const ingredientInput = row.getByRole("textbox", { name: "Ingredient" });
-  await ingredientInput.fill(ingredientName);
-
-  const option = row.getByTestId("recipe-ingredient-option").filter({ hasText: ingredientName });
-  await expect(option.first()).toBeVisible();
-  await option.first().click();
-
-  await row.getByRole("spinbutton", { name: "Quantity" }).fill(quantity);
-
-  await row.getByRole("combobox", { name: "Unit" }).click();
-  await page.getByRole("option", { name: unit, exact: true }).click();
-}
-
 interface LineSpec {
   ingredientName: string;
   quantity: string;
   unit: string;
 }
 
+/** Types `@query`, waits for the matching suggestion, and clicks it. */
+async function insertMention(page: Page, ingredientName: string, quantity: string, unit: string): Promise<void> {
+  const textarea = page.getByRole("textbox", { name: "Instructions" });
+  await textarea.pressSequentially(`@${ingredientName.slice(0, 6)}`);
+
+  const option = page.getByTestId("mention-option").filter({ hasText: ingredientName });
+  await expect(option.first()).toBeVisible();
+  await option.first().click();
+
+  await textarea.pressSequentially(`{${quantity}%${unit}} `);
+}
+
 /**
- * Creates a recipe via the S-401 editor UI and navigates to its detail
- * page via the list's (this story's newly-pinned) row link. Returns the
- * detail page URL's numeric id for reuse (e.g. revisiting after an
- * override).
+ * Creates a recipe via the editor UI and navigates to its detail page via
+ * the list's row link. Returns the detail page URL's numeric id for reuse
+ * (e.g. revisiting after an override).
+ *
+ * openspec: cooklang-recipe-editor — mentions are typed first, then the
+ * free-text `instructions` filler is appended as its own separate
+ * sentence with no mentions in it, so it survives `stripMentionIds()`
+ * as a fully intact, contiguous substring for the one test that asserts
+ * its exact content (`toContainText("Combine and serve.")`).
  */
 async function createRecipeAndOpenDetail(
   page: Page,
@@ -123,14 +113,13 @@ async function createRecipeAndOpenDetail(
   await page.goto("/recipes/new");
   await page.getByRole("textbox", { name: "Recipe name" }).fill(opts.name);
   await page.getByRole("spinbutton", { name: "Servings" }).fill(opts.servings);
-  await page.getByRole("textbox", { name: "Instructions" }).fill(opts.instructions);
 
-  await ensureLineRowCount(page, opts.lines.length);
-  const rows = page.getByTestId("recipe-line-row");
-  for (let i = 0; i < opts.lines.length; i++) {
-    const line = opts.lines[i];
-    await fillLine(page, rows.nth(i), line.ingredientName, line.quantity, line.unit);
+  const textarea = page.getByRole("textbox", { name: "Instructions" });
+  await textarea.click();
+  for (const line of opts.lines) {
+    await insertMention(page, line.ingredientName, line.quantity, line.unit);
   }
+  await textarea.pressSequentially(opts.instructions);
 
   await page.getByRole("button", { name: "Save recipe" }).click();
 

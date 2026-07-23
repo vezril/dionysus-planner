@@ -182,31 +182,22 @@ async function removePantryItem(page: Page, ingredientName: string): Promise<voi
   await expect(confirmDialog).not.toBeVisible();
 }
 
-async function ensureLineRowCount(page: Page, count: number): Promise<void> {
-  const addButton = page.getByRole("button", { name: "Add ingredient line" });
-  while ((await page.getByTestId("recipe-line-row").count()) < count) {
-    await addButton.click();
-  }
-}
+/** Exact-match mention insertion (unlike other specs' substring `hasText`
+ * filter): needed here because FR-24's own fixture deliberately uses an
+ * ingredient named "onion" alongside seeded entries whose names CONTAIN
+ * "onion" as a substring (e.g. "Onion, yellow, medium") — a plain
+ * substring filter would ambiguously match both. */
+async function insertMentionExact(page: Page, ingredientName: string, quantity: string, unit: string): Promise<void> {
+  const textarea = page.getByRole("textbox", { name: "Instructions" });
+  await textarea.pressSequentially(`@${ingredientName.slice(0, 6)}`);
 
-/** Exact-match line-fill (unlike other specs' substring `hasText` filter):
- * needed here because FR-24's own fixture deliberately uses an ingredient
- * named "onion" alongside seeded entries whose names CONTAIN "onion" as a
- * substring (e.g. "Onion, yellow, medium") — a plain substring filter
- * would ambiguously match both. */
-async function fillLineExact(page: Page, row: Locator, ingredientName: string, quantity: string, unit: string) {
-  const ingredientInput = row.getByRole("textbox", { name: "Ingredient" });
-  await ingredientInput.fill(ingredientName);
-
-  const option = row
-    .getByTestId("recipe-ingredient-option")
+  const option = page
+    .getByTestId("mention-option")
     .filter({ hasText: new RegExp(`^${escapeRegExp(ingredientName)}$`) });
   await expect(option.first()).toBeVisible();
   await option.first().click();
 
-  await row.getByRole("spinbutton", { name: "Quantity" }).fill(quantity);
-  await row.getByRole("combobox", { name: "Unit" }).click();
-  await page.getByRole("option", { name: unit, exact: true }).click();
+  await textarea.pressSequentially(`{${quantity}%${unit}} `);
 }
 
 async function createRecipe(
@@ -220,13 +211,13 @@ async function createRecipe(
 
   await page.getByRole("textbox", { name: "Recipe name" }).fill(name);
   await page.getByRole("spinbutton", { name: "Servings" }).fill(opts.servings ?? "2");
-  await page.getByRole("textbox", { name: "Instructions" }).fill(opts.instructions ?? "Combine and serve.");
 
-  await ensureLineRowCount(page, lines.length);
-  const rows = page.getByTestId("recipe-line-row");
-  for (let i = 0; i < lines.length; i += 1) {
-    await fillLineExact(page, rows.nth(i), lines[i].ingredientName, lines[i].quantity, lines[i].unit);
+  const textarea = page.getByRole("textbox", { name: "Instructions" });
+  await textarea.click();
+  for (const line of lines) {
+    await insertMentionExact(page, line.ingredientName, line.quantity, line.unit);
   }
+  await textarea.pressSequentially(opts.instructions ?? "Combine and serve.");
 
   await page.getByRole("button", { name: "Save recipe" }).click();
   await expect(page).toHaveURL(/\/recipes(\/\d+)?$/);

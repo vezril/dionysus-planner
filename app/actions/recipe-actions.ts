@@ -12,6 +12,7 @@
 import { revalidatePath } from "next/cache";
 import { recipeSchema } from "@/domain/validation/recipe.schema";
 import { toCanonical } from "@/domain/units";
+import { parseRecipeBody } from "@/domain/cooklangParser";
 import type { RecipeRecord, RecipeLineRecord, RecipeLineInput } from "@/data/repositories/recipeRepo";
 import {
   createRecipeWithLines,
@@ -68,6 +69,28 @@ function toLineInputs(lines: Array<{ ingredientId: number; quantity: number; uni
 }
 
 /**
+ * openspec: cooklang-recipe-editor — extracts `{ingredientId, quantity,
+ * unit}` lines from the typed `body` text via `domain/cooklangParser.ts`.
+ * Any parse error (missing quantity, unknown unit, non-positive quantity)
+ * or a body with zero mentions at all is surfaced as a `fieldErrors.body`
+ * validation failure (design.md Decision 5) — mirrors the old "0 lines"
+ * rejection (FR-13), just derived from parsed text instead of a
+ * client-submitted array.
+ */
+function resolveLinesFromBody(body: string): { ok: true; lines: RecipeLineInput[] } | { ok: false; error: ActionError } {
+  const parsed = parseRecipeBody(body);
+
+  if (parsed.errors.length > 0) {
+    return validationError({ body: parsed.errors });
+  }
+  if (parsed.lines.length === 0) {
+    return validationError({ body: ["Type at least one ingredient (start with @)."] });
+  }
+
+  return { ok: true, lines: toLineInputs(parsed.lines) };
+}
+
+/**
  * Re-parses `input` with `recipeSchema` (ADR-005 — never trusts the
  * caller, even the app's own client component). A schema violation
  * (including 0 lines, FR-13) returns `{ ok: false, error }` and writes
@@ -91,14 +114,17 @@ export async function createRecipe(input: unknown): Promise<CreateRecipeResult> 
   }
 
   const data = parsed.data;
-  const lines: RecipeLineInput[] = toLineInputs(data.lines);
+  const resolved = resolveLinesFromBody(data.body);
+  if (!resolved.ok) {
+    return resolved;
+  }
 
   try {
     const record = await createRecipeWithLines({
       name: data.name,
       servings: data.servings,
-      instructions: data.instructions ?? "",
-      lines,
+      instructions: data.body,
+      lines: resolved.lines,
       tags: data.tags ?? [],
     });
 
@@ -143,14 +169,17 @@ export async function updateRecipe(id: number, input: unknown): Promise<UpdateRe
   }
 
   const data = parsed.data;
-  const lines: RecipeLineInput[] = toLineInputs(data.lines);
+  const resolved = resolveLinesFromBody(data.body);
+  if (!resolved.ok) {
+    return resolved;
+  }
 
   try {
     const record = await updateRecipeWithLines(id, {
       name: data.name,
       servings: data.servings,
-      instructions: data.instructions ?? "",
-      lines,
+      instructions: data.body,
+      lines: resolved.lines,
       tags: data.tags ?? [],
     });
 

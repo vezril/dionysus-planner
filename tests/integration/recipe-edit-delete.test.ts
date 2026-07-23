@@ -57,9 +57,10 @@ import {
  * `updateRecipe`'s `input` (pre-validation) matches the SAME
  * `domain/validation/recipe.schema.ts#recipeSchema` `createRecipe` already
  * re-parses (Dev Notes: "Reuses S-401's schema... do not fork a second
- * editor"):
- *   { name: string; servings: number; instructions?: string;
- *     lines: Array<{ ingredientId: number; quantity: number; unit: string }> }
+ * editor"). openspec: cooklang-recipe-editor — `lines`/`instructions`
+ * replaced by a single typed `body: string` (parsed via
+ * `domain/cooklangParser.ts`, same as create):
+ *   { name: string; servings: number; body: string }
  *
  * `updateRecipe` behavior:
  *   - Re-parses `input` with `recipeSchema` (ADR-005). A schema violation
@@ -204,13 +205,17 @@ describe("app/actions/recipe-actions: updateRecipe / deleteRecipe (S-402)", () =
     vi.clearAllMocks();
   });
 
+  function mention(name: string, id: number, quantity: number, unit: string): string {
+    return `@${name}(${id}){${quantity}%${unit}}`;
+  }
+
   /** Seeds a baseline recipe: "Chicken and Rice", 4 servings, 2 lines. */
   function seedBaselineRecipe(): number {
     const sqlite = openRawDb(dbPath);
     const recipeId = insertRawRecipe(sqlite, {
       name: "Chicken and Rice",
       servings: 4,
-      instructions: "Cook it.",
+      instructions: `Cook the ${mention("Chicken Breast", chickenId, 400, "g")} with the ${mention("Rice", riceId, 300, "g")}.`,
     });
     insertRawRecipeLine(sqlite, recipeId, chickenId, {
       quantityCanonical: 400,
@@ -232,11 +237,7 @@ describe("app/actions/recipe-actions: updateRecipe / deleteRecipe (S-402)", () =
     return {
       name: "Chicken and Rice",
       servings: 4,
-      instructions: "Cook it.",
-      lines: [
-        { ingredientId: chickenId, quantity: 400, unit: "g" },
-        { ingredientId: riceId, quantity: 300, unit: "g" },
-      ],
+      body: `Cook the ${mention("Chicken Breast", chickenId, 400, "g")} with the ${mention("Rice", riceId, 300, "g")}.`,
       ...overrides,
     };
   }
@@ -279,10 +280,7 @@ describe("app/actions/recipe-actions: updateRecipe / deleteRecipe (S-402)", () =
         const result = await updateRecipe(
           recipeId,
           validUpdateInput({
-            lines: [
-              { ingredientId: chickenId, quantity: 400, unit: "g" },
-              { ingredientId: riceId, quantity: 2, unit: "cup" },
-            ],
+            body: `Cook the ${mention("Chicken Breast", chickenId, 400, "g")} with ${mention("Rice", riceId, 2, "cup")}.`,
           }),
         );
 
@@ -303,10 +301,7 @@ describe("app/actions/recipe-actions: updateRecipe / deleteRecipe (S-402)", () =
         const result = await updateRecipe(
           recipeId,
           validUpdateInput({
-            lines: [
-              { ingredientId: chickenId, quantity: 400, unit: "g" },
-              { ingredientId: garlicId, quantity: 3, unit: "each" },
-            ],
+            body: `Cook the ${mention("Chicken Breast", chickenId, 400, "g")} with ${mention("Garlic", garlicId, 3, "each")}.`,
           }),
         );
 
@@ -330,7 +325,7 @@ describe("app/actions/recipe-actions: updateRecipe / deleteRecipe (S-402)", () =
         await updateRecipe(
           recipeId,
           validUpdateInput({
-            lines: [{ ingredientId: chickenId, quantity: 400, unit: "g" }],
+            body: mention("Chicken Breast", chickenId, 400, "g"),
           }),
         );
 
@@ -351,8 +346,8 @@ describe("app/actions/recipe-actions: updateRecipe / deleteRecipe (S-402)", () =
       });
     });
 
-    describe("edit to 0 lines is rejected — FR-13's >=1-line invariant holds on edit too (AC3)", () => {
-      it("returns ok:false with a fieldErrors.lines entry and leaves the recipe + its lines completely untouched", async () => {
+    describe("edit to 0 parsed mentions is rejected — FR-13's >=1-line invariant holds on edit too (AC3)", () => {
+      it("returns ok:false with a fieldErrors.body entry and leaves the recipe + its lines completely untouched", async () => {
         const recipeId = seedBaselineRecipe();
         const beforeRow = getRawRecipe(dbPath, recipeId);
         const beforeLines = getRawLines(dbPath, recipeId);
@@ -360,11 +355,11 @@ describe("app/actions/recipe-actions: updateRecipe / deleteRecipe (S-402)", () =
         const { updateRecipe } = await import("@/app/actions/recipe-actions");
         const { revalidatePath } = await import("next/cache");
 
-        const result = await updateRecipe(recipeId, validUpdateInput({ lines: [] }));
+        const result = await updateRecipe(recipeId, validUpdateInput({ body: "Just eat it plain." }));
 
         expect(result.ok).toBe(false);
         if (result.ok) return;
-        expect(result.error.fieldErrors?.lines).toBeDefined();
+        expect(result.error.fieldErrors?.body).toBeDefined();
         expect(revalidatePath).not.toHaveBeenCalled();
 
         expect(getRawRecipe(dbPath, recipeId)).toEqual(beforeRow);
@@ -390,7 +385,7 @@ describe("app/actions/recipe-actions: updateRecipe / deleteRecipe (S-402)", () =
         },
       );
 
-      it("returns ok:false when a line has no ingredientId, leaving stored lines unchanged", async () => {
+      it("returns ok:false when a mention has no {quantity} block, leaving stored lines unchanged", async () => {
         const recipeId = seedBaselineRecipe();
         const beforeLines = getRawLines(dbPath, recipeId);
 
@@ -398,14 +393,14 @@ describe("app/actions/recipe-actions: updateRecipe / deleteRecipe (S-402)", () =
 
         const result = await updateRecipe(recipeId, {
           ...validUpdateInput(),
-          lines: [{ quantity: 400, unit: "g" }],
+          body: `Add @Chicken Breast(${chickenId}) to taste.`,
         });
 
         expect(result.ok).toBe(false);
         expect(getRawLines(dbPath, recipeId)).toEqual(beforeLines);
       });
 
-      it("returns ok:false when a line's quantity is 0, leaving stored lines unchanged", async () => {
+      it("returns ok:false when a mention's quantity is 0, leaving stored lines unchanged", async () => {
         const recipeId = seedBaselineRecipe();
         const beforeLines = getRawLines(dbPath, recipeId);
 
@@ -413,7 +408,7 @@ describe("app/actions/recipe-actions: updateRecipe / deleteRecipe (S-402)", () =
 
         const result = await updateRecipe(recipeId, {
           ...validUpdateInput(),
-          lines: [{ ingredientId: chickenId, quantity: 0, unit: "g" }],
+          body: mention("Chicken Breast", chickenId, 0, "g"),
         });
 
         expect(result.ok).toBe(false);
@@ -439,7 +434,7 @@ describe("app/actions/recipe-actions: updateRecipe / deleteRecipe (S-402)", () =
           validUpdateInput({
             name: "Attempted Overwrite",
             servings: 99,
-            lines: [{ ingredientId: 999_999, quantity: 10, unit: "g" }],
+            body: mention("Ghost Ingredient", 999_999, 10, "g"),
           }),
         );
 

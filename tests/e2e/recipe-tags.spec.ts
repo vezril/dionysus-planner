@@ -76,26 +76,18 @@ async function createRecipeWithTags(page: Page, name: string, tags: string[]): P
 
   await page.getByRole("textbox", { name: "Recipe name" }).fill(name);
   await page.getByRole("spinbutton", { name: "Servings" }).fill("2");
-  await page.getByRole("textbox", { name: "Instructions" }).fill("n/a");
-
-  const addButton = page.getByRole("button", { name: "Add ingredient line" });
-  while ((await page.getByTestId("recipe-line-row").count()) < 1) {
-    await addButton.click();
-  }
-  const row = page.getByTestId("recipe-line-row").first();
 
   // Distinctive, single-match seeded ingredient name (data/seed/seed-data.json,
   // S-204) — same fixture used by tests/e2e/recipe-create.spec.ts /
-  // tests/e2e/recipe-list.spec.ts.
-  const ingredientInput = row.getByRole("textbox", { name: "Ingredient" });
-  await ingredientInput.fill("Garlic, 1 clove");
-  const option = row.getByTestId("recipe-ingredient-option").filter({ hasText: "Garlic, 1 clove" });
+  // tests/e2e/recipe-list.spec.ts. Typed as a mention (openspec:
+  // cooklang-recipe-editor) rather than picked via a per-line form.
+  const textarea = page.getByRole("textbox", { name: "Instructions" });
+  await textarea.click();
+  await textarea.pressSequentially("@Garlic,");
+  const option = page.getByTestId("mention-option").filter({ hasText: "Garlic, 1 clove" });
   await expect(option.first()).toBeVisible();
   await option.first().click();
-
-  await row.getByRole("spinbutton", { name: "Quantity" }).fill("1");
-  await row.getByRole("combobox", { name: "Unit" }).click();
-  await page.getByRole("option", { name: "g", exact: true }).click();
+  await textarea.pressSequentially("{1%g}");
 
   const tagsInput = page.getByRole("textbox", { name: "Tags" });
   for (const tag of tags) {
