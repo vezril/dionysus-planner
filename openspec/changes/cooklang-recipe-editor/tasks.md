@@ -33,4 +33,4 @@
 
 - [x] 6.1 Full local gate: lint, tsc, `pnpm test:unit`, `pnpm test:integration`, `pnpm build`, `pnpm test:e2e` (full matrix) all green.
 - [x] 6.2 Visual sweep in-browser: create a recipe with 2+ mentions via `@`-autocomplete, confirm nutrition/cookability reflect it identically to before; edit it back open and confirm the body round-trips; confirm the detail page shows no visible `(id)`.
-- [ ] 6.3 PR through the CI gate.
+- [x] 6.3 PR through the CI gate.
