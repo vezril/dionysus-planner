@@ -1,57 +1,43 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 /**
  * S-402 Recipe edit & delete — end-to-end coverage
  * (docs/stories/S-402-recipe-edit-delete.md AC1-AC4, FR-14, FR-15).
  *
- * Neither `/app/recipes/[id]/edit/page.tsx` nor any Edit/Delete affordance
- * exists yet (S-401's detail page — S-403 — has no edit link, and no
- * `updateRecipe`/`deleteRecipe` Server Actions exist) — every test below is
- * intentionally RED (404 / missing elements) until the implementer builds
- * the pre-filled editor (reusing S-401's editor component in edit mode per
- * the story's Dev Notes) and the delete confirmation flow.
+ * Rewritten under openspec: cooklang-recipe-editor — the per-line picker
+ * form is gone; both `/recipes/new` and `/recipes/[id]/edit` share the
+ * same single "Instructions" mention-aware textarea (RecipeEditor is one
+ * component in both modes, unchanged from before this rewrite).
  *
  * Test-isolation note (same discipline as tests/e2e/recipe-create.spec.ts
  * and tests/e2e/recipe-detail.spec.ts): the e2e DB (`.dev-data/`) is
- * persistent and shared across this whole `webServer` run, across every
- * spec file, running with `fullyParallel: true`. Every recipe created here
- * gets a unique, timestamped name so this file's mutations (including the
- * delete flow) never collide with another spec file's fixtures or a
- * parallel worker. This file does not touch tests/e2e/recipe-list.spec.ts
- * or tests/e2e/shell.spec.ts (a parallel S-404 pair owns the list's
- * search/sort feature set).
+ * persistent and shared across this whole `webServer` run. Every recipe
+ * created here gets a unique, timestamped name.
  *
  * ============================ PINNED CONTRACT (demanded surface) ==========
- * Detail page (`/recipes/<id>`, S-403's existing page) — NEW affordance:
+ * Detail page (`/recipes/<id>`, S-403's existing page):
  *   - One `role="link"` with accessible name **"Edit recipe"**, `href`
  *     exactly `/recipes/<id>/edit`.
  *
- * Edit page (`/app/recipes/[id]/edit/page.tsx`), reusing S-401's editor
- * client component in edit mode (Dev Notes: "do not fork a second
- * editor"):
+ * Edit page (`/app/recipes/[id]/edit/page.tsx`), reusing the same editor:
  *   - `<h1>` whose text matches /edit recipe/i.
- *   - Same field set/roles as `/recipes/new` (tests/e2e/recipe-create.spec.ts's
- *     pinned contract): textbox "Recipe name", spinbutton "Servings",
- *     textbox "Instructions", `data-testid="recipe-line-row"` per line
- *     (textbox "Ingredient", spinbutton "Quantity", combobox "Unit"),
- *     "Add ingredient line" button, and a Save button reachable as
- *     `getByRole("button", { name: /save/i })`.
- *   - PRE-FILLED on load: name/servings/instructions match the recipe's
- *     current values; exactly one `recipe-line-row` per existing line,
- *     each row's Ingredient textbox value equal to that line's
- *     constituent ingredient's name, Quantity spinbutton value equal to
- *     `displayQuantity`, Unit combobox showing `displayUnit` (FR-14 AC1).
- *   - Editing (changing servings, changing an existing line's quantity,
- *     and/or adding a new line) and saving persists the changes; the
- *     recipe's detail page (`/recipes/<id>`) subsequently reflects the new
- *     servings/line values AND recomputed nutrition totals, with zero
- *     separate cache-invalidation step (FR-14 AC2, ADR-011).
+ *   - Same field set as `/recipes/new`: textbox "Recipe name", spinbutton
+ *     "Servings", textbox "Instructions" (mention-aware), Save button
+ *     reachable as `getByRole("button", { name: /save/i })`.
+ *   - PRE-FILLED on load: name/servings match; the "Instructions" textarea
+ *     is pre-filled with the EXACT stored body text, mentions and id
+ *     annotations intact — a byte-for-byte round-trip (design.md Decision
+ *     6), not a reconstruction from `recipe_line` rows.
+ *   - Editing (changing servings, editing the body text, and/or adding a
+ *     new mention) and saving persists the changes; the recipe's detail
+ *     page (`/recipes/<id>`) subsequently reflects the new servings/line
+ *     values AND recomputed nutrition totals, with zero separate
+ *     cache-invalidation step (FR-14 AC2, ADR-011).
  *   - A `data-testid="delete-recipe"` element, ALSO reachable as
- *     `getByRole("button", { name: /delete/i })` (dual-selector shape
- *     matching this repo's established S-303 ingredient-delete pattern).
- *     Clicking it opens `getByRole("dialog", { name: /delete/i })`
- *     containing `getByRole("button", { name: "Confirm delete", exact: true })`
- *     and `getByRole("button", { name: "Cancel", exact: true })`.
+ *     `getByRole("button", { name: /delete/i })`. Clicking it opens
+ *     `getByRole("dialog", { name: /delete/i })` containing
+ *     `getByRole("button", { name: "Confirm delete", exact: true })` and
+ *     `getByRole("button", { name: "Cancel", exact: true })`.
  *     - "Cancel" closes the dialog without navigating or deleting
  *       anything — the recipe still exists afterward.
  *     - "Confirm delete" invokes `deleteRecipe`: on success, the app
@@ -60,55 +46,41 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
  * ===========================================================================
  */
 
-async function ensureLineRowCount(page: Page, count: number): Promise<void> {
-  const addButton = page.getByRole("button", { name: "Add ingredient line" });
-  while ((await page.getByTestId("recipe-line-row").count()) < count) {
-    await addButton.click();
-  }
-}
+/** Types `@query`, waits for the matching suggestion, and clicks it — works
+ * identically on /recipes/new and /recipes/[id]/edit (same shared editor). */
+async function insertMention(page: Page, ingredientName: string, quantity: string, unit: string): Promise<void> {
+  const textarea = page.getByRole("textbox", { name: "Instructions" });
+  await textarea.pressSequentially(`@${ingredientName.slice(0, 6)}`);
 
-async function fillLine(
-  page: Page,
-  row: Locator,
-  ingredientName: string,
-  quantity: string,
-  unit: string,
-): Promise<void> {
-  const ingredientInput = row.getByRole("textbox", { name: "Ingredient" });
-  await ingredientInput.fill(ingredientName);
-
-  const option = row.getByTestId("recipe-ingredient-option").filter({ hasText: ingredientName });
+  const option = page.getByTestId("mention-option").filter({ hasText: ingredientName });
   await expect(option.first()).toBeVisible();
   await option.first().click();
 
-  await row.getByRole("spinbutton", { name: "Quantity" }).fill(quantity);
-
-  await row.getByRole("combobox", { name: "Unit" }).click();
-  await page.getByRole("option", { name: unit, exact: true }).click();
+  await textarea.pressSequentially(`{${quantity}%${unit}} `);
 }
 
-interface LineSpec {
+interface MentionSpec {
   ingredientName: string;
   quantity: string;
   unit: string;
 }
 
-/** Creates a recipe via the S-401 editor UI and returns its `/recipes/<id>` href. */
+/** Creates a recipe via the editor UI; returns its `/recipes/<id>` href AND
+ * the exact final Instructions textarea value (for round-trip assertions). */
 async function createRecipeViaUI(
   page: Page,
-  opts: { name: string; servings: string; instructions: string; lines: LineSpec[] },
-): Promise<string> {
+  opts: { name: string; servings: string; mentions: MentionSpec[] },
+): Promise<{ href: string; body: string }> {
   await page.goto("/recipes/new");
   await page.getByRole("textbox", { name: "Recipe name" }).fill(opts.name);
   await page.getByRole("spinbutton", { name: "Servings" }).fill(opts.servings);
-  await page.getByRole("textbox", { name: "Instructions" }).fill(opts.instructions);
 
-  await ensureLineRowCount(page, opts.lines.length);
-  const rows = page.getByTestId("recipe-line-row");
-  for (let i = 0; i < opts.lines.length; i++) {
-    const line = opts.lines[i];
-    await fillLine(page, rows.nth(i), line.ingredientName, line.quantity, line.unit);
+  const textarea = page.getByRole("textbox", { name: "Instructions" });
+  await textarea.click();
+  for (const m of opts.mentions) {
+    await insertMention(page, m.ingredientName, m.quantity, m.unit);
   }
+  const body = await textarea.inputValue();
 
   await page.getByRole("button", { name: "Save recipe" }).click();
 
@@ -120,21 +92,7 @@ async function createRecipeViaUI(
   const href = await link.getAttribute("href");
   expect(href).toMatch(/^\/recipes\/\d+$/);
 
-  return href!;
-}
-
-/** Finds the `recipe-line-row` whose Ingredient textbox value equals `ingredientName`. */
-async function findLineRowByIngredientValue(page: Page, ingredientName: string): Promise<Locator> {
-  const rows = page.getByTestId("recipe-line-row");
-  const count = await rows.count();
-  for (let i = 0; i < count; i++) {
-    const row = rows.nth(i);
-    const value = await row.getByRole("textbox", { name: "Ingredient" }).inputValue();
-    if (value === ingredientName) {
-      return row;
-    }
-  }
-  throw new Error(`No recipe-line-row found with Ingredient value "${ingredientName}" among ${count} row(s)`);
+  return { href: href!, body };
 }
 
 // Distinctive, single-match seeded ingredient names (data/seed/seed-data.json,
@@ -149,16 +107,15 @@ test.describe("S-402 recipe edit & delete", () => {
     test.skip(testInfo.project.name !== "chromium", "functional ACs verified once on chromium");
   });
 
-  test("AC1/FR-14: the detail page's Edit link opens the edit page pre-filled with the recipe's current name, servings, instructions, and lines", async ({
+  test("AC1/FR-14: the detail page's Edit link opens the edit page pre-filled with the recipe's current name, servings, and exact body text", async ({
     page,
   }) => {
     const recipeName = `E2E Edit Prefill ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-    const detailHref = await createRecipeViaUI(page, {
+    const { href: detailHref, body } = await createRecipeViaUI(page, {
       name: recipeName,
       servings: "3",
-      instructions: "Original instructions.",
-      lines: [
+      mentions: [
         { ingredientName: GARLIC, quantity: "6", unit: "each" },
         { ingredientName: OLIVE_OIL, quantity: "25", unit: "mL" },
       ],
@@ -175,29 +132,23 @@ test.describe("S-402 recipe edit & delete", () => {
 
     await expect(page.getByRole("textbox", { name: "Recipe name" })).toHaveValue(recipeName);
     await expect(page.getByRole("spinbutton", { name: "Servings" })).toHaveValue("3");
-    await expect(page.getByRole("textbox", { name: "Instructions" })).toHaveValue("Original instructions.");
 
-    await expect(page.getByTestId("recipe-line-row")).toHaveCount(2);
-
-    const garlicRow = await findLineRowByIngredientValue(page, GARLIC);
-    await expect(garlicRow.getByRole("spinbutton", { name: "Quantity" })).toHaveValue("6");
-    await expect(garlicRow.getByRole("combobox", { name: "Unit" })).toContainText("each");
-
-    const oilRow = await findLineRowByIngredientValue(page, OLIVE_OIL);
-    await expect(oilRow.getByRole("spinbutton", { name: "Quantity" })).toHaveValue("25");
-    await expect(oilRow.getByRole("combobox", { name: "Unit" })).toContainText("mL");
+    // Round-trip: the stored body text comes back byte-for-byte, mentions
+    // and id annotations intact — no reconstruction from recipe_line rows
+    // (design.md Decision 6). `recipeSchema`'s `body: z.string().trim()`
+    // trims the saved value, so compare against the trimmed capture too.
+    await expect(page.getByRole("textbox", { name: "Instructions" })).toHaveValue(body.trim());
   });
 
-  test("AC2/FR-14: changing servings, changing a line's quantity, and adding a new line persists and the detail page reflects recomputed nutrition", async ({
+  test("AC2/FR-14: changing servings, editing a mention's quantity, and adding a new mention persists and the detail page reflects recomputed nutrition", async ({
     page,
   }) => {
     const recipeName = `E2E Edit Save ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-    const detailHref = await createRecipeViaUI(page, {
+    const { href: detailHref, body } = await createRecipeViaUI(page, {
       name: recipeName,
       servings: "3",
-      instructions: "Original instructions.",
-      lines: [
+      mentions: [
         { ingredientName: GARLIC, quantity: "6", unit: "each" },
         { ingredientName: OLIVE_OIL, quantity: "25", unit: "mL" },
       ],
@@ -207,12 +158,17 @@ test.describe("S-402 recipe edit & delete", () => {
 
     await page.getByRole("spinbutton", { name: "Servings" }).fill("5");
 
-    const garlicRow = await findLineRowByIngredientValue(page, GARLIC);
-    await garlicRow.getByRole("spinbutton", { name: "Quantity" }).fill("10");
+    // Garlic 6 -> 10 (string-replace within the exact stored body — the
+    // mention's numeric id is unknown to the test, but this substring is
+    // unique within this recipe's own body).
+    const revisedBody = body.replace("{6%each}", "{10%each}");
+    const textarea = page.getByRole("textbox", { name: "Instructions" });
+    await textarea.fill(revisedBody);
 
-    await ensureLineRowCount(page, 3);
-    const newRow = page.getByTestId("recipe-line-row").nth(2);
-    await fillLine(page, newRow, SQUASH_ACORN, "100", "g");
+    // Add a third mention via the real autocomplete flow.
+    await textarea.click();
+    await textarea.press("End");
+    await insertMention(page, SQUASH_ACORN, "100", "g");
 
     await page.getByRole("button", { name: /save/i }).click();
 
@@ -263,11 +219,10 @@ test.describe("S-402 recipe edit & delete", () => {
   }) => {
     const recipeName = `E2E Delete ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-    const detailHref = await createRecipeViaUI(page, {
+    const { href: detailHref } = await createRecipeViaUI(page, {
       name: recipeName,
       servings: "2",
-      instructions: "n/a",
-      lines: [{ ingredientName: GARLIC, quantity: "2", unit: "each" }],
+      mentions: [{ ingredientName: GARLIC, quantity: "2", unit: "each" }],
     });
 
     await page.goto(`${detailHref}/edit`);
@@ -291,11 +246,10 @@ test.describe("S-402 recipe edit & delete", () => {
   }) => {
     const recipeName = `E2E Delete Cancelled ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-    const detailHref = await createRecipeViaUI(page, {
+    const { href: detailHref } = await createRecipeViaUI(page, {
       name: recipeName,
       servings: "2",
-      instructions: "n/a",
-      lines: [{ ingredientName: GARLIC, quantity: "2", unit: "each" }],
+      mentions: [{ ingredientName: GARLIC, quantity: "2", unit: "each" }],
     });
 
     await page.goto(`${detailHref}/edit`);

@@ -134,8 +134,7 @@ describe("S-405 recipe tags — createRecipe / updateRecipe / deleteRecipe / rea
   const baseInput = (overrides: Record<string, unknown> = {}) => ({
     name: "Chicken and Rice",
     servings: 4,
-    instructions: "Cook it.",
-    lines: [{ ingredientId: chickenId, quantity: 400, unit: "g" }],
+    body: `Cook @Chicken Breast(${chickenId}){400%g}.`,
     ...overrides,
   });
 
@@ -278,7 +277,7 @@ describe("S-405 recipe tags — createRecipe / updateRecipe / deleteRecipe / rea
       const recipeId = seedRecipeWithTags(["quick", "vegetarian"]);
       const { updateRecipe } = await import("@/app/actions/recipe-actions");
 
-      const result = await updateRecipe(recipeId, baseInput({ lines: [], tags: ["one-pot"] }));
+      const result = await updateRecipe(recipeId, baseInput({ body: "Just eat it plain.", tags: ["one-pot"] }));
 
       expect(result.ok).toBe(false);
       const raw = openRawDb(dbPath);
@@ -344,12 +343,12 @@ describe("S-405 recipe tags — createRecipe / updateRecipe / deleteRecipe / rea
       const { listRecipeSummaries } = await import("@/data/recipes");
 
       const quickOnly = await createRecipe(
-        baseInput({ name: "Quick Rice Bowl", lines: [{ ingredientId: riceId, quantity: 200, unit: "g" }], tags: ["quick"] }),
+        baseInput({ name: "Quick Rice Bowl", body: `@Rice(${riceId}){200%g}`, tags: ["quick"] }),
       );
       const vegetarianOnly = await createRecipe(
         baseInput({
           name: "Vegetarian Rice Bowl",
-          lines: [{ ingredientId: riceId, quantity: 200, unit: "g" }],
+          body: `@Rice(${riceId}){200%g}`,
           tags: ["vegetarian"],
         }),
       );

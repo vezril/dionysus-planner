@@ -32,7 +32,7 @@ export default async function EditRecipePage({ params }: { params: Promise<{ id:
     notFound();
   }
 
-  const { recipe, lines, tags } = detail;
+  const { recipe, tags } = detail;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
@@ -42,13 +42,10 @@ export default async function EditRecipePage({ params }: { params: Promise<{ id:
         initialValues={{
           name: recipe.name,
           servings: recipe.servings,
-          instructions: recipe.instructions,
-          lines: lines.map((line) => ({
-            ingredientId: line.ingredientId,
-            ingredientName: line.ingredient.name,
-            quantity: line.displayQuantity,
-            unit: line.displayUnit,
-          })),
+          // openspec: cooklang-recipe-editor (design.md Decision 6) — the
+          // stored `instructions` column already IS the typed body text,
+          // mentions and all; no reconstruction from `lines` needed.
+          body: recipe.instructions,
           tags,
         }}
       />

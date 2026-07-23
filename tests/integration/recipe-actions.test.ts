@@ -10,21 +10,21 @@ import { countRows, insertRawIngredient } from "./support/rawFixtures";
 
 /**
  * S-401 recipe creation — `app/actions/recipe-actions.ts#createRecipe`.
- * Traces to docs/stories/S-401-recipe-create.md's TEST task (integration),
- * architecture.md §4 Recipe/RecipeLine, §6 error-handling union, ADR-005
- * (server independently re-validates), FR-13, FR-9.
+ * Traces to docs/stories/S-401-recipe-create.md, architecture.md §4
+ * Recipe/RecipeLine, §6 error-handling union, ADR-005, FR-13, FR-9.
  *
- * `app/actions/recipe-actions.ts` does not exist yet (only
- * `app/actions/.gitkeep`) — every test below is intentionally RED
- * (module-not-found) until the implementer builds it.
+ * openspec: cooklang-recipe-editor — the INPUT shape changed from a
+ * structured `lines: [...]` array to a single `body: string` (the typed
+ * recipe with inline `@Name(id){quantity%unit}` mentions). `createRecipe`
+ * now calls `domain/cooklangParser.ts#parseRecipeBody(body)` to derive the
+ * same `{ingredientId, quantity, unit}` lines this suite already pinned —
+ * the OUTPUT contract (result.data.lines, the transactional write, the
+ * FK-catch behavior) is unchanged; only how those lines are produced from
+ * the caller's input has changed. `instructions` is stored verbatim as the
+ * raw typed `body` text (no separate free-text field anymore).
  *
  * `next/cache`'s `revalidatePath` throws when invoked outside an active
- * Next.js request/action scope ("Invariant: static generation store
- * missing") — expected, since ADR-007 calls Server Actions directly here
- * as plain async functions, with no running Next.js server. Mocking it is
- * a test-harness concern only (this suite does not assert anything about
- * *how* or *whether* revalidation is invoked — only about persistence and
- * the returned result shape), not a weakening of the behavior under test.
+ * Next.js request/action scope — mocked here as a harness concern only.
  *
  * ============================ PINNED CONTRACT ============================
  * export async function createRecipe(input: unknown): Promise<CreateRecipeResult>
@@ -32,40 +32,32 @@ import { countRows, insertRawIngredient } from "./support/rawFixtures";
  * type CreateRecipeResult =
  *   | { ok: true; data: RecipeRecord & { lines: RecipeLineRecord[] } }
  *   | { ok: false; error: { code: string; message: string; fieldErrors?: Record<string, string[]> } }
- *                                                          // architecture.md §6 discriminated union
  *
  * `input` (pre-validation, matches `domain/validation/recipe.schema.ts`'s
- * `recipeSchema` — the SAME schema the client form uses, ADR-005):
- *   {
- *     name: string;
- *     servings: number;
- *     instructions?: string;
- *     lines: Array<{ ingredientId: number; quantity: number; unit: string }>;
- *   }
+ * `recipeSchema`):
+ *   { name: string; servings: number; body: string; tags?: string[] }
  *
  * Behavior:
- *   - Re-parses `input` with `recipeSchema` — never trusts the caller
- *     (ADR-005). A schema violation (incl. 0 lines, FR-13) returns
- *     `{ ok: false, error: { ..., fieldErrors } }` and writes NOTHING —
- *     never a partial recipe row without its lines.
- *   - For each valid line, converts `quantity`/`unit` via
+ *   - Re-parses `input` with `recipeSchema` (name/servings/body shape) —
+ *     never trusts the caller (ADR-005).
+ *   - Parses `body` with `parseRecipeBody`; zero mentions or any parse
+ *     error (missing quantity, unknown unit) returns `{ ok: false, error:
+ *     { fieldErrors: { body: [...] } } }` and writes NOTHING.
+ *   - For each parsed line, converts `quantity`/`unit` via
  *     `domain/units.ts#toCanonical` into `quantityCanonical`/
- *     `entryUnitClass`, and persists `quantity`/`unit` verbatim as
- *     `displayQuantity`/`displayUnit` (FR-9 — same pattern as PantryItem).
- *   - Delegates the actual write to `recipeRepo.createWithLines` — ONE
+ *     `entryUnitClass`, persisting `quantity`/`unit` verbatim as
+ *     `displayQuantity`/`displayUnit` (FR-9).
+ *   - `instructions` column stores the raw `body` text verbatim (mentions
+ *     and all) — reopening for edit reads it straight back with no
+ *     reconstruction (design.md Decision 6).
+ *   - Delegates the write to `recipeRepo.createWithLines` — ONE
  *     transaction, recipe + all lines together or neither (S-202).
- *   - An `ingredientId` that parses (positive integer) but doesn't exist
- *     in the `ingredient` table trips the FK (`ON DELETE RESTRICT`
- *     doesn't block inserts, but the FK itself still requires the
- *     referenced row to exist) — this must be CAUGHT and mapped to the
- *     same `{ ok: false, error }` shape (architecture.md §6 "FK RESTRICT
- *     violations... caught in the action"), never an unhandled/raw
- *     exception thrown out of `createRecipe`, and never a partially
- *     written recipe row.
- *   - A line entered in a unit class other than its ingredient's primary
- *     class (e.g. `cup` of a MASS-primary ingredient) saves successfully —
- *     no cross-class rejection at save time (AC5; FR-11/FR-12 govern
- *     computation later, not here).
+ *   - A mention's `(id)` that doesn't exist in the `ingredient` table
+ *     trips the FK — CAUGHT and mapped to `{ ok: false, error }`, never an
+ *     unhandled exception, never a partially written recipe row.
+ *   - A mention entered in a unit class other than its ingredient's
+ *     primary class (e.g. `cup` of a MASS-primary ingredient) saves
+ *     successfully — no cross-class rejection at save time (AC5).
  * ===========================================================================
  */
 vi.mock("next/cache", () => ({
@@ -129,14 +121,14 @@ describe("app/actions/recipe-actions#createRecipe", () => {
     }
   }
 
+  function mention(name: string, id: number, quantity: number, unit: string): string {
+    return `@${name}(${id}){${quantity}%${unit}}`;
+  }
+
   const validInput = () => ({
     name: "Chicken and Rice",
     servings: 4,
-    instructions: "Cook it.",
-    lines: [
-      { ingredientId: chickenId, quantity: 400, unit: "g" },
-      { ingredientId: riceId, quantity: 300, unit: "g" },
-    ],
+    body: `Cook the ${mention("Chicken Breast", chickenId, 400, "g")} with the ${mention("Rice", riceId, 300, "g")}.`,
   });
 
   describe("valid input — creates the recipe + lines transactionally with canonical AND display values (FR-9)", () => {
@@ -152,13 +144,24 @@ describe("app/actions/recipe-actions#createRecipe", () => {
       expect(result.data.lines).toHaveLength(2);
     });
 
-    it("persists exactly one recipe row and one row per line", async () => {
+    it("persists exactly one recipe row and one row per parsed mention", async () => {
       const { createRecipe } = await import("@/app/actions/recipe-actions");
 
       await createRecipe(validInput());
 
       expect(countInDb("recipe")).toBe(1);
       expect(countInDb("recipe_line")).toBe(2);
+    });
+
+    it("stores the raw body text verbatim in the instructions column (design.md Decision 6 — no reconstruction needed on reopen)", async () => {
+      const { createRecipe } = await import("@/app/actions/recipe-actions");
+      const input = validInput();
+
+      const result = await createRecipe(input);
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.instructions).toBe(input.body);
     });
 
     it("stores quantityCanonical + entryUnitClass (computed via toCanonical) AND displayQuantity/displayUnit verbatim per line", async () => {
@@ -176,7 +179,7 @@ describe("app/actions/recipe-actions#createRecipe", () => {
       expect(chickenLine.entryUnitClass).toBe(toCanonical(400, "g").entryUnitClass);
     });
 
-    it("saves a line entered in a unit class other than the ingredient's primary class (AC5 — permissive entry)", async () => {
+    it("saves a mention entered in a unit class other than the ingredient's primary class (AC5 — permissive entry)", async () => {
       const { createRecipe } = await import("@/app/actions/recipe-actions");
 
       // Rice is MASS-primary (with density 0.85 g/mL) but entered here in
@@ -184,8 +187,7 @@ describe("app/actions/recipe-actions#createRecipe", () => {
       const result = await createRecipe({
         name: "Rice Bowl",
         servings: 2,
-        instructions: "",
-        lines: [{ ingredientId: riceId, quantity: 1, unit: "cup" }],
+        body: `Add ${mention("Rice", riceId, 1, "cup")} of rice.`,
       });
 
       expect(result.ok).toBe(true);
@@ -196,22 +198,36 @@ describe("app/actions/recipe-actions#createRecipe", () => {
       expect(line.entryUnitClass).toBe("VOLUME");
       expect(line.quantityCanonical).toBe(toCanonical(1, "cup").quantityCanonical);
     });
+
+    it("emits one line per occurrence when the same ingredient is mentioned twice", async () => {
+      const { createRecipe } = await import("@/app/actions/recipe-actions");
+
+      const result = await createRecipe({
+        name: "Double Chicken",
+        servings: 1,
+        body: `Sear ${mention("Chicken Breast", chickenId, 200, "g")}, then add ${mention("Chicken Breast", chickenId, 200, "g")} more.`,
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.lines).toHaveLength(2);
+      expect(countInDb("recipe_line")).toBe(2);
+    });
   });
 
-  describe("0 ingredient lines — blocked, writes nothing (FR-13 AC2)", () => {
-    it("returns ok:false with a fieldErrors.lines entry and creates no rows", async () => {
+  describe("0 parsed mentions — blocked, writes nothing (FR-13 AC2)", () => {
+    it("returns ok:false with a fieldErrors.body entry and creates no rows", async () => {
       const { createRecipe } = await import("@/app/actions/recipe-actions");
 
       const result = await createRecipe({
         name: "Empty Recipe",
         servings: 1,
-        instructions: "",
-        lines: [],
+        body: "Just stand there.",
       });
 
       expect(result.ok).toBe(false);
       if (result.ok) return;
-      expect(result.error.fieldErrors?.lines).toBeDefined();
+      expect(result.error.fieldErrors?.body).toBeDefined();
       expect(countInDb("recipe")).toBe(0);
       expect(countInDb("recipe_line")).toBe(0);
     });
@@ -230,37 +246,27 @@ describe("app/actions/recipe-actions#createRecipe", () => {
     });
   });
 
-  describe("a line with no ingredient or a non-positive quantity — rejected, writes nothing (FR-13 AC3)", () => {
-    it("returns ok:false when a line has no ingredientId", async () => {
+  describe("a mention with no quantity block or an unknown unit — rejected, writes nothing (FR-13 AC3)", () => {
+    it("returns ok:false when a mention has no {quantity} block at all", async () => {
       const { createRecipe } = await import("@/app/actions/recipe-actions");
 
       const result = await createRecipe({
-        ...validInput(),
-        lines: [{ quantity: 400, unit: "g" }],
+        name: "Broken",
+        servings: 1,
+        body: `Add @Chicken Breast(${chickenId}) to taste.`,
       });
 
       expect(result.ok).toBe(false);
       expect(countInDb("recipe")).toBe(0);
     });
 
-    it("returns ok:false when a line's quantity is 0", async () => {
+    it("returns ok:false when a mention's unit is unknown", async () => {
       const { createRecipe } = await import("@/app/actions/recipe-actions");
 
       const result = await createRecipe({
-        ...validInput(),
-        lines: [{ ingredientId: chickenId, quantity: 0, unit: "g" }],
-      });
-
-      expect(result.ok).toBe(false);
-      expect(countInDb("recipe")).toBe(0);
-    });
-
-    it("returns ok:false when a line's unit is unknown", async () => {
-      const { createRecipe } = await import("@/app/actions/recipe-actions");
-
-      const result = await createRecipe({
-        ...validInput(),
-        lines: [{ ingredientId: chickenId, quantity: 400, unit: "banana-bunches" }],
+        name: "Broken",
+        servings: 1,
+        body: mention("Chicken Breast", chickenId, 400, "banana-bunches"),
       });
 
       expect(result.ok).toBe(false);
@@ -268,7 +274,7 @@ describe("app/actions/recipe-actions#createRecipe", () => {
     });
   });
 
-  describe("an ingredientId that doesn't exist — a clean error, not a raw DB exception (architecture.md §6)", () => {
+  describe("a mention referencing a nonexistent ingredient id — a clean error, not a raw DB exception (architecture.md §6)", () => {
     it("returns ok:false rather than throwing, and writes nothing", async () => {
       const { createRecipe } = await import("@/app/actions/recipe-actions");
 
@@ -278,8 +284,7 @@ describe("app/actions/recipe-actions#createRecipe", () => {
       const result = await createRecipe({
         name: "Broken Recipe",
         servings: 1,
-        instructions: "",
-        lines: [{ ingredientId: 999_999, quantity: 10, unit: "g" }],
+        body: mention("Ghost Ingredient", 999_999, 10, "g"),
       });
 
       expect(result.ok).toBe(false);

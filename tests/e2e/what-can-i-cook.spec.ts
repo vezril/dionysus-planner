@@ -124,30 +124,16 @@ async function stockPantry(page: Page, ingredientName: string, quantity: string,
   await expect(dialog).not.toBeVisible();
 }
 
-async function ensureLineRowCount(page: Page, count: number): Promise<void> {
-  const addButton = page.getByRole("button", { name: "Add ingredient line" });
-  while ((await page.getByTestId("recipe-line-row").count()) < count) {
-    await addButton.click();
-  }
-}
+/** Types `@query`, waits for the matching suggestion, and clicks it. */
+async function insertMention(page: Page, ingredientName: string, quantity: string, unit: string): Promise<void> {
+  const textarea = page.getByRole("textbox", { name: "Instructions" });
+  await textarea.pressSequentially(`@${ingredientName.slice(0, 6)}`);
 
-async function fillLine(
-  page: Page,
-  row: Locator,
-  ingredientName: string,
-  quantity: string,
-  unit: string,
-): Promise<void> {
-  const ingredientInput = row.getByRole("textbox", { name: "Ingredient" });
-  await ingredientInput.fill(ingredientName);
-
-  const option = row.getByTestId("recipe-ingredient-option").filter({ hasText: ingredientName });
+  const option = page.getByTestId("mention-option").filter({ hasText: ingredientName });
   await expect(option.first()).toBeVisible();
   await option.first().click();
 
-  await row.getByRole("spinbutton", { name: "Quantity" }).fill(quantity);
-  await row.getByRole("combobox", { name: "Unit" }).click();
-  await page.getByRole("option", { name: unit, exact: true }).click();
+  await textarea.pressSequentially(`{${quantity}%${unit}} `);
 }
 
 async function createRecipe(
@@ -160,13 +146,13 @@ async function createRecipe(
 
   await page.getByRole("textbox", { name: "Recipe name" }).fill(name);
   await page.getByRole("spinbutton", { name: "Servings" }).fill("2");
-  await page.getByRole("textbox", { name: "Instructions" }).fill("E2E fixture — combine and serve.");
 
-  await ensureLineRowCount(page, lines.length);
-  const rows = page.getByTestId("recipe-line-row");
-  for (let i = 0; i < lines.length; i += 1) {
-    await fillLine(page, rows.nth(i), lines[i].ingredientName, lines[i].quantity, lines[i].unit);
+  const textarea = page.getByRole("textbox", { name: "Instructions" });
+  await textarea.click();
+  for (const line of lines) {
+    await insertMention(page, line.ingredientName, line.quantity, line.unit);
   }
+  await textarea.pressSequentially("E2E fixture — combine and serve.");
 
   await page.getByRole("button", { name: "Save recipe" }).click();
   await expect(page).toHaveURL(/\/recipes(\/\d+)?$/);
