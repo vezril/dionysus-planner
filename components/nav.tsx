@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/pantry", label: "Pantry" },
   { href: "/recipes", label: "Recipes" },
   { href: "/ingredients", label: "Ingredients" },
+  { href: "/meal-log", label: "Meal Log" },
 ] as const;
 
 export function MainNav() {
