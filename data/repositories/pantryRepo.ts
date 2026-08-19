@@ -78,6 +78,12 @@ export async function getByIngredientId(db: Db, ingredientId: number): Promise<P
   return row ? toRecord(row) : null;
 }
 
+/** openspec: pantry-item-detail — the `/pantry/[id]` route resolves by row id. */
+export async function getById(db: Db, id: number): Promise<PantryItemRecord | null> {
+  const [row] = await db.select().from(pantryItem).where(eq(pantryItem.id, id));
+  return row ? toRecord(row) : null;
+}
+
 export async function updateQuantity(
   db: Db,
   id: number,

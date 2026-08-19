@@ -45,6 +45,29 @@ export const pantryItem = sqliteTable("pantry_item", {
   updatedAt: text("updatedAt").notNull(),
 });
 
+/**
+ * openspec: pantry-item-detail — purchase history, keyed by INGREDIENT (not
+ * pantry_item): price history is durable fact that must survive pantry
+ * churn, and the future Demeter integration looks prices up by ingredient
+ * (design.md Decision 1). CASCADE: history for a deliberately deleted
+ * custom ingredient has no future value, and purchases must not join the
+ * "cannot delete because referenced" list for what is only metadata.
+ * displayQuantity/displayUnit are verbatim (FR-9 pattern), no canonical
+ * conversion — purchases are never matched against recipes (Decision 3).
+ */
+export const purchase = sqliteTable("purchase", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  ingredientId: integer("ingredientId")
+    .notNull()
+    .references(() => ingredient.id, { onDelete: "cascade" }),
+  price: real("price").notNull(),
+  store: text("store"),
+  displayQuantity: real("displayQuantity"),
+  displayUnit: text("displayUnit"),
+  purchasedAt: text("purchasedAt").notNull(),
+  createdAt: text("createdAt").notNull(),
+});
+
 export const recipe = sqliteTable(
   "recipe",
   {
