@@ -38,6 +38,10 @@ spec:
               value: {{ .Values.service.port | quote }}
             - name: NEAR_MATCH_DEFAULT_THRESHOLD
               value: {{ .Values.env.nearMatchDefaultThreshold | quote }}
+            {{- if .Values.env.dionysusServiceUrl }}
+            - name: DIONYSUS_SERVICE_URL
+              value: {{ .Values.env.dionysusServiceUrl | quote }}
+            {{- end }}
           volumeMounts:
             - name: data
               mountPath: /data

@@ -32,6 +32,12 @@ ENV NODE_ENV=production
 ENV DB_PATH=/data/dionysus.db
 ENV PORT=3000
 ENV NEAR_MATCH_DEFAULT_THRESHOLD=3
+# openspec: meal-log-integration — DIONYSUS_SERVICE_URL is deliberately NOT
+# set here (unlike the vars above). Meal Log requires it; there's no sane
+# default the way NEAR_MATCH_DEFAULT_THRESHOLD has one. Supply it at
+# runtime (docker run -e, docker-compose.yml, or the Helm chart's
+# env.dionysusServiceUrl value) — until then, /meal-log/* surfaces a clear
+# error via its error.tsx boundary; the rest of the app is unaffected.
 # Docker always injects a container HOSTNAME env var (the container ID),
 # and Next's standalone server.js does `process.env.HOSTNAME || '0.0.0.0'`
 # — without this override the server binds only to the container's

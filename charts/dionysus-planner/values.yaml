@@ -16,6 +16,13 @@ image:
 env:
   # FR-21/FR-23 near-match threshold default (prd.md, architecture.md §7).
   nearMatchDefaultThreshold: 3
+  # openspec: meal-log-integration — dionysus-service is a separate
+  # deployment (its own chart/release, not this one). Point this at
+  # wherever it's actually running: an in-cluster Service DNS name (e.g.
+  # http://dionysus-service.default.svc.cluster.local:8080) or an external
+  # host. Empty by default — until set, /meal-log/* shows a clear error;
+  # the rest of the app is unaffected.
+  dionysusServiceUrl: ""
 
 persistence:
   # k3s's bundled dynamic provisioner. A different StorageClass may be

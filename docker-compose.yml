@@ -20,4 +20,9 @@ services:
       DB_PATH: /data/dionysus.db
       PORT: "3000"
       NEAR_MATCH_DEFAULT_THRESHOLD: "3"
+      # openspec: meal-log-integration — point this at wherever your own
+      # dionysus-service instance is running (a separate repo/deployment;
+      # not started by this compose file). Without it, /meal-log/* shows a
+      # clear error; the rest of the app is unaffected.
+      DIONYSUS_SERVICE_URL: "http://localhost:8080"
     restart: unless-stopped

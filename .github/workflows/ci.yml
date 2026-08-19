@@ -91,6 +91,66 @@ jobs:
       - name: Docker build + smoke suite
         run: bash scripts/docker-smoke.sh
 
+  e2e-meal-log:
+    # Not a required status check (openspec: meal-log-integration, same
+    # precedent as helm-lint) — this is the only e2e coverage for the new
+    # Meal Log section, but it depends on pulling an external image
+    # (calvinference/dionysus:dev) from a separate repo, so it stays
+    # non-blocking rather than risking the required e2e gate on that
+    # cross-repo dependency. tests/e2e/meal-log-flow.spec.ts is entirely
+    # inert (test.skip) in the required `e2e` job above, which never sets
+    # DIONYSUS_SERVICE_URL.
+    name: e2e-meal-log
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start dionysus-service
+        run: |
+          docker run -d --name dionysus-service -p 8080:8080 calvinference/dionysus:dev
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/health > /dev/null; then
+              echo "dionysus-service is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::dionysus-service did not become healthy in time"
+          docker logs dionysus-service
+          exit 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build
+        env:
+          DIONYSUS_SERVICE_URL: http://localhost:8080
+        run: pnpm build
+      - name: E2E — Meal Log flow only
+        env:
+          DIONYSUS_SERVICE_URL: http://localhost:8080
+        run: pnpm exec playwright test tests/e2e/meal-log-flow.spec.ts --project=chromium
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-meal-log
+          path: playwright-report/
+          retention-days: 7
+      - name: dionysus-service logs
+        if: always()
+        run: docker logs dionysus-service
+
   helm-lint:
     # Not a required status check (openspec: helm-charts-k3s, task 3.4) —
     # a cheap, fast sanity net so the chart can't silently bit-rot, not a
