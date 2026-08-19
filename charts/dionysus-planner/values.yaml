@@ -23,6 +23,10 @@ env:
   # host. Empty by default — until set, /meal-log/* shows a clear error;
   # the rest of the app is unaffected.
   dionysusServiceUrl: ""
+  # IANA zone for the Meal Log's "today" and displayed times. MUST match
+  # the dionysus-service deployment's DIONYSUS_TZ so both sides agree on
+  # where a calendar day begins. Empty = UTC.
+  dionysusTz: ""
 
 persistence:
   # k3s's bundled dynamic provisioner. A different StorageClass may be
