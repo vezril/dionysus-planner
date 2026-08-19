@@ -1,18 +1,27 @@
 import Link from "next/link";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
+import { formatInstantIn, resolveDionysusTimezone, todayIsoDateIn } from "@/app/lib/dionysusTimezone";
 import { getDayLog } from "@/services/dionysusService";
 
 /**
  * openspec: meal-log-integration — the Meal Log day view. Reads exclusively
  * through dionysus-service's `GET /api/log/{date}` (design.md Decision 4:
  * force-dynamic, no caching — day totals and meal lists are live values).
+ *
+ * "Today" and displayed times follow `DIONYSUS_TZ` (app/lib/
+ * dionysusTimezone.ts) — the server container runs in UTC, and a naive
+ * UTC "today" made the day flip at 8pm in Montreal.
  */
 export const dynamic = "force-dynamic";
 
-function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10);
+/** True only for a real calendar date (regex alone admits 2026-02-31). */
+function isValidIsoDate(raw: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return false;
+  const parsed = new Date(`${raw}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === raw;
 }
 
+/** Pure calendar-date arithmetic on YYYY-MM-DD strings (timezone-free). */
 function shiftDate(date: string, deltaDays: number): string {
   const d = new Date(`${date}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + deltaDays);
@@ -33,7 +42,8 @@ export default async function MealLogPage({
   searchParams: Promise<{ date?: string }>;
 }) {
   const params = await searchParams;
-  const date = params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : todayIsoDate();
+  const timeZone = resolveDionysusTimezone();
+  const date = params.date && isValidIsoDate(params.date) ? params.date : todayIsoDateIn(timeZone);
 
   const baseUrl = resolveDionysusServiceUrl();
   const dayLog = await getDayLog(baseUrl, date);
@@ -107,7 +117,7 @@ export default async function MealLogPage({
         <ul className="flex flex-col divide-y divide-border" data-testid="day-log-meals">
           {dayLog.meals.map((meal) => (
             <li key={meal.id} data-testid="day-log-meal-row" className="flex items-center justify-between gap-4 py-3">
-              <span className="text-sm">{new Date(meal.eatenAt).toLocaleString()}</span>
+              <span className="text-sm">{formatInstantIn(meal.eatenAt, timeZone)}</span>
               <span className="text-sm text-muted-foreground">{meal.nutrition.sodiumMg}mg sodium</span>
             </li>
           ))}

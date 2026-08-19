@@ -1,4 +1,5 @@
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
+import { formatInstantIn, resolveDionysusTimezone } from "@/app/lib/dionysusTimezone";
 import { listBatches, listRecipes } from "@/services/dionysusService";
 import { CookBatchForm } from "./_components/CookBatchForm";
 
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MealLogBatchesPage() {
   const baseUrl = resolveDionysusServiceUrl();
+  const timeZone = resolveDionysusTimezone();
   const [batches, recipes] = await Promise.all([listBatches(baseUrl), listRecipes(baseUrl)]);
   const recipeNameById = new Map(recipes.map((recipe) => [recipe.id, recipe.name]));
 
@@ -33,7 +35,7 @@ export default async function MealLogBatchesPage() {
                 {recipeNameById.get(batch.recipeId) ?? `Recipe #${batch.recipeId}`}
               </span>
               <span className="text-sm text-muted-foreground">
-                cooked {new Date(batch.cookedAt).toLocaleString()} · {batch.remainingPortions} portions remaining
+                cooked {formatInstantIn(batch.cookedAt, timeZone)} · {batch.remainingPortions} portions remaining
               </span>
             </li>
           ))}

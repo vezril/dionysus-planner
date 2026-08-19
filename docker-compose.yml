@@ -23,6 +23,14 @@ services:
       # openspec: meal-log-integration — point this at wherever your own
       # dionysus-service instance is running (a separate repo/deployment;
       # not started by this compose file). Without it, /meal-log/* shows a
-      # clear error; the rest of the app is unaffected.
-      DIONYSUS_SERVICE_URL: "http://localhost:8080"
+      # clear error; the rest of the app is unaffected. `localhost` would
+      # be THIS container, so the default targets the Docker host via
+      # host.docker.internal (mapped below for Linux parity).
+      DIONYSUS_SERVICE_URL: "http://host.docker.internal:8080"
+      # IANA zone for the Meal Log's "today" and displayed meal times —
+      # keep it identical to dionysus-service's DIONYSUS_TZ so both sides
+      # agree on where a calendar day begins. Defaults to UTC when unset.
+      DIONYSUS_TZ: "America/Toronto"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped

@@ -42,6 +42,10 @@ spec:
             - name: DIONYSUS_SERVICE_URL
               value: {{ .Values.env.dionysusServiceUrl | quote }}
             {{- end }}
+            {{- if .Values.env.dionysusTz }}
+            - name: DIONYSUS_TZ
+              value: {{ .Values.env.dionysusTz | quote }}
+            {{- end }}
           volumeMounts:
             - name: data
               mountPath: /data
