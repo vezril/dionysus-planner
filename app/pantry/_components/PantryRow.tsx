@@ -8,6 +8,7 @@
  * pantry/page.tsx`) and is refreshed via `router.refresh()` after a
  * successful edit/remove, matching the add flow's existing pattern.
  */
+import Link from "next/link";
 import { useState } from "react";
 import { EditPantryItemDialog } from "@/app/pantry/_components/EditPantryItemDialog";
 import { RemovePantryItemDialog } from "@/app/pantry/_components/RemovePantryItemDialog";
@@ -23,7 +24,14 @@ export function PantryRow({ item }: { item: PantryListRow }) {
       data-testid="pantry-row"
       className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3"
     >
-      <span className="min-w-0 break-words font-medium text-foreground">{item.ingredientName}</span>
+      {/* openspec: pantry-item-detail — the name links to the detail page;
+          edit/remove affordances are untouched. */}
+      <Link
+        href={`/pantry/${item.id}`}
+        className="min-w-0 break-words font-medium text-foreground hover:text-primary hover:underline"
+      >
+        {item.ingredientName}
+      </Link>
       <span className="text-sm text-muted-foreground font-mono tabular-nums">
         {item.displayQuantity} {item.displayUnit}
       </span>
