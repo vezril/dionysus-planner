@@ -361,13 +361,13 @@ describe("app/actions/pantry-actions", () => {
   });
 
   describe("invalid input (AC8, ADR-005: independent server-side re-validation)", () => {
-    it("rejects a non-positive quantity with fieldErrors, never touching the DB", async () => {
+    it("rejects a NEGATIVE quantity with fieldErrors, never touching the DB (zero is now valid — openspec: custom-pantry-items)", async () => {
       const sqlite = openRawDb();
       const ingredientId = insertRawIngredient(sqlite, { name: "Garlic, raw", unitClass: "MASS" });
       sqlite.close();
 
       const { addOrUpdatePantryItem } = await import("@/app/actions/pantry-actions");
-      const result = await addOrUpdatePantryItem({ ingredientId, quantity: 0, unit: "g" });
+      const result = await addOrUpdatePantryItem({ ingredientId, quantity: -1, unit: "g" });
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
@@ -378,6 +378,21 @@ describe("app/actions/pantry-actions", () => {
       const readBack = openRawDb();
       expect(countRows(readBack, "pantry_item")).toBe(0);
       readBack.close();
+    });
+
+    it("accepts a ZERO quantity — the row is created and persists as out-of-stock (openspec: custom-pantry-items)", async () => {
+      const sqlite = openRawDb();
+      const ingredientId = insertRawIngredient(sqlite, { name: "Garlic, raw", unitClass: "MASS" });
+      sqlite.close();
+
+      const { addOrUpdatePantryItem } = await import("@/app/actions/pantry-actions");
+      const result = await addOrUpdatePantryItem({ ingredientId, quantity: 0, unit: "g" });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.data.quantityCanonical).toBe(0);
+        expect(result.data.displayQuantity).toBe(0);
+      }
     });
 
     it("rejects an unknown unit with fieldErrors", async () => {

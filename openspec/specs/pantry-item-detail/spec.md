@@ -66,3 +66,14 @@ When at least one purchase exists, the detail page SHALL show the most recent pr
 #### Scenario: No purchases yet
 - **WHEN** no purchases exist for the ingredient
 - **THEN** the stats area shows an empty state instead of zeros
+
+### Requirement: The detail page shows product identity when present
+The `/pantry/{id}` detail page (capability `pantry-item-detail`) SHALL additionally display a product panel — brand, barcode, and package size — when the ingredient has at least one of them; ingredients with none render exactly as before.
+
+#### Scenario: Product panel renders for a branded item
+- **WHEN** the detail page loads for an item whose ingredient has brand "Ritz" and a barcode
+- **THEN** both are visible in a product section
+
+#### Scenario: No product panel for generic ingredients
+- **WHEN** the detail page loads for an ingredient with no product fields
+- **THEN** no product section renders

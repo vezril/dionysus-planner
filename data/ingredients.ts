@@ -79,6 +79,11 @@ export interface IngredientNutritionFields {
   sugarPerRef?: number | null;
   sodiumMgPerRef?: number | null;
   densityGPerMl?: number | null;
+  // openspec: custom-pantry-items — optional product identity.
+  brand?: string | null;
+  barcode?: string | null;
+  packageQuantity?: number | null;
+  packageUnit?: string | null;
 }
 
 export async function getIngredientRecordById(id: number): Promise<IngredientRecord | null> {
@@ -106,6 +111,10 @@ export async function createIngredientRecord(input: IngredientNutritionFields): 
       sugarPerRef: input.sugarPerRef ?? null,
       sodiumMgPerRef: input.sodiumMgPerRef ?? null,
       source: "CUSTOM",
+      brand: input.brand ?? null,
+      barcode: input.barcode ?? null,
+      packageQuantity: input.packageQuantity ?? null,
+      packageUnit: input.packageUnit ?? null,
     });
   } finally {
     db.$client.close();
@@ -129,6 +138,10 @@ export async function updateIngredientNutritionRecord(
       sugarPerRef: patch.sugarPerRef ?? null,
       sodiumMgPerRef: patch.sodiumMgPerRef ?? null,
       overridden: patch.overridden,
+      brand: patch.brand ?? null,
+      barcode: patch.barcode ?? null,
+      packageQuantity: patch.packageQuantity ?? null,
+      packageUnit: patch.packageUnit ?? null,
     });
   } finally {
     db.$client.close();

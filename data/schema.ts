@@ -26,10 +26,22 @@ export const ingredient = sqliteTable(
     sodiumMgPerRef: real("sodiumMgPerRef"),
     source: text("source", { enum: ["SEEDED", "CUSTOM"] }).notNull(),
     overridden: integer("overridden", { mode: "boolean" }).notNull().default(false),
+    // openspec: custom-pantry-items — product identity for branded items
+    // (design.md Decision 1: a branded product IS a custom ingredient, no
+    // parallel product table). barcode is the future scanner app's lookup
+    // key; unique when present (SQLite unique indexes treat NULLs as
+    // distinct, so barcode-less rows are unlimited).
+    brand: text("brand"),
+    barcode: text("barcode"),
+    packageQuantity: real("packageQuantity"),
+    packageUnit: text("packageUnit"),
     createdAt: text("createdAt").notNull(),
     updatedAt: text("updatedAt").notNull(),
   },
-  (table) => [uniqueIndex("ingredient_seedKey_unique").on(table.seedKey)],
+  (table) => [
+    uniqueIndex("ingredient_seedKey_unique").on(table.seedKey),
+    uniqueIndex("ingredient_barcode_unique").on(table.barcode),
+  ],
 );
 
 export const pantryItem = sqliteTable("pantry_item", {

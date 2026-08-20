@@ -32,9 +32,20 @@ export function PantryRow({ item }: { item: PantryListRow }) {
       >
         {item.ingredientName}
       </Link>
-      <span className="text-sm text-muted-foreground font-mono tabular-nums">
-        {item.displayQuantity} {item.displayUnit}
-      </span>
+      {/* openspec: custom-pantry-items — zero-quantity rows persist and
+          render out-of-stock instead of a quantity. */}
+      {item.displayQuantity === 0 ? (
+        <span
+          data-testid="out-of-stock"
+          className="rounded-sm border border-destructive/40 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-destructive"
+        >
+          Out of stock
+        </span>
+      ) : (
+        <span className="text-sm text-muted-foreground font-mono tabular-nums">
+          {item.displayQuantity} {item.displayUnit}
+        </span>
+      )}
       <div className="flex shrink-0 gap-2">
         <Button type="button" size="sm" variant="outline" onClick={() => setEditOpen(true)}>
           Edit

@@ -125,6 +125,11 @@ describe("data/repositories/ingredientRepo", () => {
           "sodiumMgPerRef",
           "source",
           "overridden",
+          // openspec: custom-pantry-items — optional product identity.
+          "brand",
+          "barcode",
+          "packageQuantity",
+          "packageUnit",
           "createdAt",
           "updatedAt",
         ].sort(),

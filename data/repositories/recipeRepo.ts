@@ -123,6 +123,10 @@ function toIngredientRecord(row: typeof ingredient.$inferSelect): IngredientReco
     sodiumMgPerRef: row.sodiumMgPerRef,
     source: row.source,
     overridden: row.overridden,
+    brand: row.brand,
+    barcode: row.barcode,
+    packageQuantity: row.packageQuantity,
+    packageUnit: row.packageUnit,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
