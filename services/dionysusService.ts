@@ -124,6 +124,15 @@ export function createIngredient(
   return request(baseUrl, "/api/ingredients", { method: "POST", body: JSON.stringify(body) });
 }
 
+/** openspec: pantry-quick-eat — flip mirrors to directly loggable. */
+export function updateIngredient(
+  baseUrl: string,
+  id: number,
+  body: Omit<IngredientJson, "id">,
+): Promise<IngredientJson> {
+  return request(baseUrl, `/api/ingredients/${id}`, { method: "PUT", body: JSON.stringify(body) });
+}
+
 export function listRecipes(baseUrl: string): Promise<RecipeJson[]> {
   return request(baseUrl, "/api/recipes");
 }

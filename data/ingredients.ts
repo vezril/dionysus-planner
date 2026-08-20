@@ -87,6 +87,7 @@ export interface IngredientNutritionFields {
   category?: "FOOD" | "DRINK" | "SUPPLEMENT";
   shelfLifeDays?: number | null;
   genericOfId?: number | null;
+  readyToEat?: boolean;
   densityGPerMl?: number | null;
   // openspec: custom-pantry-items — optional product identity.
   brand?: string | null;
@@ -126,6 +127,7 @@ export async function createIngredientRecord(input: IngredientNutritionFields): 
       category: input.category ?? "FOOD",
       shelfLifeDays: input.shelfLifeDays ?? null,
       genericOfId: input.genericOfId ?? null,
+      readyToEat: input.readyToEat ?? false,
       source: "CUSTOM",
       brand: input.brand ?? null,
       barcode: input.barcode ?? null,
@@ -160,6 +162,7 @@ export async function updateIngredientNutritionRecord(
       category: patch.category ?? "FOOD",
       shelfLifeDays: patch.shelfLifeDays ?? null,
       genericOfId: patch.genericOfId ?? null,
+      readyToEat: patch.readyToEat ?? false,
       overridden: patch.overridden,
       brand: patch.brand ?? null,
       barcode: patch.barcode ?? null,

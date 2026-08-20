@@ -56,7 +56,24 @@ export default async function MealLogPage({
     listRecipes(baseUrl),
   ]);
   const recipeNameById = new Map(recipes.map((recipe) => [recipe.id, recipe.name]));
-  const readyToConsume = batches.filter((batch) => batch.remainingPortions >= 1);
+  // openspec: pantry-quick-eat — one row per recipe with portions summed
+  // across batches; logging targets the OLDEST batch with portions left
+  // (FIFO), while the Batches admin page keeps the per-batch view.
+  const readyByRecipe = new Map<number, { recipeId: number; oldestBatchId: number | null; totalPortions: number }>();
+  for (const batch of [...batches].sort((a, b) => (a.id ?? 0) - (b.id ?? 0))) {
+    if (batch.remainingPortions < 1) continue;
+    const existing = readyByRecipe.get(batch.recipeId);
+    if (existing) {
+      existing.totalPortions = Math.round((existing.totalPortions + batch.remainingPortions) * 100) / 100;
+    } else {
+      readyByRecipe.set(batch.recipeId, {
+        recipeId: batch.recipeId,
+        oldestBatchId: batch.id,
+        totalPortions: batch.remainingPortions,
+      });
+    }
+  }
+  const readyToConsume = [...readyByRecipe.values()];
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
@@ -115,17 +132,17 @@ export default async function MealLogPage({
           </p>
         ) : (
           <ul data-testid="ready-to-consume" className="flex flex-col divide-y divide-border">
-            {readyToConsume.map((batch) => (
+            {readyToConsume.map((row) => (
               <li
-                key={batch.id}
+                key={row.recipeId}
                 data-testid="ready-to-consume-row"
                 className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2"
               >
                 <span className="text-sm font-medium">
-                  {recipeNameById.get(batch.recipeId) ?? `Recipe #${batch.recipeId}`}
+                  {recipeNameById.get(row.recipeId) ?? `Recipe #${row.recipeId}`}
                 </span>
-                <span className="text-sm text-muted-foreground">{batch.remainingPortions} portions</span>
-                {batch.id !== null ? <LogPortionButton batchId={batch.id} /> : null}
+                <span className="text-sm text-muted-foreground">{row.totalPortions} portions</span>
+                {row.oldestBatchId !== null ? <LogPortionButton batchId={row.oldestBatchId} /> : null}
               </li>
             ))}
           </ul>

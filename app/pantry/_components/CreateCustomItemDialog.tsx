@@ -44,6 +44,7 @@ type FormValues = {
   category: "FOOD" | "DRINK" | "SUPPLEMENT" | undefined;
   shelfLifeDays: number | undefined;
   genericOfId: number | undefined;
+  readyToEat: boolean;
   alcoholAbvPercent: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   brand: string | undefined;
@@ -82,6 +83,7 @@ const DEFAULT_VALUES: FormValues = {
   category: "FOOD",
   shelfLifeDays: undefined,
   genericOfId: undefined,
+  readyToEat: false,
   alcoholAbvPercent: undefined,
   micronutrients: [],
   brand: undefined,
@@ -259,6 +261,11 @@ export function CreateCustomItemDialog({
                 ) : null}
               </div>
             </div>
+
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input type="checkbox" {...register("readyToEat")} />
+              Ready to eat
+            </label>
 
             <div className="flex flex-col gap-1">
               <span className="text-sm font-medium">Generic of (optional)</span>

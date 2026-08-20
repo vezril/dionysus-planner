@@ -154,6 +154,7 @@ export async function createCustomPantryItem(
       category: data.category,
       shelfLifeDays: data.shelfLifeDays ?? null,
       genericOfId: genericLink.value,
+      readyToEat: data.readyToEat,
       densityGPerMl: data.densityGPerMl ?? null,
       ...nutrition,
       brand: data.brand ?? null,

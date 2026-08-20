@@ -32,6 +32,7 @@ export interface IngredientRecord {
   category: "FOOD" | "DRINK" | "SUPPLEMENT";
   shelfLifeDays: number | null;
   genericOfId: number | null;
+  readyToEat: boolean;
   overridden: boolean;
   // openspec: custom-pantry-items — optional product identity (design.md D1).
   brand: string | null;
@@ -68,6 +69,7 @@ export type IngredientUpdatePatch = Partial<
     | "category"
     | "shelfLifeDays"
     | "genericOfId"
+    | "readyToEat"
     | "sodiumMgPerRef"
     | "alcoholGPerRef"
     | "saturatedFatGPerRef"
@@ -102,6 +104,7 @@ function toRecord(row: typeof ingredient.$inferSelect): IngredientRecord {
     category: row.category,
     shelfLifeDays: row.shelfLifeDays,
     genericOfId: row.genericOfId,
+    readyToEat: row.readyToEat,
     source: row.source,
     overridden: row.overridden,
     brand: row.brand,
@@ -140,6 +143,7 @@ export async function create(db: Db, input: IngredientCreateInput): Promise<Ingr
       category: input.category,
       shelfLifeDays: input.shelfLifeDays,
       genericOfId: input.genericOfId,
+      readyToEat: input.readyToEat,
       source: input.source,
       overridden: input.overridden ?? false,
       brand: input.brand ?? null,

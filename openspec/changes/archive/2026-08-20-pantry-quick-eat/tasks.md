@@ -1,0 +1,4 @@
+- [x] 1.1 Slider max(4×servings, 24); readyToEat column (migration 0013) + schemas/forms/threading; eat_item kind (TS enum widen) + planner display
+- [x] 1.2 eatPantryItem action (service-first meal, pantry consume, today plan entry) + EatButton/dialog on pantry rows + integration tests
+- [x] 1.3 Batch grouping (landing + planner readyToEat/picker, FIFO oldest-batch targeting) + tests
+- [x] 1.4 e2e (eat a can end-to-end; merged rows); full gate; train v2.26.0

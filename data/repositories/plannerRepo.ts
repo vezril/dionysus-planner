@@ -12,7 +12,7 @@ type Db = BetterSQLite3Database<typeof schema>;
 export interface PlanEntryRecord {
   id: number;
   date: string;
-  kind: "cook" | "eat_batch";
+  kind: "cook" | "eat_batch" | "eat_item";
   recipeId: number | null;
   batchId: number | null;
   batchLabel: string | null;
@@ -47,7 +47,7 @@ export async function listForDates(db: Db, dates: string[]): Promise<PlanEntryRo
 
 export interface PlanEntryInsert {
   date: string;
-  kind: "cook" | "eat_batch";
+  kind: "cook" | "eat_batch" | "eat_item";
   recipeId: number | null;
   batchId: number | null;
   batchLabel: string | null;
