@@ -33,6 +33,10 @@ export interface RecipeDetail {
   /** openspec: ingredient-categories-auto-tags — computed from ingredient
    * categories at read time; never stored, never editable. */
   derivedTags: string[];
+  /** openspec: ratings-variants-links — the root recipe when this is a
+   * variation, and this recipe's own variations. */
+  variantOf: { id: number; name: string } | null;
+  variations: Array<{ id: number; name: string }>;
 }
 
 export interface RecipeWriteInputPayload {
@@ -96,6 +100,47 @@ export async function removeRecipeRecord(id: number): Promise<void> {
   const db = createDb();
   try {
     await recipeRepo.remove(db, id);
+  } finally {
+    db.$client.close();
+  }
+}
+
+/** openspec: ratings-variants-links — 1–5 stars, null clears. */
+export async function setRecipeRatingRecord(id: number, rating: number | null): Promise<void> {
+  const db = createDb();
+  try {
+    await recipeRepo.setRating(db, id, rating);
+  } finally {
+    db.$client.close();
+  }
+}
+
+/**
+ * openspec: ratings-variants-links — duplicate a recipe (lines + manual
+ * tags) as a new recipe linked to the ROOT (a variation of a variation
+ * still links to the original). Returns the new recipe id.
+ */
+export async function createRecipeVariationRecord(id: number): Promise<number | null> {
+  const db = createDb();
+  try {
+    const source = await recipeRepo.getWithLinesAndIngredients(db, id);
+    if (!source) return null;
+    const tags = await recipeRepo.getTags(db, id);
+    const created = await recipeRepo.createWithLines(db, {
+      name: `${source.name} (variation)`,
+      servings: source.servings,
+      instructions: source.instructions,
+      tags,
+      lines: source.lines.map((line) => ({
+        ingredientId: line.ingredientId,
+        quantityCanonical: line.quantityCanonical,
+        entryUnitClass: line.entryUnitClass,
+        displayQuantity: line.displayQuantity,
+        displayUnit: line.displayUnit,
+      })),
+    });
+    await recipeRepo.setVariantOf(db, created.id, source.variantOfId ?? id);
+    return created.id;
   } finally {
     db.$client.close();
   }
@@ -173,7 +218,14 @@ export async function getRecipeDetail(id: number): Promise<RecipeDetail | null> 
 
     const derivedAll = (await recipeRepo.getAllDerivedTags(db)).get(id) ?? [];
     const derivedTags = derivedAll.filter((tag) => !tags.includes(tag));
-    return { recipe, lines, nutrition, tags, derivedTags };
+    // openspec: ratings-variants-links — variation cross-links.
+    const allRecipes = await recipeRepo.getAllWithLines(db);
+    const variantOfRow = recipe.variantOfId !== null ? allRecipes.find((row) => row.id === recipe.variantOfId) : undefined;
+    const variantOf = variantOfRow ? { id: variantOfRow.id, name: variantOfRow.name } : null;
+    const variations = allRecipes
+      .filter((row) => row.variantOfId === id)
+      .map((row) => ({ id: row.id, name: row.name }));
+    return { recipe, lines, nutrition, tags, derivedTags, variantOf, variations };
   } finally {
     db.$client.close();
   }
@@ -185,6 +237,9 @@ export interface AnnotatedRecipeSummary extends RecipeSummary {
   servings: number;
   caloriesPerServing: number | null;
   cookability: CookabilityStatus;
+  /** openspec: ratings-variants-links */
+  rating: number | null;
+  variantOfName: string | null;
 }
 
 /**
@@ -215,6 +270,7 @@ export async function listRecipeSummariesAnnotated(threshold: number): Promise<A
     const ingredientsById = Object.fromEntries(ingredients.map((ingredient) => [ingredient.id, ingredient]));
 
     // openspec: generic-products — interchangeable stock for cookability.
+    const nameById = new Map(recipes.map((row) => [row.id, row.name]));
     const { pantryIndex, normalizedRecipes } = await getGroupedMatchInputs(db, recipes);
     const matchResult = computeCookableAndNearMatch(pantryIndex, normalizedRecipes, threshold);
     const cookabilityByRecipeId = new Map<number, CookabilityStatus>();
@@ -247,6 +303,8 @@ export async function listRecipeSummariesAnnotated(threshold: number): Promise<A
         servings: recipe.servings,
         caloriesPerServing: nutrition.perServing.calories.value,
         cookability: cookabilityByRecipeId.get(recipe.id) ?? "MISSING_MORE",
+        rating: recipe.rating,
+        variantOfName: recipe.variantOfId !== null ? (nameById.get(recipe.variantOfId) ?? null) : null,
       };
     });
   } finally {

@@ -19,6 +19,8 @@ import {
   getRecipeRecordById,
   removeRecipeRecord,
   updateRecipeWithLines,
+  createRecipeVariationRecord,
+  setRecipeRatingRecord,
 } from "@/data/recipes";
 
 export interface ActionError {
@@ -204,6 +206,25 @@ export async function updateRecipe(id: number, input: unknown): Promise<UpdateRe
  * and pantry rows are untouched, since this only ever deletes the `recipe`
  * row itself.
  */
+/** openspec: ratings-variants-links — 1–5 stars; null clears. */
+export async function rateRecipe(id: number, rating: number | null): Promise<{ ok: boolean }> {
+  if (rating !== null && (!Number.isInteger(rating) || rating < 1 || rating > 5)) return { ok: false };
+  await setRecipeRatingRecord(id, rating);
+  revalidatePath("/recipes");
+  revalidatePath(`/recipes/${id}`);
+  return { ok: true };
+}
+
+/** openspec: ratings-variants-links — duplicate as a linked variation;
+ * returns the new recipe id (null if the source vanished). */
+export async function createRecipeVariation(id: number): Promise<{ ok: boolean; newId: number | null }> {
+  const newId = await createRecipeVariationRecord(id);
+  if (newId === null) return { ok: false, newId: null };
+  revalidatePath("/recipes");
+  revalidatePath(`/recipes/${id}`);
+  return { ok: true, newId };
+}
+
 export async function deleteRecipe(id: number): Promise<DeleteRecipeResult> {
   const existing = await getRecipeRecordById(id);
   if (!existing) {

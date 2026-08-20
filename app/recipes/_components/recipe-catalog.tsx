@@ -208,6 +208,17 @@ export function RecipeCatalog({ recipes }: { recipes: AnnotatedRecipeSummary[] }
                 >
                   {COOKABILITY_BADGE_LABEL[recipe.cookability]}
                 </span>
+                {/* openspec: ratings-variants-links */}
+                {recipe.rating !== null ? (
+                  <span data-testid="recipe-row-rating" className="text-xs text-status-near">
+                    {"★".repeat(recipe.rating)}
+                  </span>
+                ) : null}
+                {recipe.variantOfName !== null ? (
+                  <span data-testid="recipe-row-variant" className="text-xs text-muted-foreground">
+                    variation of {recipe.variantOfName}
+                  </span>
+                ) : null}
               </div>
               {recipe.tags.length > 0 ? (
                 <div className="mt-1 flex flex-wrap gap-1.5">

@@ -254,6 +254,25 @@ export async function getIngredientCategories(ingredientId: number): Promise<str
   }
 }
 
+/** openspec: ratings-variants-links */
+export async function setIngredientMerchantLinks(ingredientId: number, urls: string[]): Promise<void> {
+  const db = createDb();
+  try {
+    ingredientRepo.replaceMerchantLinks(db, ingredientId, urls);
+  } finally {
+    db.$client.close();
+  }
+}
+
+export async function getIngredientMerchantLinks(ingredientId: number): Promise<string[]> {
+  const db = createDb();
+  try {
+    return await ingredientRepo.getMerchantLinks(db, ingredientId);
+  } finally {
+    db.$client.close();
+  }
+}
+
 /** openspec: generic-products */
 export async function getGenericLinksMap(): Promise<Map<number, number | null>> {
   const db = createDb();

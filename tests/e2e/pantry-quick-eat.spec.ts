@@ -53,7 +53,7 @@ test.describe("pantry quick eat", () => {
     await dialog.getByRole("spinbutton", { name: "Package size (optional)" }).fill("355");
     await dialog.getByRole("combobox", { name: "Package unit" }).click();
     await page.getByRole("option", { name: "mL", exact: true }).click();
-    await dialog.getByRole("checkbox", { name: "Ready to eat" }).check();
+    await dialog.getByRole("checkbox", { name: "Ready to consume" }).check();
     await dialog.getByRole("button", { name: "Create item" }).click();
     await expect(dialog).not.toBeVisible();
     await expect(page.getByTestId("pantry-row").filter({ hasText: BEER_NAME })).toBeVisible();

@@ -103,6 +103,11 @@ export const recipe = sqliteTable(
     name: text("name").notNull(),
     servings: integer("servings").notNull(),
     instructions: text("instructions").notNull(),
+    /** openspec: ratings-variants-links — 1–5 stars, null = unrated. */
+    rating: integer("rating"),
+    /** openspec: ratings-variants-links — root recipe this is a variation
+     * of (no FK constraint, same posture as ingredient.genericOfId). */
+    variantOfId: integer("variantOfId"),
     createdAt: text("createdAt").notNull(),
     updatedAt: text("updatedAt").notNull(),
   },
@@ -133,6 +138,16 @@ export const recipeTag = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.recipeId, table.tag] })],
 );
+
+/** openspec: ratings-variants-links — merchant URLs for a product
+ * (local stores that carry it; future demeter deal-finding input). */
+export const ingredientLink = sqliteTable("ingredient_link", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  ingredientId: integer("ingredientId")
+    .notNull()
+    .references(() => ingredient.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+});
 
 /** openspec: ingredient-categories-auto-tags — user-defined category
  * labels on products/generics; recipes derive tags from them at read

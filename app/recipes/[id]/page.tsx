@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CreateVariationButton } from "./_components/CreateVariationButton";
+import { RecipeRating } from "./_components/RecipeRating";
 import { notFound } from "next/navigation";
 import { getRecipeDetail } from "@/data/recipes";
 import { getResolvedTargets } from "@/data/nutritionTargets";
@@ -54,7 +56,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  const { recipe, lines, nutrition, tags, derivedTags } = detail;
+  const { recipe, lines, nutrition, tags, derivedTags, variantOf, variations } = detail;
   // openspec: nutrition-targets-guide — per-serving % of the daily target.
   const targets = await getResolvedTargets();
   const TARGET_KEY_BY_ROW: Record<string, string> = {
@@ -81,10 +83,36 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
     <div className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{recipe.name}</h1>
-        <Link href={`/recipes/${recipe.id}/edit`} className="text-sm font-medium text-primary underline">
-          Edit recipe
-        </Link>
+        <div className="flex items-center gap-3">
+          <CreateVariationButton recipeId={recipe.id} />
+          <Link href={`/recipes/${recipe.id}/edit`} className="text-sm font-medium text-primary underline">
+            Edit recipe
+          </Link>
+        </div>
       </div>
+      {/* openspec: ratings-variants-links */}
+      <RecipeRating recipeId={recipe.id} rating={recipe.rating} />
+      {variantOf !== null ? (
+        <p data-testid="variant-of" className="text-sm text-muted-foreground">
+          Variation of{" "}
+          <Link href={`/recipes/${variantOf.id}`} className="font-medium text-primary hover:underline">
+            {variantOf.name}
+          </Link>
+        </p>
+      ) : null}
+      {variations.length > 0 ? (
+        <p data-testid="variations" className="text-sm text-muted-foreground">
+          Variations:{" "}
+          {variations.map((variation, index) => (
+            <span key={variation.id}>
+              {index > 0 ? ", " : ""}
+              <Link href={`/recipes/${variation.id}`} className="font-medium text-primary hover:underline">
+                {variation.name}
+              </Link>
+            </span>
+          ))}
+        </p>
+      ) : null}
       <p data-testid="recipe-servings" className="text-sm text-muted-foreground">
         Servings: {recipe.servings}
         {abv !== null ? (
