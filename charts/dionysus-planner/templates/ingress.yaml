@@ -30,4 +30,16 @@ spec:
                 name: {{ include "dionysus-planner.fullname" . }}
                 port:
                   number: {{ .Values.service.port }}
+    {{- range .Values.ingress.extraHosts }}
+    - host: {{ . }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "dionysus-planner.fullname" $ }}
+                port:
+                  number: {{ $.Values.service.port }}
+    {{- end }}
 {{- end }}

@@ -52,5 +52,8 @@ ingress:
   enabled: false
   className: traefik
   host: ""
+  # Additional hostnames routed to the app (e.g. a Tailscale MagicDNS
+  # name so the tailnet reaches it without the LAN's dionysus.lan).
+  extraHosts: []
   annotations: {}
   tls: []
