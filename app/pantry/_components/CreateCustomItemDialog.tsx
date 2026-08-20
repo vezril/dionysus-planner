@@ -45,6 +45,8 @@ type FormValues = {
   shelfLifeDays: number | undefined;
   genericOfId: number | undefined;
   readyToEat: boolean;
+  /** openspec: ingredient-categories-auto-tags — comma-separated entry. */
+  categoriesText: string;
   alcoholAbvPercent: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   brand: string | undefined;
@@ -84,6 +86,7 @@ const DEFAULT_VALUES: FormValues = {
   shelfLifeDays: undefined,
   genericOfId: undefined,
   readyToEat: false,
+  categoriesText: "",
   alcoholAbvPercent: undefined,
   micronutrients: [],
   brand: undefined,
@@ -127,6 +130,7 @@ export function CreateCustomItemDialog({
     reset,
     setError,
     setValue,
+    getValues,
     watch,
     formState: { errors },
   } = useForm<FormValues>({
@@ -156,7 +160,11 @@ export function CreateCustomItemDialog({
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
-    const result = await createCustomPantryItem(values);
+    // zodResolver strips unknown keys from `values` — read the raw input.
+    const result = await createCustomPantryItem({
+      ...values,
+      categories: (getValues("categoriesText") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean),
+    });
 
     if (result.ok) {
       reset(DEFAULT_VALUES);
@@ -260,6 +268,20 @@ export function CreateCustomItemDialog({
                   </p>
                 ) : null}
               </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="custom-item-categories" className="text-sm font-medium">
+                Categories{" "}
+                <span className="font-normal text-muted-foreground">(comma-separated — recipes inherit them as tags)</span>
+              </label>
+              <input
+                id="custom-item-categories"
+                type="text"
+                placeholder="fish, salmon"
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                {...register("categoriesText")}
+              />
             </div>
 
             <label className="flex items-center gap-2 text-sm font-medium">

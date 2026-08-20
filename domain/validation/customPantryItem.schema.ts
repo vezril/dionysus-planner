@@ -53,6 +53,12 @@ export const customPantryItemSchema = z
         message: "Each micronutrient can only appear once.",
       })
       .nullish(),
+    // openspec: ingredient-categories-auto-tags — user-defined category
+    // labels; trimmed, empties dropped, deduped exact (recipe-tag posture).
+    categories: z
+      .array(z.string().trim().min(1, { message: "Categories cannot be blank." }))
+      .transform((tags) => Array.from(new Set(tags)))
+      .nullish(),
     densityGPerMl: z.number().gt(0).nullish(),
     brand: z.string().trim().min(1).nullish(),
     barcode: z.string().trim().min(1).nullish(),

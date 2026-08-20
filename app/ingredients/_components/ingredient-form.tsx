@@ -63,6 +63,8 @@ type FormValues = {
   shelfLifeDays: number | undefined;
   genericOfId: number | undefined;
   readyToEat: boolean;
+  /** openspec: ingredient-categories-auto-tags — comma-separated entry. */
+  categoriesText: string;
   alcoholAbvPercent: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   densityGPerMl: number | undefined;
@@ -90,6 +92,7 @@ export interface IngredientFormInitialValues {
   shelfLifeDays: number | null;
   genericOfId: number | null;
   readyToEat: boolean;
+  categories?: string[];
   micronutrients?: Array<{ key: string; amountPerRef: number }>;
   densityGPerMl: number | null;
 }
@@ -120,6 +123,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       shelfLifeDays: undefined,
       genericOfId: undefined,
       readyToEat: false,
+      categoriesText: "",
       alcoholAbvPercent: undefined,
       micronutrients: [],
       densityGPerMl: undefined,
@@ -151,6 +155,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     shelfLifeDays: initial.shelfLifeDays ?? undefined,
     genericOfId: initial.genericOfId ?? undefined,
     readyToEat: initial.readyToEat,
+    categoriesText: (initial.categories ?? []).join(", "),
     // openspec: batch-nutrition-and-abv-entry — VOLUME drinks edit in ABV.
     alcoholAbvPercent:
       initial.unitClass === "VOLUME" && initial.category === "DRINK" && initial.alcoholGPerRef != null
@@ -229,6 +234,7 @@ export function IngredientForm({
     control,
     setError,
     setValue,
+    getValues,
     watch,
     formState: { errors },
   } = useForm<FormValues>({
@@ -264,10 +270,15 @@ export function IngredientForm({
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
+    // zodResolver strips unknown keys from `values` — read the raw input.
+    const payload = {
+      ...values,
+      categories: (getValues("categoriesText") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean),
+    };
     const result =
       mode === "create"
-        ? await createIngredient(values)
-        : await overrideIngredientNutrition(ingredientId!, values);
+        ? await createIngredient(payload)
+        : await overrideIngredientNutrition(ingredientId!, payload);
 
     if (result.ok) {
       router.push("/ingredients");
@@ -346,6 +357,21 @@ export function IngredientForm({
               </SelectContent>
             </Select>
           )}
+        />
+      </div>
+
+      {/* openspec: ingredient-categories-auto-tags */}
+      <div className="flex max-w-sm flex-col gap-1">
+        <label htmlFor="ingredient-categories" className="text-sm font-medium">
+          Categories{" "}
+          <span className="font-normal text-muted-foreground">(comma-separated — recipes inherit them as tags)</span>
+        </label>
+        <input
+          id="ingredient-categories"
+          type="text"
+          placeholder="fish, salmon"
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          {...register("categoriesText")}
         />
       </div>
 

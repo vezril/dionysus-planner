@@ -17,7 +17,7 @@
  */
 import { eq } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { ingredient, recipe, recipeLine, recipeTag } from "@/data/schema";
+import { ingredient, ingredientTag, recipe, recipeLine, recipeTag } from "@/data/schema";
 import * as schema from "@/data/schema";
 import type { UnitClass } from "@/domain/types";
 import type { IngredientRecord } from "@/data/repositories/ingredientRepo";
@@ -315,6 +315,43 @@ export async function getTags(db: Db, recipeId: number): Promise<string[]> {
  * `getAllWithLines`'s result without per-recipe queries (same anti-N+1
  * posture as `getAllWithLines` itself, AC-4/NFR-3).
  */
+/**
+ * openspec: ingredient-categories-auto-tags — computed recipe tags: the
+ * union of each line ingredient's categories and its generic root's.
+ * Never persisted to recipe_tag; read-time only.
+ */
+export async function getAllDerivedTags(db: Db): Promise<Map<number, string[]>> {
+  const lines = await db
+    .select({
+      recipeId: recipeLine.recipeId,
+      ingredientId: recipeLine.ingredientId,
+      genericOfId: ingredient.genericOfId,
+    })
+    .from(recipeLine)
+    .innerJoin(ingredient, eq(ingredient.id, recipeLine.ingredientId));
+  const tagRows = await db
+    .select({ ingredientId: ingredientTag.ingredientId, tag: ingredientTag.tag })
+    .from(ingredientTag);
+  const tagsByIngredientId = new Map<number, string[]>();
+  for (const row of tagRows) {
+    const existing = tagsByIngredientId.get(row.ingredientId);
+    if (existing) existing.push(row.tag);
+    else tagsByIngredientId.set(row.ingredientId, [row.tag]);
+  }
+  const byRecipeId = new Map<number, Set<string>>();
+  for (const line of lines) {
+    const tags = [
+      ...(tagsByIngredientId.get(line.ingredientId) ?? []),
+      ...(line.genericOfId !== null ? (tagsByIngredientId.get(line.genericOfId) ?? []) : []),
+    ];
+    if (tags.length === 0) continue;
+    const set = byRecipeId.get(line.recipeId) ?? new Set<string>();
+    for (const tag of tags) set.add(tag);
+    byRecipeId.set(line.recipeId, set);
+  }
+  return new Map([...byRecipeId].map(([recipeId, set]) => [recipeId, [...set]]));
+}
+
 export async function getAllTags(db: Db): Promise<Map<number, string[]>> {
   const rows = await db.select({ recipeId: recipeTag.recipeId, tag: recipeTag.tag }).from(recipeTag);
   const byRecipeId = new Map<number, string[]>();

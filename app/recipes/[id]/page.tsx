@@ -54,7 +54,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  const { recipe, lines, nutrition, tags } = detail;
+  const { recipe, lines, nutrition, tags, derivedTags } = detail;
   // openspec: nutrition-targets-guide — per-serving % of the daily target.
   const targets = await getResolvedTargets();
   const TARGET_KEY_BY_ROW: Record<string, string> = {
@@ -100,13 +100,25 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
         {humanizeMentions(recipe.instructions)}
       </p>
 
-      {tags.length > 0 ? (
+      {tags.length > 0 || derivedTags.length > 0 ? (
         <div data-testid="recipe-tags" className="flex flex-wrap gap-2">
           {tags.map((tag) => (
             <span
               key={tag}
               data-testid="recipe-tag"
               className="rounded-full border border-border bg-muted px-2.5 py-1 text-sm"
+            >
+              {tag}
+            </span>
+          ))}
+          {/* openspec: ingredient-categories-auto-tags — inherited from
+              ingredient categories; muted, not editable on the recipe. */}
+          {derivedTags.map((tag) => (
+            <span
+              key={`derived-${tag}`}
+              data-testid="recipe-derived-tag"
+              title="Inherited from an ingredient's categories"
+              className="rounded-full border border-dashed border-border px-2.5 py-1 text-sm text-muted-foreground"
             >
               {tag}
             </span>

@@ -235,6 +235,25 @@ export async function getIngredientMicronutrients(
   }
 }
 
+/** openspec: ingredient-categories-auto-tags */
+export async function setIngredientCategories(ingredientId: number, tags: string[]): Promise<void> {
+  const db = createDb();
+  try {
+    ingredientRepo.replaceCategories(db, ingredientId, tags);
+  } finally {
+    db.$client.close();
+  }
+}
+
+export async function getIngredientCategories(ingredientId: number): Promise<string[]> {
+  const db = createDb();
+  try {
+    return await ingredientRepo.getCategories(db, ingredientId);
+  } finally {
+    db.$client.close();
+  }
+}
+
 /** openspec: generic-products */
 export async function getGenericLinksMap(): Promise<Map<number, number | null>> {
   const db = createDb();

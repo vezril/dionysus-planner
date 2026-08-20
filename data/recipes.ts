@@ -30,6 +30,9 @@ export interface RecipeDetail {
   nutrition: RecipeNutrition;
   /** S-405 — the recipe's current tags, exactly matching what was last saved. */
   tags: string[];
+  /** openspec: ingredient-categories-auto-tags — computed from ingredient
+   * categories at read time; never stored, never editable. */
+  derivedTags: string[];
 }
 
 export interface RecipeWriteInputPayload {
@@ -98,6 +101,11 @@ export async function removeRecipeRecord(id: number): Promise<void> {
   }
 }
 
+/** Manual tags first, derived appended, exact-string dedup. */
+function mergeTags(manual: string[], derived: string[]): string[] {
+  return Array.from(new Set([...manual, ...derived]));
+}
+
 /**
  * Lean summary list for `app/recipes/page.tsx` (S-401 AC1 — the list's
  * first real, non-placeholder content). Reuses `recipeRepo.getAllWithLines`
@@ -110,10 +118,12 @@ export async function listRecipeSummaries(): Promise<RecipeSummary[]> {
   try {
     const recipes = await recipeRepo.getAllWithLines(db);
     const tagsByRecipeId = await recipeRepo.getAllTags(db);
+    // openspec: ingredient-categories-auto-tags — rows show manual ∪ derived.
+    const derivedByRecipeId = await recipeRepo.getAllDerivedTags(db);
     return recipes.map((recipe) => ({
       id: recipe.id,
       name: recipe.name,
-      tags: tagsByRecipeId.get(recipe.id) ?? [],
+      tags: mergeTags(tagsByRecipeId.get(recipe.id) ?? [], derivedByRecipeId.get(recipe.id) ?? []),
     }));
   } finally {
     db.$client.close();
@@ -161,7 +171,9 @@ export async function getRecipeDetail(id: number): Promise<RecipeDetail | null> 
       ingredientsById,
     );
 
-    return { recipe, lines, nutrition, tags };
+    const derivedAll = (await recipeRepo.getAllDerivedTags(db)).get(id) ?? [];
+    const derivedTags = derivedAll.filter((tag) => !tags.includes(tag));
+    return { recipe, lines, nutrition, tags, derivedTags };
   } finally {
     db.$client.close();
   }
@@ -196,6 +208,8 @@ export async function listRecipeSummariesAnnotated(threshold: number): Promise<A
   try {
     const recipes = await recipeRepo.getAllWithLines(db);
     const tagsByRecipeId = await recipeRepo.getAllTags(db);
+    // openspec: ingredient-categories-auto-tags — rows show manual ∪ derived.
+    const derivedByRecipeId = await recipeRepo.getAllDerivedTags(db);
     const ingredients = await ingredientRepo.listAll(db);
 
     const ingredientsById = Object.fromEntries(ingredients.map((ingredient) => [ingredient.id, ingredient]));
@@ -229,7 +243,7 @@ export async function listRecipeSummariesAnnotated(threshold: number): Promise<A
       return {
         id: recipe.id,
         name: recipe.name,
-        tags: tagsByRecipeId.get(recipe.id) ?? [],
+        tags: mergeTags(tagsByRecipeId.get(recipe.id) ?? [], derivedByRecipeId.get(recipe.id) ?? []),
         servings: recipe.servings,
         caloriesPerServing: nutrition.perServing.calories.value,
         cookability: cookabilityByRecipeId.get(recipe.id) ?? "MISSING_MORE",
