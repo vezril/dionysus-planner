@@ -15,7 +15,7 @@ export default async function MealLogRecipesPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Meal Log Recipes</h1>
+      <h1 className="text-2xl font-semibold">Meals Recipes</h1>
 
       {recipes.length === 0 ? (
         <p data-testid="meal-log-recipes-empty" className="text-sm text-muted-foreground">

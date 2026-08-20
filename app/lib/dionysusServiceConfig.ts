@@ -11,7 +11,7 @@
 
 export class DionysusServiceUrlMissingError extends Error {
   constructor() {
-    super("DIONYSUS_SERVICE_URL is not set — the Meal Log section has no dionysus-service to call.");
+    super("DIONYSUS_SERVICE_URL is not set — the Meals section has no dionysus-service to call.");
     this.name = "DionysusServiceUrlMissingError";
   }
 }

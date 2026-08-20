@@ -51,7 +51,7 @@ export default async function MealLogPage({
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Meal Log</h1>
+        <h1 className="text-2xl font-semibold">Meals</h1>
         <div className="flex gap-4 text-sm">
           <Link href="/meal-log/log" className="font-medium text-primary hover:underline">
             Log a meal

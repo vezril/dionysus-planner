@@ -14,12 +14,15 @@ import { usePathname } from "next/navigation";
  * Labels intentionally match each destination's <h1> text exactly so the
  * nav link's accessible name equals the page heading (shell.spec.ts).
  */
+// openspec: qol-nav-scale-delete — What Can I Cook first (it's home; `/`
+// redirects there), then the data-flow order: ingredients feed the pantry,
+// the pantry feeds recipes, recipes become meals.
 const NAV_ITEMS = [
   { href: "/what-can-i-cook", label: "What Can I Cook" },
+  { href: "/ingredients", label: "Ingredients" },
   { href: "/pantry", label: "Pantry" },
   { href: "/recipes", label: "Recipes" },
-  { href: "/ingredients", label: "Ingredients" },
-  { href: "/meal-log", label: "Meal Log" },
+  { href: "/meal-log", label: "Meals" },
 ] as const;
 
 export function MainNav() {

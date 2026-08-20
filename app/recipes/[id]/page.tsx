@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRecipeDetail } from "@/data/recipes";
-import { formatNutritionForDisplay } from "@/domain/nutrition";
 import type { NutritionTotals } from "@/domain/nutrition";
 import { stripMentionIds } from "@/domain/cooklangParser";
+import { DeleteRecipeButton } from "@/app/recipes/_components/delete-recipe-button";
+import { PortionScaler } from "./_components/PortionScaler";
 
 /**
  * Recipe detail with computed nutrition (docs/stories/S-403-recipe-detail-
@@ -80,57 +81,31 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-medium">Ingredients</h2>
-        <ul className="flex flex-col divide-y divide-border">
-          {lines.map((line) => {
-            const isUnresolved = nutrition.unresolvedLineIds.includes(line.id);
-            return (
-              <li
-                key={line.id}
-                data-testid="recipe-line"
-                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3"
-              >
-                <span className="font-medium text-foreground">{line.ingredient.name}</span>
-                <span data-testid="recipe-line-quantity" className="font-mono text-sm tabular-nums text-muted-foreground">
-                  {line.displayQuantity} {line.displayUnit}
-                </span>
-                {isUnresolved ? (
-                  <span data-testid="recipe-line-unresolved" className="text-sm text-destructive">
-                    Unresolved — cannot compare units
-                  </span>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      {/* openspec: qol-nav-scale-delete — slider + lines + nutrition move
+          into one client component so the factor rescales them together
+          (design D2); per-serving values pass through factor-independent. */}
+      <PortionScaler
+        servings={recipe.servings}
+        lines={lines.map((line) => ({
+          id: line.id,
+          name: line.ingredient.name,
+          displayQuantity: line.displayQuantity,
+          displayUnit: line.displayUnit,
+          unresolved: nutrition.unresolvedLineIds.includes(line.id),
+        }))}
+        totalRows={NUTRIENT_ROWS.map((row) => ({
+          key: row.key,
+          testid: row.testid,
+          label: row.label,
+          kind: row.kind,
+          totalValue: nutrition.totals[row.key].value,
+          perServingValue: nutrition.perServing[row.key].value,
+        }))}
+      />
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <div data-testid="nutrition-totals" className="flex flex-col gap-1">
-          <h2 className="text-lg font-medium">Totals</h2>
-          {NUTRIENT_ROWS.map((row) => (
-            <div key={row.key} className="flex items-center justify-between gap-4 text-sm">
-              <span className="text-muted-foreground">{row.label}</span>
-              <span data-testid={`nutrition-total-${row.testid}`} className="font-mono tabular-nums">
-                {formatNutritionForDisplay(nutrition.totals[row.key].value, row.kind)}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div data-testid="nutrition-per-serving" className="flex flex-col gap-1">
-          <h2 className="text-lg font-medium">Per serving</h2>
-          {NUTRIENT_ROWS.map((row) => (
-            <div key={row.key} className="flex items-center justify-between gap-4 text-sm">
-              <span className="text-muted-foreground">{row.label}</span>
-              <span data-testid={`nutrition-per-serving-${row.testid}`} className="font-mono tabular-nums">
-                {formatNutritionForDisplay(nutrition.perServing[row.key].value, row.kind)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* openspec: qol-nav-scale-delete — same confirm-dialog delete as the
+          edit page (design D3). */}
+      <DeleteRecipeButton recipeId={recipe.id} />
     </div>
   );
 }

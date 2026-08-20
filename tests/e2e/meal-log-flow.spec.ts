@@ -29,7 +29,7 @@ test.describe("Meal Log flow", () => {
 
   test("create an ingredient", async ({ page }) => {
     await page.goto("/meal-log/ingredients");
-    await expect(page.getByRole("heading", { level: 1, name: "Meal Log Ingredients" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Meals Ingredients" })).toBeVisible();
 
     await page.getByRole("textbox", { name: "Name" }).fill(INGREDIENT_NAME);
     await page.getByRole("spinbutton", { name: "Calories (kcal)" }).fill("100");
