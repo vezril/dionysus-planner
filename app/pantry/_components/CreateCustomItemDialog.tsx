@@ -38,6 +38,9 @@ type FormValues = {
   sugarPerRef: number | undefined;
   sodiumMgPerRef: number | undefined;
   alcoholGPerRef: number | undefined;
+  saturatedFatGPerRef: number | undefined;
+  transFatGPerRef: number | undefined;
+  cholesterolMgPerRef: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   brand: string | undefined;
   barcode: string | undefined;
@@ -69,6 +72,9 @@ const DEFAULT_VALUES: FormValues = {
   sugarPerRef: undefined,
   sodiumMgPerRef: undefined,
   alcoholGPerRef: undefined,
+  saturatedFatGPerRef: undefined,
+  transFatGPerRef: undefined,
+  cholesterolMgPerRef: undefined,
   micronutrients: [],
   brand: undefined,
   barcode: undefined,
@@ -89,6 +95,9 @@ const NUTRITION_FIELDS: Array<{ name: keyof FormValues & string; label: string }
   { name: "sugarPerRef", label: "Sugar (g)" },
   { name: "sodiumMgPerRef", label: "Sodium (mg)" },
   { name: "alcoholGPerRef", label: "Alcohol (g)" },
+  { name: "saturatedFatGPerRef", label: "Saturated fat (g)" },
+  { name: "transFatGPerRef", label: "Trans fat (g)" },
+  { name: "cholesterolMgPerRef", label: "Cholesterol (mg)" },
 ];
 
 export function CreateCustomItemDialog() {

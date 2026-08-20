@@ -33,6 +33,9 @@ const NUTRIENT_ROWS: Array<{
   { key: "sugar", testid: "sugar", label: "Sugar", kind: "g" },
   { key: "sodiumMg", testid: "sodium", label: "Sodium", kind: "mg" },
   { key: "alcoholG", testid: "alcohol", label: "Alcohol", kind: "g" },
+  { key: "saturatedFatG", testid: "saturated-fat", label: "Saturated fat", kind: "g" },
+  { key: "transFatG", testid: "trans-fat", label: "Trans fat", kind: "g" },
+  { key: "cholesterolMg", testid: "cholesterol", label: "Cholesterol", kind: "mg" },
 ];
 
 export default async function RecipeDetailPage({ params }: { params: Promise<{ id: string }> }) {

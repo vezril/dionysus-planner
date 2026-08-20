@@ -15,8 +15,8 @@ const base = {
 };
 
 describe("MICRONUTRIENTS registry", () => {
-  it("has the 16 v1 nutrients, each with a label and a µg/mg unit", () => {
-    expect(Object.keys(MICRONUTRIENTS)).toHaveLength(16);
+  it("has the 17 nutrients (16 v1 + phosphorus), each with a label and a µg/mg unit", () => {
+    expect(Object.keys(MICRONUTRIENTS)).toHaveLength(17);
     for (const def of Object.values(MICRONUTRIENTS)) {
       expect(def.label.length).toBeGreaterThan(0);
       expect(["µg", "mg"]).toContain(def.unit);

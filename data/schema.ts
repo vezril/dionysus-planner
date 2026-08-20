@@ -26,6 +26,10 @@ export const ingredient = sqliteTable(
     sodiumMgPerRef: real("sodiumMgPerRef"),
     // openspec: alcohol-tracking — optional, grams per reference (null = not recorded).
     alcoholGPerRef: real("alcoholGPerRef"),
+    // openspec: expanded-nutrients — optional label values (null = not recorded).
+    saturatedFatGPerRef: real("saturatedFatGPerRef"),
+    transFatGPerRef: real("transFatGPerRef"),
+    cholesterolMgPerRef: real("cholesterolMgPerRef"),
     source: text("source", { enum: ["SEEDED", "CUSTOM"] }).notNull(),
     overridden: integer("overridden", { mode: "boolean" }).notNull().default(false),
     // openspec: custom-pantry-items — product identity for branded items

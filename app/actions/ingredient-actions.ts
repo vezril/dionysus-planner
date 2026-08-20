@@ -52,6 +52,9 @@ function resolveNutrition(data: {
   sugarPerRef?: number | null;
   sodiumMgPerRef?: number | null;
   alcoholGPerRef?: number | null;
+  saturatedFatGPerRef?: number | null;
+  transFatGPerRef?: number | null;
+  cholesterolMgPerRef?: number | null;
   nutritionBasisQuantity?: number | null;
   nutritionBasisUnit?: string | null;
 }): { ok: true; values: NutritionFieldValues; factor: number } | { ok: false; error: ActionError } {
@@ -64,6 +67,9 @@ function resolveNutrition(data: {
     sugarPerRef: data.sugarPerRef ?? null,
     sodiumMgPerRef: data.sodiumMgPerRef ?? null,
     alcoholGPerRef: data.alcoholGPerRef ?? null,
+    saturatedFatGPerRef: data.saturatedFatGPerRef ?? null,
+    transFatGPerRef: data.transFatGPerRef ?? null,
+    cholesterolMgPerRef: data.cholesterolMgPerRef ?? null,
   };
   if (data.nutritionBasisQuantity == null || data.nutritionBasisUnit == null) {
     return { ok: true, values, factor: 1 };

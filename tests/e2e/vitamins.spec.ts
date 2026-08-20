@@ -22,7 +22,7 @@ test.describe("vitamin tracking", () => {
     await dialog.getByRole("spinbutton", { name: "Calories" }).fill("0");
     await dialog.getByRole("spinbutton", { name: "Protein" }).fill("0");
     await dialog.getByRole("spinbutton", { name: "Carbs" }).fill("0");
-    await dialog.getByRole("spinbutton", { name: "Fat" }).fill("0");
+    await dialog.getByRole("spinbutton", { name: "Fat (g)", exact: true }).fill("0");
 
     await dialog.getByRole("button", { name: "Add micronutrient" }).click();
     await dialog.getByRole("combobox", { name: "Micronutrient" }).click();

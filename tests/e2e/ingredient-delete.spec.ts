@@ -62,7 +62,7 @@ test.describe("S-303 ingredient deletion rules", () => {
     await page.getByRole("spinbutton", { name: "Calories" }).fill("100");
     await page.getByRole("spinbutton", { name: "Protein" }).fill("2");
     await page.getByRole("spinbutton", { name: "Carbs" }).fill("5");
-    await page.getByRole("spinbutton", { name: "Fat" }).fill("1");
+    await page.getByRole("spinbutton", { name: "Fat (g)", exact: true }).fill("1");
     await page.getByRole("button", { name: "Save" }).click();
     await expect(page).toHaveURL(/\/ingredients\/?$/);
   }

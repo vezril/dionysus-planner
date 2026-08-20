@@ -43,6 +43,13 @@
       "when": 1787233228483,
       "tag": "0005_crazy_ezekiel",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1787239351756,
+      "tag": "0006_expanded_nutrients",
+      "breakpoints": true
     }
   ]
 }

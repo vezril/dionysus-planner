@@ -49,7 +49,7 @@ test.describe("nutrition basis + edit details", () => {
     await dialog.getByRole("spinbutton", { name: "Calories" }).fill("150");
     await dialog.getByRole("spinbutton", { name: "Protein" }).fill("0");
     await dialog.getByRole("spinbutton", { name: "Carbs" }).fill("39");
-    await dialog.getByRole("spinbutton", { name: "Fat" }).fill("0");
+    await dialog.getByRole("spinbutton", { name: "Fat (g)", exact: true }).fill("0");
 
     await dialog.getByRole("spinbutton", { name: "On hand now (0 is fine)" }).fill("355");
     await dialog.getByRole("combobox", { name: "Pantry unit" }).click();

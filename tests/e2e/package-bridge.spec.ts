@@ -55,7 +55,7 @@ test.describe("count-via-package-size", () => {
     await dialog.getByRole("spinbutton", { name: "Calories" }).fill("42");
     await dialog.getByRole("spinbutton", { name: "Protein" }).fill("0");
     await dialog.getByRole("spinbutton", { name: "Carbs" }).fill("11");
-    await dialog.getByRole("spinbutton", { name: "Fat" }).fill("0");
+    await dialog.getByRole("spinbutton", { name: "Fat (g)", exact: true }).fill("0");
 
     await dialog.getByRole("spinbutton", { name: "On hand now (0 is fine)" }).fill("1");
     await dialog.getByRole("combobox", { name: "Pantry unit" }).click();

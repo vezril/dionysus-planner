@@ -44,7 +44,7 @@ async function fillRequired(page: Page, dialog: ReturnType<Page["getByTestId"]>,
   await dialog.getByRole("spinbutton", { name: "Calories" }).fill("492");
   await dialog.getByRole("spinbutton", { name: "Protein" }).fill("7");
   await dialog.getByRole("spinbutton", { name: "Carbs" }).fill("61");
-  await dialog.getByRole("spinbutton", { name: "Fat" }).fill("24");
+  await dialog.getByRole("spinbutton", { name: "Fat (g)", exact: true }).fill("24");
 }
 
 async function fillPantryHalf(page: Page, dialog: ReturnType<Page["getByTestId"]>, quantity: string) {

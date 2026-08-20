@@ -100,7 +100,7 @@ async function createCustomIngredient(
   await page.getByRole("spinbutton", { name: "Calories" }).fill(opts.calories ?? "100");
   await page.getByRole("spinbutton", { name: "Protein" }).fill(opts.protein ?? "5");
   await page.getByRole("spinbutton", { name: "Carbs" }).fill(opts.carbs ?? "10");
-  await page.getByRole("spinbutton", { name: "Fat" }).fill(opts.fat ?? "2");
+  await page.getByRole("spinbutton", { name: "Fat (g)", exact: true }).fill(opts.fat ?? "2");
   if (opts.sugar !== undefined) {
     await page.getByRole("spinbutton", { name: "Sugar" }).fill(opts.sugar);
   }

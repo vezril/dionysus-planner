@@ -20,6 +20,9 @@ export interface CookLineIngredient {
   carbsPerRef: number;
   fatPerRef: number;
   sodiumMgPerRef: number | null;
+  saturatedFatGPerRef?: number | null;
+  transFatGPerRef?: number | null;
+  cholesterolMgPerRef?: number | null;
 }
 
 export interface CookLine {
@@ -139,9 +142,18 @@ export function mirrorNutritionPerCanonicalUnit(
     carbsG: ingredient.carbsPerRef / ref,
     fatG: ingredient.fatPerRef / ref,
     sodiumMg: (ingredient.sodiumMgPerRef ?? 0) / ref,
-    micronutrients: Object.fromEntries(
-      micronutrients.map((entry) => [entry.key, entry.amountPerRef / ref]),
-    ),
+    micronutrients: {
+      ...Object.fromEntries(micronutrients.map((entry) => [entry.key, entry.amountPerRef / ref])),
+      // openspec: expanded-nutrients — first-class planner fields ride the
+      // free-form map so service day rollups include them.
+      ...(ingredient.saturatedFatGPerRef != null
+        ? { saturatedFatG: ingredient.saturatedFatGPerRef / ref }
+        : {}),
+      ...(ingredient.transFatGPerRef != null ? { transFatG: ingredient.transFatGPerRef / ref } : {}),
+      ...(ingredient.cholesterolMgPerRef != null
+        ? { cholesterolMg: ingredient.cholesterolMgPerRef / ref }
+        : {}),
+    },
   };
 }
 

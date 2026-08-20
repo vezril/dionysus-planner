@@ -26,6 +26,8 @@ export const MICRONUTRIENTS: Record<string, MicronutrientDef> = {
   magnesium: { label: "Magnesium", unit: "mg" },
   potassium: { label: "Potassium", unit: "mg" },
   zinc: { label: "Zinc", unit: "mg" },
+  // openspec: expanded-nutrients
+  phosphorus: { label: "Phosphorus", unit: "mg" },
 };
 
 export interface MicronutrientEntry {
@@ -41,3 +43,15 @@ export function scaleMicronutrients(entries: MicronutrientEntry[], factor: numbe
     amountPerRef: Math.round(entry.amountPerRef * factor * 10_000) / 10_000,
   }));
 }
+
+/**
+ * openspec: expanded-nutrients — labels for keys the cook mirror sends
+ * through the service's free-form micronutrient map that are NOT registry
+ * micronutrients (they're first-class planner fields). Used only for
+ * display on the Inventory day view.
+ */
+export const MIRROR_EXTRA_LABELS: Record<string, { label: string; unit: string }> = {
+  saturatedFatG: { label: "Saturated fat", unit: "g" },
+  transFatG: { label: "Trans fat", unit: "g" },
+  cholesterolMg: { label: "Cholesterol", unit: "mg" },
+};

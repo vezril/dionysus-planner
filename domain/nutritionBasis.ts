@@ -58,6 +58,9 @@ export interface NutritionFieldValues {
   sugarPerRef: number | null;
   sodiumMgPerRef: number | null;
   alcoholGPerRef: number | null;
+  saturatedFatGPerRef: number | null;
+  transFatGPerRef: number | null;
+  cholesterolMgPerRef: number | null;
 }
 
 /** Rounded to 4 decimals — far below nutritional significance, keeps
@@ -79,5 +82,8 @@ export function scaleNutritionFields(
     sugarPerRef: fields.sugarPerRef == null ? null : scale(fields.sugarPerRef, factor),
     sodiumMgPerRef: fields.sodiumMgPerRef == null ? null : scale(fields.sodiumMgPerRef, factor),
     alcoholGPerRef: fields.alcoholGPerRef == null ? null : scale(fields.alcoholGPerRef, factor),
+    saturatedFatGPerRef: fields.saturatedFatGPerRef == null ? null : scale(fields.saturatedFatGPerRef, factor),
+    transFatGPerRef: fields.transFatGPerRef == null ? null : scale(fields.transFatGPerRef, factor),
+    cholesterolMgPerRef: fields.cholesterolMgPerRef == null ? null : scale(fields.cholesterolMgPerRef, factor),
   };
 }

@@ -26,6 +26,9 @@ export const customPantryItemSchema = z
     sugarPerRef: optionalNonNegative,
     sodiumMgPerRef: optionalNonNegative,
     alcoholGPerRef: optionalNonNegative,
+    saturatedFatGPerRef: optionalNonNegative,
+    transFatGPerRef: optionalNonNegative,
+    cholesterolMgPerRef: optionalNonNegative,
     // openspec: vitamin-tracking — sparse micronutrient rows (registry
     // keys, per-reference amounts, no duplicates).
     micronutrients: z

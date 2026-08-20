@@ -40,6 +40,9 @@ export interface SeedRow {
   sugarPerRef: number | null;
   sodiumMgPerRef: number | null;
   alcoholGPerRef?: number | null;
+  saturatedFatGPerRef?: number | null;
+  transFatGPerRef?: number | null;
+  cholesterolMgPerRef?: number | null;
 }
 
 type Db = BetterSQLite3Database<typeof schema>;
@@ -69,6 +72,9 @@ export async function seed(db: Db, rows: SeedRow[]): Promise<void> {
             sugarPerRef: row.sugarPerRef,
             sodiumMgPerRef: row.sodiumMgPerRef,
             alcoholGPerRef: row.alcoholGPerRef ?? null,
+            saturatedFatGPerRef: row.saturatedFatGPerRef ?? null,
+            transFatGPerRef: row.transFatGPerRef ?? null,
+            cholesterolMgPerRef: row.cholesterolMgPerRef ?? null,
             source: "SEEDED",
             overridden: false,
             createdAt: timestamp,

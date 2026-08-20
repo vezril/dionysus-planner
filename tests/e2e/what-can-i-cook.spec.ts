@@ -86,7 +86,7 @@ async function createCustomIngredient(page: Page, name: string): Promise<void> {
   await page.getByRole("spinbutton", { name: "Calories" }).fill("100");
   await page.getByRole("spinbutton", { name: "Protein" }).fill("5");
   await page.getByRole("spinbutton", { name: "Carbs" }).fill("10");
-  await page.getByRole("spinbutton", { name: "Fat" }).fill("2");
+  await page.getByRole("spinbutton", { name: "Fat (g)", exact: true }).fill("2");
 
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page).toHaveURL(/\/ingredients\/?$/);

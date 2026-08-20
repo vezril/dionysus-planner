@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MICRONUTRIENTS } from "@/domain/micronutrients";
+import { MICRONUTRIENTS, MIRROR_EXTRA_LABELS } from "@/domain/micronutrients";
 import { LogPortionButton } from "./batches/_components/LogPortionButton";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { formatInstantIn, resolveDionysusTimezone, todayIsoDateIn } from "@/app/lib/dionysusTimezone";
@@ -155,11 +155,11 @@ export default async function MealLogPage({
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([key, amount]) => (
               <div key={key} className="flex flex-col">
-                <span className="text-xs text-muted-foreground">{MICRONUTRIENTS[key]?.label ?? key}</span>
+                <span className="text-xs text-muted-foreground">{MICRONUTRIENTS[key]?.label ?? MIRROR_EXTRA_LABELS[key]?.label ?? key}</span>
                 <span data-testid={`day-log-micronutrient-${key}`} className="text-lg font-semibold">
                   {Math.round(amount * 10) / 10}
                   <span className="ml-1 text-xs font-normal text-muted-foreground">
-                    {MICRONUTRIENTS[key]?.unit ?? ""}
+                    {MICRONUTRIENTS[key]?.unit ?? MIRROR_EXTRA_LABELS[key]?.unit ?? ""}
                   </span>
                 </span>
               </div>
