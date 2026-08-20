@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getIngredientRecordById } from "@/data/ingredients";
 import { getPantryItemDetail } from "@/data/purchases";
 import { computeFreshness } from "@/domain/freshness";
 import { MICRONUTRIENTS } from "@/domain/micronutrients";
@@ -40,6 +41,8 @@ export default async function PantryItemDetailPage({
   if (!detail) notFound();
 
   const { item, ingredient, purchases, micronutrients } = detail;
+  // openspec: generic-products
+  const generic = ingredient.genericOfId !== null ? await getIngredientRecordById(ingredient.genericOfId) : null;
   // openspec: pantry-freshness
   const freshness = item.displayQuantity > 0 ? computeFreshness(item.stockedAt, ingredient.shelfLifeDays, new Date()) : null;
 
@@ -104,7 +107,7 @@ export default async function PantryItemDetailPage({
 
       {/* openspec: custom-pantry-items — product identity, only when at
           least one field is present; generic ingredients render as before. */}
-      {ingredient.brand != null || ingredient.barcode != null || ingredient.packageQuantity != null ? (
+      {ingredient.brand != null || ingredient.barcode != null || ingredient.packageQuantity != null || generic !== null ? (
         <section className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold">Product</h2>
           <dl data-testid="product-panel" className="grid grid-cols-2 gap-x-6 gap-y-1 rounded-md border border-border p-4 sm:grid-cols-3">
@@ -118,6 +121,12 @@ export default async function PantryItemDetailPage({
               <div className="flex flex-col">
                 <dt className="text-xs text-muted-foreground">Barcode</dt>
                 <dd data-testid="product-barcode" className="font-mono text-sm tabular-nums">{ingredient.barcode}</dd>
+              </div>
+            ) : null}
+            {generic !== null ? (
+              <div className="flex flex-col">
+                <dt className="text-xs text-muted-foreground">Generic</dt>
+                <dd data-testid="product-generic" className="text-sm font-medium">{generic.name}</dd>
               </div>
             ) : null}
             {ingredient.packageQuantity != null ? (

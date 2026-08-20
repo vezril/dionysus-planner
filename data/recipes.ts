@@ -15,6 +15,7 @@ import * as pantryRepo from "@/data/repositories/pantryRepo";
 import { computeRecipeNutrition } from "@/domain/nutrition";
 import type { RecipeNutrition } from "@/domain/nutrition";
 import { computeCookableAndNearMatch } from "@/domain/matching";
+import { getGroupedMatchInputs } from "@/data/whatCanICook";
 
 export interface RecipeSummary {
   id: number;
@@ -195,12 +196,13 @@ export async function listRecipeSummariesAnnotated(threshold: number): Promise<A
   try {
     const recipes = await recipeRepo.getAllWithLines(db);
     const tagsByRecipeId = await recipeRepo.getAllTags(db);
-    const pantryIndex = await pantryRepo.getAllAsIndex(db);
     const ingredients = await ingredientRepo.listAll(db);
 
     const ingredientsById = Object.fromEntries(ingredients.map((ingredient) => [ingredient.id, ingredient]));
 
-    const matchResult = computeCookableAndNearMatch(pantryIndex, recipes, threshold);
+    // openspec: generic-products — interchangeable stock for cookability.
+    const { pantryIndex, normalizedRecipes } = await getGroupedMatchInputs(db, recipes);
+    const matchResult = computeCookableAndNearMatch(pantryIndex, normalizedRecipes, threshold);
     const cookabilityByRecipeId = new Map<number, CookabilityStatus>();
     for (const recipe of matchResult.cookable) {
       cookabilityByRecipeId.set(recipe.id, "COOKABLE");

@@ -32,6 +32,9 @@ export const customPantryItemSchema = z
     // openspec: drinks-and-abv
     category: z.enum(["FOOD", "DRINK", "SUPPLEMENT"]).default("FOOD"),
     shelfLifeDays: z.number().gt(0).nullish(),
+    // openspec: generic-products — structural only; existence/level/class
+    // checks live in the action.
+    genericOfId: z.number().int().positive().nullish(),
     // openspec: vitamin-tracking — sparse micronutrient rows (registry
     // keys, per-reference amounts, no duplicates).
     micronutrients: z

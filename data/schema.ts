@@ -35,6 +35,8 @@ export const ingredient = sqliteTable(
     category: text("category", { enum: ["FOOD", "DRINK", "SUPPLEMENT"] }).notNull().default("FOOD"),
     // openspec: pantry-freshness — optional label shelf life.
     shelfLifeDays: real("shelfLifeDays"),
+    // openspec: generic-products — a branded product's generic ("Butter").
+    genericOfId: integer("genericOfId"),
     overridden: integer("overridden", { mode: "boolean" }).notNull().default(false),
     // openspec: custom-pantry-items — product identity for branded items
     // (design.md Decision 1: a branded product IS a custom ingredient, no

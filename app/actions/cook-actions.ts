@@ -11,6 +11,8 @@
 import { revalidatePath } from "next/cache";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { consumeFromPantry, getAllPantryRows, getIngredientRecordById, getPantryList } from "@/data/pantry";
+import { getGenericLinksMap } from "@/data/ingredients";
+import { rootOf } from "@/domain/interchange";
 import { getIngredientMicronutrients } from "@/data/ingredients";
 import { getRecipeDetail } from "@/data/recipes";
 import {
@@ -39,7 +41,18 @@ export interface ActionError {
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: ActionError };
 
-export interface CookPreviewLine extends CookLinePlan {
+export interface CookCandidate {
+  pantryItemId: number;
+  name: string;
+  displayQuantity: number;
+  displayUnit: string;
+}
+
+export interface CookPreviewLine extends Omit<CookLinePlan, "status"> {
+  /** openspec: generic-products — "choice" when several interchangeable
+   * pantry products could satisfy the line. */
+  status: CookLinePlan["status"] | "choice";
+  candidates: CookCandidate[];
   displayQuantity: number;
   displayUnit: string;
   scaledDisplayQuantity: number;
@@ -83,22 +96,57 @@ async function loadPlans(recipeId: number, portions: number) {
   const detail = await getRecipeDetail(recipeId);
   if (!detail) return null;
 
-  const pantryRows = await getAllPantryRows();
-  const rowsByIngredientId = new Map(pantryRows.map((row) => [row.ingredientId, row]));
+  const [pantryRows, pantryList, genericLinks] = await Promise.all([
+    getAllPantryRows(),
+    getPantryList(),
+    getGenericLinksMap(),
+  ]);
+  const nameByPantryItemId = new Map(pantryList.map((row) => [row.id, row.ingredientName]));
   const factor = portions / detail.recipe.servings;
-  const plans = planCookConsumption(
-    detail.lines.map((line) => ({
+
+  // openspec: generic-products — candidates are the STOCKED rows of the
+  // line ingredient's group. One candidate plans as before; several
+  // demand a choice; none is missing.
+  const rowsByRoot = new Map<number, typeof pantryRows>();
+  for (const row of pantryRows) {
+    if (row.quantityCanonical <= 0) continue;
+    const root = rootOf(row.ingredientId, genericLinks);
+    const bucket = rowsByRoot.get(root);
+    if (bucket) bucket.push(row);
+    else rowsByRoot.set(root, [row]);
+  }
+
+  const plans = detail.lines.map((line) => {
+    const cookLine = {
       id: line.id,
       quantityCanonical: line.quantityCanonical,
       entryUnitClass: line.entryUnitClass,
       displayQuantity: line.displayQuantity,
       displayUnit: line.displayUnit,
       ingredient: line.ingredient,
-    })),
-    rowsByIngredientId,
-    factor,
-  );
-  return { detail, pantryRows, plans, factor };
+    };
+    const root = rootOf(line.ingredientId, genericLinks);
+    const candidates = rowsByRoot.get(root) ?? [];
+
+    const planAgainst = (row: (typeof pantryRows)[number] | undefined) =>
+      planCookConsumption(
+        [cookLine],
+        row ? new Map([[line.ingredient.id, { ...row, ingredientId: line.ingredient.id }]]) : new Map(),
+        factor,
+      )[0];
+
+    if (candidates.length <= 1) {
+      return { plan: planAgainst(candidates[0]), candidates, line };
+    }
+    const base = planAgainst(undefined); // mirror math without a row
+    return {
+      plan: { ...base, status: "choice" as const, pantryItemId: null, requiredInPantryBasis: null, availableInPantryBasis: null },
+      candidates,
+      line,
+    };
+  });
+
+  return { detail, pantryRows, plans, factor, genericLinks, rowsByRoot, nameByPantryItemId };
 }
 
 export async function previewCook(recipeId: number, portions: number): Promise<ActionResult<CookPreview>> {
@@ -109,9 +157,8 @@ export async function previewCook(recipeId: number, portions: number): Promise<A
   if (!loaded) {
     return { ok: false, error: { code: "NOT_FOUND", message: "Recipe not found." } };
   }
-  const { detail, pantryRows, plans, factor } = loaded;
-
-  const linesById = new Map(detail.lines.map((line) => [line.id, line]));
+  const { detail, factor } = loaded;
+  const plans = loaded.plans;
   return {
     ok: true,
     data: {
@@ -119,15 +166,18 @@ export async function previewCook(recipeId: number, portions: number): Promise<A
       recipeName: detail.recipe.name,
       servings: detail.recipe.servings,
       portions,
-      lines: plans.map((plan) => {
-        const line = linesById.get(plan.lineId)!;
-        return {
-          ...plan,
-          displayQuantity: line.displayQuantity,
-          displayUnit: line.displayUnit,
-          scaledDisplayQuantity: Math.round(line.displayQuantity * factor * 100) / 100,
-        };
-      }),
+      lines: plans.map(({ plan, candidates, line }) => ({
+        ...plan,
+        candidates: candidates.map((row) => ({
+          pantryItemId: row.id,
+          name: loaded.nameByPantryItemId.get(row.id) ?? `pantry item ${row.id}`,
+          displayQuantity: row.displayQuantity,
+          displayUnit: row.displayUnit,
+        })),
+        displayQuantity: line.displayQuantity,
+        displayUnit: line.displayUnit,
+        scaledDisplayQuantity: Math.round(line.displayQuantity * factor * 100) / 100,
+      })),
       pantryOptions: (await getPantryList()).map((row) => ({
         pantryItemId: row.id,
         ingredientId: row.ingredientId,
@@ -167,7 +217,7 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
   if (!loaded) {
     return { ok: false, error: { code: "NOT_FOUND", message: "Recipe not found." } };
   }
-  const { detail, plans, pantryRows } = loaded;
+  const { detail, plans, pantryRows, factor } = loaded;
   const pantryRowById = new Map(pantryRows.map((row) => [row.id, row]));
   const choiceByLineId = new Map(choices.map((choice) => [choice.lineId, choice]));
 
@@ -177,7 +227,7 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
   const ignored: string[] = [];
   const substituted: Array<{ name: string; substituteName: string }> = [];
 
-  for (const plan of plans) {
+  for (const { plan, candidates, line } of plans) {
     const choice = choiceByLineId.get(plan.lineId);
     const action = choice?.action ?? "consume";
 
@@ -230,6 +280,56 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
         },
       };
     }
+
+    // openspec: generic-products — a multi-candidate line must say which
+    // product is used; the chosen row is re-planned server-side.
+    const usePantryItemId = choice?.action === "consume" ? choice.usePantryItemId : undefined;
+    if (plan.status === "choice" || usePantryItemId !== undefined) {
+      const chosenId = usePantryItemId;
+      if (chosenId === undefined) {
+        return {
+          ok: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: `Several products can cover "${plan.ingredientName}" — pick which one you're using.`,
+          },
+        };
+      }
+      const chosenRow = candidates.find((candidate) => candidate.id === chosenId);
+      if (!chosenRow) {
+        return {
+          ok: false,
+          error: { code: "VALIDATION_ERROR", message: `That product can't cover "${plan.ingredientName}".` },
+        };
+      }
+      const rePlanned = planCookConsumption(
+        [
+          {
+            id: line.id,
+            quantityCanonical: line.quantityCanonical,
+            entryUnitClass: line.entryUnitClass,
+            displayQuantity: line.displayQuantity,
+            displayUnit: line.displayUnit,
+            ingredient: line.ingredient,
+          },
+        ],
+        new Map([[line.ingredient.id, { ...chosenRow, ingredientId: line.ingredient.id }]]),
+        factor,
+      )[0];
+      if (rePlanned.requiredInPantryBasis === null) {
+        return {
+          ok: false,
+          error: { code: "VALIDATION_ERROR", message: `"${plan.ingredientName}" cannot resolve against that product.` },
+        };
+      }
+      decrements.push({
+        pantryItemId: chosenRow.id,
+        amountInRowBasis: rePlanned.requiredInPantryBasis,
+        name: plan.ingredientName,
+      });
+      continue;
+    }
+
     decrements.push({
       pantryItemId: plan.pantryItemId!,
       amountInRowBasis: plan.requiredInPantryBasis!,
@@ -243,7 +343,7 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
     const baseUrl = resolveDionysusServiceUrl();
     const linesById = new Map(detail.lines.map((line) => [line.id, line]));
 
-    const mirrorable = plans.filter((plan) => plan.mirrorQuantityCanonical !== null);
+    const mirrorable = plans.map(({ plan }) => plan).filter((plan) => plan.mirrorQuantityCanonical !== null);
     if (mirrorable.length === 0) {
       return {
         ok: false,

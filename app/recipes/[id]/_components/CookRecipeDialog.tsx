@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UNITS } from "@/domain/units";
 
 type LineChoice =
-  | { action: "consume" }
+  | { action: "consume"; usePantryItemId?: number }
   | { action: "ignore" }
   | { action: "substitute"; substitutePantryItemId?: number; substituteQuantity?: number; substituteUnit?: string };
 
@@ -33,6 +33,7 @@ const STATUS_LABEL: Record<string, string> = {
   insufficient: "not enough — will consume to zero",
   missing: "not in pantry",
   unresolved: "cannot compare units",
+  choice: "several products fit — pick one",
 };
 
 export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; portions: number }) {
@@ -74,6 +75,13 @@ export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; por
         choice?.action === "substitute" &&
         (!choice.substitutePantryItemId || !choice.substituteQuantity || !choice.substituteUnit)
       );
+    }) ?? false;
+
+  // openspec: generic-products — every multi-product line needs a pick.
+  const productChoiceIncomplete =
+    preview?.lines.some((line) => {
+      const choice = choices[line.lineId];
+      return line.status === "choice" && !(choice?.action !== "consume" || choice.usePantryItemId);
     }) ?? false;
 
   async function handleConfirm() {
@@ -179,6 +187,30 @@ export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; por
                         {STATUS_LABEL[line.status]}
                       </span>
                     </div>
+                    {line.status === "choice" ? (
+                      <div className="flex flex-wrap items-center gap-3" data-testid="product-choice">
+                        {line.candidates.map((candidate) => {
+                          const current = choices[line.lineId];
+                          const checked = current?.action === "consume" && current.usePantryItemId === candidate.pantryItemId;
+                          return (
+                            <label key={candidate.pantryItemId} className="flex items-center gap-1 text-sm">
+                              <input
+                                type="radio"
+                                name={`product-choice-${line.lineId}`}
+                                checked={checked}
+                                onChange={() =>
+                                  setChoice(line.lineId, { action: "consume", usePantryItemId: candidate.pantryItemId })
+                                }
+                              />
+                              {candidate.name}
+                              <span className="text-xs text-muted-foreground">
+                                ({candidate.displayQuantity} {candidate.displayUnit})
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : null}
                     {needsChoice ? (
                       <div className="flex flex-wrap items-center gap-3">
                         <label className="flex items-center gap-1 text-sm">
@@ -291,7 +323,7 @@ export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; por
             <Button
               type="button"
               data-testid="cook-confirm"
-              disabled={preview === null || busy || substituteIncomplete}
+              disabled={preview === null || busy || substituteIncomplete || productChoiceIncomplete}
               onClick={() => void handleConfirm()}
             >
               {busy ? "Cooking…" : "Confirm cook"}

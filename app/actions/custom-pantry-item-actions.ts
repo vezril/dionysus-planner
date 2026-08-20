@@ -9,7 +9,7 @@
  */
 import { revalidatePath } from "next/cache";
 import { scaleMicronutrients } from "@/domain/micronutrients";
-import { setIngredientMicronutrients } from "@/data/ingredients";
+import { getIngredientRecordById, setIngredientMicronutrients } from "@/data/ingredients";
 import { customPantryItemSchema } from "@/domain/validation/customPantryItem.schema";
 import { toCanonical } from "@/domain/units";
 import { nutritionScaleFactor, scaleNutritionFields } from "@/domain/nutritionBasis";
@@ -40,6 +40,23 @@ const DUPLICATE_BARCODE_ERROR: ActionResult<never> = {
  * (same pre-check-then-catch pattern as deleteIngredient's REFERENCED
  * handling) — never a raw constraint message.
  */
+
+/**
+ * openspec: generic-products — a product's generic must exist, be a
+ * generic itself (one level), and share the unit class.
+ */
+async function validateGenericLink(
+  genericOfId: number | null | undefined,
+  unitClass: "MASS" | "VOLUME" | "COUNT",
+): Promise<{ ok: true; value: number | null } | { ok: false; message: string }> {
+  if (genericOfId == null) return { ok: true, value: null };
+  const generic = await getIngredientRecordById(genericOfId);
+  if (!generic) return { ok: false, message: "Generic ingredient not found." };
+  if (generic.genericOfId !== null) return { ok: false, message: "That ingredient is itself a product — link to its generic instead." };
+  if (generic.unitClass !== unitClass) return { ok: false, message: `The generic's unit class (${generic.unitClass}) must match.` };
+  return { ok: true, value: genericOfId };
+}
+
 export async function createCustomPantryItem(
   input: unknown,
 ): Promise<ActionResult<CustomPantryItemResult>> {
@@ -100,6 +117,18 @@ export async function createCustomPantryItem(
     basisFactor = factor.factor;
   }
 
+  const genericLink = await validateGenericLink(data.genericOfId, data.unitClass);
+  if (!genericLink.ok) {
+    return {
+      ok: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Custom item input failed validation.",
+        fieldErrors: { genericOfId: [genericLink.message] },
+      },
+    };
+  }
+
   const { quantityCanonical, entryUnitClass } = toCanonical(data.initialQuantity, data.unit);
 
   try {
@@ -108,6 +137,7 @@ export async function createCustomPantryItem(
       unitClass: data.unitClass,
       category: data.category,
       shelfLifeDays: data.shelfLifeDays ?? null,
+      genericOfId: genericLink.value,
       densityGPerMl: data.densityGPerMl ?? null,
       ...nutrition,
       brand: data.brand ?? null,

@@ -10,6 +10,9 @@ import { UNITS } from "@/domain/units";
 const consumeLine = z.object({
   lineId: z.number().int().positive(),
   action: z.literal("consume"),
+  // openspec: generic-products — which interchangeable product to use
+  // when the line's group has several stocked rows.
+  usePantryItemId: z.number().int().positive().optional(),
 });
 
 const ignoreLine = z.object({

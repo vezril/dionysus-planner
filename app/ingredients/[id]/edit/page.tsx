@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { DeleteIngredientButton } from "@/app/ingredients/_components/delete-ingredient-button";
 import { IngredientForm } from "@/app/ingredients/_components/ingredient-form";
-import { getIngredientMicronutrients, getIngredientRecordById } from "@/data/ingredients";
+import { getIngredientMicronutrients, getIngredientRecordById, listGenericOptions } from "@/data/ingredients";
 
 /**
  * S-302 edit/override form (FR-3). RSC wrapper (ADR-002) that fetches the
@@ -38,6 +38,7 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
       <IngredientForm
         mode="edit"
         ingredientId={ingredient.id}
+        genericOptions={await listGenericOptions()}
         initialValues={{
           name: ingredient.name,
           unitClass: ingredient.unitClass,
@@ -58,6 +59,7 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
           cholesterolMgPerRef: ingredient.cholesterolMgPerRef,
           category: ingredient.category,
           shelfLifeDays: ingredient.shelfLifeDays,
+          genericOfId: ingredient.genericOfId,
           micronutrients,
           densityGPerMl: ingredient.densityGPerMl,
         }}

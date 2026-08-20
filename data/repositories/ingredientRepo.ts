@@ -31,6 +31,7 @@ export interface IngredientRecord {
   source: "SEEDED" | "CUSTOM";
   category: "FOOD" | "DRINK" | "SUPPLEMENT";
   shelfLifeDays: number | null;
+  genericOfId: number | null;
   overridden: boolean;
   // openspec: custom-pantry-items — optional product identity (design.md D1).
   brand: string | null;
@@ -66,6 +67,7 @@ export type IngredientUpdatePatch = Partial<
     | "sugarPerRef"
     | "category"
     | "shelfLifeDays"
+    | "genericOfId"
     | "sodiumMgPerRef"
     | "alcoholGPerRef"
     | "saturatedFatGPerRef"
@@ -99,6 +101,7 @@ function toRecord(row: typeof ingredient.$inferSelect): IngredientRecord {
     cholesterolMgPerRef: row.cholesterolMgPerRef,
     category: row.category,
     shelfLifeDays: row.shelfLifeDays,
+    genericOfId: row.genericOfId,
     source: row.source,
     overridden: row.overridden,
     brand: row.brand,
@@ -136,6 +139,7 @@ export async function create(db: Db, input: IngredientCreateInput): Promise<Ingr
       cholesterolMgPerRef: input.cholesterolMgPerRef,
       category: input.category,
       shelfLifeDays: input.shelfLifeDays,
+      genericOfId: input.genericOfId,
       source: input.source,
       overridden: input.overridden ?? false,
       brand: input.brand ?? null,
@@ -233,4 +237,19 @@ export function replaceMicronutrients(db: Db, ingredientId: number, entries: Mic
         .run();
     }
   });
+}
+
+/** openspec: generic-products — id → genericOfId for every ingredient
+ * (group-root resolution) plus products linked to a given generic. */
+export async function getGenericLinks(db: Db): Promise<Map<number, number | null>> {
+  const rows = await db.select({ id: ingredient.id, genericOfId: ingredient.genericOfId }).from(ingredient);
+  return new Map(rows.map((row) => [row.id, row.genericOfId]));
+}
+
+export async function listProductsOfGeneric(db: Db, genericId: number): Promise<Array<{ id: number; name: string }>> {
+  const rows = await db
+    .select({ id: ingredient.id, name: ingredient.name })
+    .from(ingredient)
+    .where(eq(ingredient.genericOfId, genericId));
+  return rows;
 }
