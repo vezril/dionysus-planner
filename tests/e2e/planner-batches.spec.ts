@@ -68,7 +68,10 @@ test.describe("planner ready-to-eat", () => {
   test("the batch appears as ready to eat, plans onto a day, and availability shrinks", async ({ page }) => {
     await page.goto("/planner");
     const ready = page.getByTestId("planner-ready-batch").filter({ hasText: RECIPE_NAME });
-    await expect(ready).toContainText("4 portions available");
+    // Delta-based: a persistent local planner DB can hold stale batch plans
+    // against a recreated service container's reused ids.
+    await expect(ready).toBeVisible();
+    const before = Number((await ready.textContent())!.match(/(\d+(?:\.\d+)?) portions available/)![1]);
 
     await page.getByRole("combobox", { name: "Plan recipe" }).click();
     await page.getByRole("option", { name: new RegExp(`${RECIPE_NAME} — ready to eat`) }).click();
@@ -79,7 +82,7 @@ test.describe("planner ready-to-eat", () => {
     await expect(entry).toBeVisible();
     await expect(entry).toContainText("3 portions");
     await expect(page.getByTestId("planner-ready-batch").filter({ hasText: RECIPE_NAME })).toContainText(
-      "1 portions available",
+      `${before - 3} portions available`,
     );
     // Batch plans never touch the shopping list.
     await expect(page.getByTestId("shopping-list-empty")).toBeVisible();

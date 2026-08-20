@@ -226,6 +226,13 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
   const decrements: Array<{ pantryItemId: number; amountInRowBasis: number; name: string }> = [];
   const ignored: string[] = [];
   const substituted: Array<{ name: string; substituteName: string }> = [];
+  // openspec: batch-nutrition-and-abv-entry — what ACTUALLY goes in the pot,
+  // per line, in authored basis: drives the service recipe mirror.
+  type ActualLine = {
+    ingredient: NonNullable<Awaited<ReturnType<typeof getIngredientRecordById>>>;
+    quantityCanonical: number;
+  };
+  const actualByLineId = new Map<number, ActualLine>();
 
   for (const { plan, candidates, line } of plans) {
     const choice = choiceByLineId.get(plan.lineId);
@@ -267,6 +274,24 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
         name: substituteIngredient?.name ?? `pantry item ${substituteRow.id}`,
       });
       substituted.push({ name: plan.ingredientName, substituteName: substituteIngredient?.name ?? "?" });
+      if (substituteIngredient) {
+        const inSubstituteClass = resolveQuantityForComparison(
+          entered.quantityCanonical,
+          entered.entryUnitClass,
+          substituteIngredient.unitClass,
+          substituteIngredient.densityGPerMl,
+          substituteIngredient.packageQuantity,
+          substituteIngredient.packageUnit,
+        );
+        if (inSubstituteClass !== "UNRESOLVED") {
+          // Entered quantity is for THIS cook (factor-scaled) — de-scale to
+          // the mirror's authored basis.
+          actualByLineId.set(plan.lineId, {
+            ingredient: substituteIngredient,
+            quantityCanonical: inSubstituteClass / factor,
+          });
+        }
+      }
       continue;
     }
 
@@ -327,6 +352,17 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
         amountInRowBasis: rePlanned.requiredInPantryBasis,
         name: plan.ingredientName,
       });
+      if (plan.mirrorQuantityCanonical !== null) {
+        const pickedIngredient = await getIngredientRecordById(chosenRow.ingredientId);
+        if (pickedIngredient) {
+          // Same class as the generic (write-time invariant) — the authored
+          // canonical amount carries over; the NUTRITION is the pick's.
+          actualByLineId.set(plan.lineId, {
+            ingredient: pickedIngredient,
+            quantityCanonical: plan.mirrorQuantityCanonical,
+          });
+        }
+      }
       continue;
     }
 
@@ -351,12 +387,25 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
       };
     }
 
+    // openspec: batch-nutrition-and-abv-entry — mirror what actually went
+    // in: pick/substitute per line, authored ingredient otherwise
+    // (ignored lines included — skipped stock, not stomach).
+    const mirrorLines = mirrorable.map((plan) => {
+      const authored = linesById.get(plan.lineId)!.ingredient;
+      const actual = actualByLineId.get(plan.lineId);
+      return {
+        lineId: plan.lineId,
+        ingredient: actual?.ingredient ?? authored,
+        quantityCanonical: actual?.quantityCanonical ?? plan.mirrorQuantityCanonical!,
+      };
+    });
+
     const serviceIngredients = await serviceListIngredients(baseUrl);
     const serviceIngredientIdByName = new Map(
       serviceIngredients.filter((item) => item.id !== null).map((item) => [item.name, item.id as number]),
     );
-    for (const plan of mirrorable) {
-      const ingredient = linesById.get(plan.lineId)!.ingredient;
+    for (const mirrorLine of mirrorLines) {
+      const ingredient = mirrorLine.ingredient;
       if (!serviceIngredientIdByName.has(ingredient.name)) {
         // openspec: meal-micronutrients — only a NEW mirror pays the fetch.
         const micronutrients = await getIngredientMicronutrients(ingredient.id);
@@ -370,20 +419,33 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
       }
     }
 
+    const desiredLines = mirrorLines.map((mirrorLine) => ({
+      ingredientId: serviceIngredientIdByName.get(mirrorLine.ingredient.name)!,
+      quantity: Math.round(mirrorLine.quantityCanonical * 10_000) / 10_000,
+      unit: canonicalUnitForClass(mirrorLine.ingredient.unitClass),
+    }));
+    const signatureOf = (lines: Array<{ ingredientId: number; quantity: number; unit: string }>): string =>
+      lines
+        .map((line) => `${line.ingredientId}|${Math.round(line.quantity * 10_000) / 10_000}|${line.unit}`)
+        .sort()
+        .join(";");
+    const desiredSignature = signatureOf(desiredLines);
+
+    // Reuse only an EXACT variant (name + line signature) — a Kirkland cook
+    // and a Lactantia cook are different service recipes with the same name.
     const serviceRecipes = await serviceListRecipes(baseUrl);
-    let mirrorRecipeId = serviceRecipes.find((recipe) => recipe.name === detail.recipe.name)?.id ?? null;
+    let mirrorRecipeId =
+      serviceRecipes.find(
+        (recipe) =>
+          recipe.name === detail.recipe.name &&
+          recipe.servings === detail.recipe.servings &&
+          signatureOf(recipe.lines) === desiredSignature,
+      )?.id ?? null;
     if (mirrorRecipeId === null) {
       const created = await serviceCreateRecipe(baseUrl, {
         name: detail.recipe.name,
         servings: detail.recipe.servings,
-        lines: mirrorable.map((plan) => {
-          const ingredient = linesById.get(plan.lineId)!.ingredient;
-          return {
-            ingredientId: serviceIngredientIdByName.get(ingredient.name)!,
-            quantity: plan.mirrorQuantityCanonical!,
-            unit: canonicalUnitForClass(ingredient.unitClass),
-          };
-        }),
+        lines: desiredLines,
       });
       mirrorRecipeId = created.id;
     }

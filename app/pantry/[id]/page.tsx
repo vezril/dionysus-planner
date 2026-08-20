@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getIngredientRecordById } from "@/data/ingredients";
 import { getPantryItemDetail } from "@/data/purchases";
+import { gramsPer100MlToAbvPercent } from "@/domain/abv";
 import { computeFreshness } from "@/domain/freshness";
 import { MICRONUTRIENTS } from "@/domain/micronutrients";
 import { computePriceStats } from "@/domain/priceStats";
@@ -58,7 +59,14 @@ export default async function PantryItemDetailPage({
     { label: "Fiber", value: ingredient.fiberPerRef, unit: "g" },
     { label: "Sugar", value: ingredient.sugarPerRef, unit: "g" },
     { label: "Sodium", value: ingredient.sodiumMgPerRef, unit: "mg" },
-    { label: "Alcohol", value: ingredient.alcoholGPerRef, unit: "g" },
+    {
+      label: "Alcohol",
+      value: ingredient.alcoholGPerRef,
+      unit:
+        ingredient.unitClass === "VOLUME" && ingredient.category === "DRINK" && ingredient.alcoholGPerRef != null
+          ? `g (${gramsPer100MlToAbvPercent(ingredient.alcoholGPerRef)}% ABV)`
+          : "g",
+    },
     { label: "Saturated fat", value: ingredient.saturatedFatGPerRef, unit: "g" },
     { label: "Trans fat", value: ingredient.transFatGPerRef, unit: "g" },
     { label: "Cholesterol", value: ingredient.cholesterolMgPerRef, unit: "mg" },

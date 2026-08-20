@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ingredientSchema, type IngredientSchemaInput } from "@/domain/validation/ingredient.schema";
+import { gramsPer100MlToAbvPercent } from "@/domain/abv";
 import { referenceBasisFor, unitsForClass } from "@/domain/nutritionBasis";
 import { MICRONUTRIENTS } from "@/domain/micronutrients";
 import { UNITS } from "@/domain/units";
@@ -61,6 +62,7 @@ type FormValues = {
   category: "FOOD" | "DRINK" | "SUPPLEMENT" | undefined;
   shelfLifeDays: number | undefined;
   genericOfId: number | undefined;
+  alcoholAbvPercent: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   densityGPerMl: number | undefined;
 };
@@ -115,6 +117,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       category: "FOOD",
       shelfLifeDays: undefined,
       genericOfId: undefined,
+      alcoholAbvPercent: undefined,
       micronutrients: [],
       densityGPerMl: undefined,
     };
@@ -144,6 +147,11 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     category: initial.category,
     shelfLifeDays: initial.shelfLifeDays ?? undefined,
     genericOfId: initial.genericOfId ?? undefined,
+    // openspec: batch-nutrition-and-abv-entry — VOLUME drinks edit in ABV.
+    alcoholAbvPercent:
+      initial.unitClass === "VOLUME" && initial.category === "DRINK" && initial.alcoholGPerRef != null
+        ? gramsPer100MlToAbvPercent(initial.alcoholGPerRef)
+        : undefined,
     micronutrients: initial.micronutrients ?? [],
     densityGPerMl: initial.densityGPerMl ?? undefined,
   };
@@ -236,6 +244,7 @@ export function IngredientForm({
   // unit class, defaulting to that class's reference (100 g / 100 mL / 1)
   // so an untouched form behaves exactly as before.
   const watchedUnitClass = watch("unitClass");
+  const watchedCategory = watch("category");
   const watchedBasisQuantity = watch("nutritionBasisQuantity");
   const watchedBasisUnit = watch("nutritionBasisUnit");
   useEffect(() => {
@@ -488,7 +497,30 @@ export function IngredientForm({
         {watchedUnitClass === "VOLUME" ? "mL" : watchedUnitClass === "COUNT" ? "count" : "g"} automatically.
       </p>
 
-      {NUMBER_FIELDS.map(({ name, label }) => (
+      {/* openspec: batch-nutrition-and-abv-entry — VOLUME drinks enter
+          label ABV instead of grams; stored as grams via ethanol density. */}
+      {watchedUnitClass === "VOLUME" && watchedCategory === "DRINK" ? (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="ingredient-alcoholAbvPercent" className="text-sm font-medium text-foreground">
+            Alcohol (% ABV)
+          </label>
+          <Input
+            id="ingredient-alcoholAbvPercent"
+            type="number"
+            step="any"
+            className="max-w-sm"
+            {...register("alcoholAbvPercent", { setValueAs: toOptionalNumber })}
+          />
+          {errors.alcoholAbvPercent ? (
+            <p data-testid="field-error-alcoholAbvPercent" className="text-sm text-destructive">
+              {errors.alcoholAbvPercent.message}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      {NUMBER_FIELDS.filter(
+        ({ name }) => !(name === "alcoholGPerRef" && watchedUnitClass === "VOLUME" && watchedCategory === "DRINK"),
+      ).map(({ name, label }) => (
         <div key={name} className="flex flex-col gap-1">
           <label htmlFor={`ingredient-${name}`} className="text-sm font-medium text-foreground">
             {label}

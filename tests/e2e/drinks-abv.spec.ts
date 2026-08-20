@@ -37,7 +37,9 @@ test.describe("drinks and ABV", () => {
     await dialog.getByRole("spinbutton", { name: "Protein" }).fill("0");
     await dialog.getByRole("spinbutton", { name: "Carbs" }).fill("0");
     await dialog.getByRole("spinbutton", { name: "Fat (g)", exact: true }).fill("0");
-    await dialog.getByRole("spinbutton", { name: "Alcohol" }).fill("31.6");
+    // openspec: batch-nutrition-and-abv-entry — VOLUME drinks enter % ABV
+    // (40% ≈ 31.56 g / 100 mL).
+    await dialog.getByRole("spinbutton", { name: "Alcohol (% ABV)" }).fill("40");
     await dialog.getByRole("spinbutton", { name: "On hand now (0 is fine)" }).fill("750");
     await dialog.getByRole("combobox", { name: "Pantry unit" }).click();
     await page.getByRole("option", { name: "mL", exact: true }).click();
@@ -46,6 +48,7 @@ test.describe("drinks and ABV", () => {
 
     await page.getByTestId("pantry-row").filter({ hasText: VODKA_NAME }).getByRole("link").click();
     await expect(page.getByTestId("category-badge")).toHaveText("DRINK");
+    await expect(page.getByTestId("nutrition-alcohol")).toContainText("40% ABV");
   });
 
   test("a cocktail recipe shows an estimated ABV", async ({ page }) => {

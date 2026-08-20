@@ -12,6 +12,7 @@
  * imports drizzle).
  */
 import { revalidatePath } from "next/cache";
+import { abvPercentToGramsPer100Ml } from "@/domain/abv";
 import { scaleMicronutrients } from "@/domain/micronutrients";
 import { getProductsOfGeneric } from "@/data/ingredients";
 import { ingredientSchema } from "@/domain/validation/ingredient.schema";
@@ -130,6 +131,19 @@ async function validateGenericLink(
   return { ok: true, value: genericOfId };
 }
 
+
+/** openspec: batch-nutrition-and-abv-entry — ABV is a ratio: applied AFTER
+ * any basis scaling, VOLUME items only. */
+function applyAbv(
+  values: NutritionFieldValues,
+  abvPercent: number | null | undefined,
+  unitClass: "MASS" | "VOLUME" | "COUNT",
+): { ok: true; values: NutritionFieldValues } | { ok: false } {
+  if (abvPercent == null) return { ok: true, values };
+  if (unitClass !== "VOLUME") return { ok: false };
+  return { ok: true, values: { ...values, alcoholGPerRef: abvPercentToGramsPer100Ml(abvPercent) } };
+}
+
 export async function createIngredient(input: unknown): Promise<ActionResult<IngredientRecord>> {
   const parsed = ingredientSchema.safeParse(input);
   if (!parsed.success) {
@@ -139,6 +153,11 @@ export async function createIngredient(input: unknown): Promise<ActionResult<Ing
   const data = parsed.data;
   const nutrition = resolveNutrition(data);
   if (!nutrition.ok) return nutrition;
+  const withAbv = applyAbv(nutrition.values, data.alcoholAbvPercent, data.unitClass);
+  if (!withAbv.ok) {
+    return validationError({ alcoholAbvPercent: ["ABV entry needs a volume-class item."] });
+  }
+  nutrition.values = withAbv.values;
   const genericLink = await validateGenericLink(data.genericOfId, data.unitClass);
   if (!genericLink.ok) {
     return validationError({ genericOfId: [genericLink.message] });
@@ -194,6 +213,11 @@ export async function overrideIngredientNutrition(
 
   const nutrition = resolveNutrition(data);
   if (!nutrition.ok) return nutrition;
+  const editWithAbv = applyAbv(nutrition.values, data.alcoholAbvPercent, data.unitClass);
+  if (!editWithAbv.ok) {
+    return validationError({ alcoholAbvPercent: ["ABV entry needs a volume-class item."] });
+  }
+  nutrition.values = editWithAbv.values;
   const editGenericLink = await validateGenericLink(data.genericOfId, data.unitClass);
   if (!editGenericLink.ok) {
     return validationError({ genericOfId: [editGenericLink.message] });

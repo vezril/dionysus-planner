@@ -44,6 +44,7 @@ type FormValues = {
   category: "FOOD" | "DRINK" | "SUPPLEMENT" | undefined;
   shelfLifeDays: number | undefined;
   genericOfId: number | undefined;
+  alcoholAbvPercent: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   brand: string | undefined;
   barcode: string | undefined;
@@ -81,6 +82,7 @@ const DEFAULT_VALUES: FormValues = {
   category: "FOOD",
   shelfLifeDays: undefined,
   genericOfId: undefined,
+  alcoholAbvPercent: undefined,
   micronutrients: [],
   brand: undefined,
   barcode: undefined,
@@ -136,6 +138,7 @@ export function CreateCustomItemDialog({
   // openspec: nutrition-basis-and-edit — basis follows the selected class,
   // defaulting to its reference so an untouched form behaves as before.
   const watchedUnitClass = watch("unitClass");
+  const watchedCategory = watch("category");
   const watchedBasisQuantity = watch("nutritionBasisQuantity");
   const watchedBasisUnit = watch("nutritionBasisUnit");
   useEffect(() => {
@@ -389,7 +392,28 @@ export function CreateCustomItemDialog({
                 </p>
               ) : null}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {NUTRITION_FIELDS.map(({ name, label }) => (
+                {watchedUnitClass === "VOLUME" && watchedCategory === "DRINK" ? (
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="custom-item-alcoholAbvPercent" className="text-sm font-medium">
+                      Alcohol (% ABV)
+                    </label>
+                    <Input
+                      id="custom-item-alcoholAbvPercent"
+                      type="number"
+                      step="any"
+                      {...register("alcoholAbvPercent", { setValueAs: toOptionalNumber })}
+                    />
+                    {errors.alcoholAbvPercent ? (
+                      <p data-testid="field-error-alcoholAbvPercent" className="text-sm text-destructive">
+                        {errors.alcoholAbvPercent.message}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+                {NUTRITION_FIELDS.filter(
+                  ({ name }) =>
+                    !(name === "alcoholGPerRef" && watchedUnitClass === "VOLUME" && watchedCategory === "DRINK"),
+                ).map(({ name, label }) => (
                   <div key={name} className="flex flex-col gap-1">
                     <label htmlFor={`custom-item-${name}`} className="text-sm font-medium">
                       {label}

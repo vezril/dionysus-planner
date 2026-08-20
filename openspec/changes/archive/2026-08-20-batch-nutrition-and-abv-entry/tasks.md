@@ -1,0 +1,3 @@
+- [x] 1.1 Mirror rework: per-line actual ingredient, signature-based service-recipe reuse; integration tests (variant creates, identical reuses, substitute nutrition, ignored keeps authored)
+- [x] 1.2 ABV: abv↔grams helpers; `alcoholAbvPercent` in both schemas (VOLUME-only, basis-exempt) + actions; conditional form input + edit prefill; detail ABV display; tests
+- [x] 1.3 e2e; full gate; walkthrough; train v2.21.0

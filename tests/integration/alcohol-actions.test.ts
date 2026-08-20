@@ -66,4 +66,44 @@ describe("alcohol through the actions", () => {
       expect(result.data.alcoholGPerRef).toBeNull();
     }
   });
+
+  describe("ABV entry (openspec: batch-nutrition-and-abv-entry)", () => {
+  it("a VOLUME drink's ABV converts to grams and ignores the nutrition basis", async () => {
+    const { createIngredient } = await import("@/app/actions/ingredient-actions");
+    const result = await createIngredient({
+      name: "ABV Beer",
+      unitClass: "VOLUME",
+      category: "DRINK",
+      caloriesPerRef: 150,
+      proteinPerRef: 1.6,
+      carbsPerRef: 13,
+      fatPerRef: 0,
+      alcoholAbvPercent: 5,
+      nutritionBasisQuantity: 355,
+      nutritionBasisUnit: "mL",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // Calories scale by the basis; ABV does not (a ratio).
+      expect(result.data.caloriesPerRef).toBeCloseTo(42.2535, 4);
+      expect(result.data.alcoholGPerRef).toBe(3.945);
+    }
+  });
+
+  it("ABV on a MASS item is rejected on its own field", async () => {
+    const { createIngredient } = await import("@/app/actions/ingredient-actions");
+    const result = await createIngredient({
+      name: "ABV Bread",
+      unitClass: "MASS",
+      caloriesPerRef: 250,
+      proteinPerRef: 9,
+      carbsPerRef: 49,
+      fatPerRef: 3,
+      alcoholAbvPercent: 5,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.fieldErrors?.alcoholAbvPercent).toBeDefined();
+  });
+});
+
 });
