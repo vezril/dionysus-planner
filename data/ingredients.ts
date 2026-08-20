@@ -187,3 +187,27 @@ export async function removeIngredientRecord(id: number): Promise<void> {
     db.$client.close();
   }
 }
+
+/** openspec: vitamin-tracking — replace-set micronutrient rows + read. */
+export async function setIngredientMicronutrients(
+  ingredientId: number,
+  entries: ingredientRepo.MicronutrientRow[],
+): Promise<void> {
+  const db = createDb();
+  try {
+    ingredientRepo.replaceMicronutrients(db, ingredientId, entries);
+  } finally {
+    db.$client.close();
+  }
+}
+
+export async function getIngredientMicronutrients(
+  ingredientId: number,
+): Promise<ingredientRepo.MicronutrientRow[]> {
+  const db = createDb();
+  try {
+    return await ingredientRepo.getMicronutrients(db, ingredientId);
+  } finally {
+    db.$client.close();
+  }
+}

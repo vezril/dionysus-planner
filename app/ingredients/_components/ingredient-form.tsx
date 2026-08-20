@@ -18,13 +18,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Controller, useForm, type Resolver } from "react-hook-form";
+import { Controller, useFieldArray, useForm, type Resolver } from "react-hook-form";
 import { createIngredient, overrideIngredientNutrition } from "@/app/actions/ingredient-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ingredientSchema, type IngredientSchemaInput } from "@/domain/validation/ingredient.schema";
 import { referenceBasisFor, unitsForClass } from "@/domain/nutritionBasis";
+import { MICRONUTRIENTS } from "@/domain/micronutrients";
 import { UNITS } from "@/domain/units";
 
 const UNIT_CLASS_OPTIONS: Array<{ value: IngredientSchemaInput["unitClass"]; label: string }> = [
@@ -54,6 +55,7 @@ type FormValues = {
   sugarPerRef: number | undefined;
   sodiumMgPerRef: number | undefined;
   alcoholGPerRef: number | undefined;
+  micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   densityGPerMl: number | undefined;
 };
 
@@ -72,6 +74,7 @@ export interface IngredientFormInitialValues {
   sugarPerRef: number | null;
   sodiumMgPerRef: number | null;
   alcoholGPerRef: number | null;
+  micronutrients?: Array<{ key: string; amountPerRef: number }>;
   densityGPerMl: number | null;
 }
 
@@ -94,6 +97,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       sugarPerRef: undefined,
       sodiumMgPerRef: undefined,
       alcoholGPerRef: undefined,
+      micronutrients: [],
       densityGPerMl: undefined,
     };
   }
@@ -116,6 +120,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     sugarPerRef: initial.sugarPerRef ?? undefined,
     sodiumMgPerRef: initial.sodiumMgPerRef ?? undefined,
     alcoholGPerRef: initial.alcoholGPerRef ?? undefined,
+    micronutrients: initial.micronutrients ?? [],
     densityGPerMl: initial.densityGPerMl ?? undefined,
   };
 }
@@ -182,6 +187,9 @@ export function IngredientForm({
     resolver: zodResolver(ingredientSchema) as unknown as Resolver<FormValues>,
     defaultValues: toDefaultValues(initialValues),
   });
+
+  // openspec: vitamin-tracking — repeatable micronutrient rows (D3).
+  const micronutrientRows = useFieldArray({ control, name: "micronutrients" });
 
   // openspec: nutrition-basis-and-edit — the basis follows the selected
   // unit class, defaulting to that class's reference (100 g / 100 mL / 1)
@@ -398,6 +406,61 @@ export function IngredientForm({
           ) : null}
         </div>
       ))}
+
+      {/* openspec: vitamin-tracking — sparse micronutrient rows, entered
+          against the same basis as the macros above. */}
+      <fieldset className="flex max-w-sm flex-col gap-2">
+        <legend className="text-sm font-medium text-foreground">Micronutrients</legend>
+        {micronutrientRows.fields.map((row, index) => (
+          <div key={row.id} className="flex flex-wrap items-center gap-2" data-testid="micronutrient-row">
+            <Controller
+              control={control}
+              name={`micronutrients.${index}.key`}
+              render={({ field }) => (
+                <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                  <SelectTrigger aria-label="Micronutrient" className="min-w-40">
+                    <SelectValue placeholder="Nutrient" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(MICRONUTRIENTS).map(([key, def]) => (
+                      <SelectItem key={key} value={key}>
+                        {def.label} ({def.unit})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <Input
+              aria-label="Micronutrient amount"
+              type="number"
+              step="any"
+              className="w-28"
+              {...register(`micronutrients.${index}.amountPerRef`, { setValueAs: toOptionalNumber })}
+            />
+            <Button type="button" variant="outline" size="sm" onClick={() => micronutrientRows.remove(index)}>
+              Remove
+            </Button>
+            {errors.micronutrients?.[index]?.amountPerRef ? (
+              <p className="w-full text-sm text-destructive">Enter a positive amount.</p>
+            ) : null}
+          </div>
+        ))}
+        {errors.micronutrients?.root?.message || errors.micronutrients?.message ? (
+          <p data-testid="field-error-micronutrients" className="text-sm text-destructive">
+            {errors.micronutrients?.root?.message ?? errors.micronutrients?.message}
+          </p>
+        ) : null}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-fit"
+          onClick={() => micronutrientRows.append({ key: "", amountPerRef: undefined })}
+        >
+          Add micronutrient
+        </Button>
+      </fieldset>
 
       {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
 

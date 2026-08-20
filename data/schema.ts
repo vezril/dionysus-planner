@@ -119,3 +119,18 @@ export const recipeTag = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.recipeId, table.tag] })],
 );
+
+/** openspec: vitamin-tracking — sparse per-ingredient micronutrient rows
+ * (keys from domain/micronutrients.ts MICRONUTRIENTS, amounts per the
+ * ingredient's reference quantity). */
+export const ingredientMicronutrient = sqliteTable(
+  "ingredient_micronutrient",
+  {
+    ingredientId: integer("ingredientId")
+      .notNull()
+      .references(() => ingredient.id, { onDelete: "cascade" }),
+    nutrientKey: text("nutrientKey").notNull(),
+    amountPerRef: real("amountPerRef").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.ingredientId, table.nutrientKey] })],
+);

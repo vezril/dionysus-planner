@@ -12,6 +12,7 @@
  * imports drizzle).
  */
 import { revalidatePath } from "next/cache";
+import { scaleMicronutrients } from "@/domain/micronutrients";
 import { ingredientSchema } from "@/domain/validation/ingredient.schema";
 import {
   nutritionScaleFactor,
@@ -19,7 +20,7 @@ import {
   type NutritionFieldValues,
 } from "@/domain/nutritionBasis";
 import type { IngredientRecord } from "@/data/repositories/ingredientRepo";
-import {
+import { setIngredientMicronutrients,
   createIngredientRecord,
   getIngredientRecordById,
   getIngredientReferences,
@@ -53,7 +54,7 @@ function resolveNutrition(data: {
   alcoholGPerRef?: number | null;
   nutritionBasisQuantity?: number | null;
   nutritionBasisUnit?: string | null;
-}): { ok: true; values: NutritionFieldValues } | { ok: false; error: ActionError } {
+}): { ok: true; values: NutritionFieldValues; factor: number } | { ok: false; error: ActionError } {
   const values: NutritionFieldValues = {
     caloriesPerRef: data.caloriesPerRef,
     proteinPerRef: data.proteinPerRef,
@@ -65,7 +66,7 @@ function resolveNutrition(data: {
     alcoholGPerRef: data.alcoholGPerRef ?? null,
   };
   if (data.nutritionBasisQuantity == null || data.nutritionBasisUnit == null) {
-    return { ok: true, values };
+    return { ok: true, values, factor: 1 };
   }
   const factor = nutritionScaleFactor(data.nutritionBasisQuantity, data.nutritionBasisUnit, data.unitClass);
   if (!factor.ok) {
@@ -84,7 +85,7 @@ function resolveNutrition(data: {
       },
     };
   }
-  return { ok: true, values: scaleNutritionFields(values, factor.factor) };
+  return { ok: true, values: scaleNutritionFields(values, factor.factor), factor: factor.factor };
 }
 
 function validationError(fieldErrors: Record<string, string[]>): ActionResult<never> {
@@ -124,6 +125,8 @@ export async function createIngredient(input: unknown): Promise<ActionResult<Ing
     packageQuantity: data.packageQuantity ?? null,
     packageUnit: data.packageQuantity != null ? (data.packageUnit ?? null) : null,
   });
+  // openspec: vitamin-tracking — basis-scaled sparse rows.
+  await setIngredientMicronutrients(record.id, scaleMicronutrients(data.micronutrients ?? [], nutrition.factor));
 
   revalidatePath("/ingredients");
   return { ok: true, data: record };
@@ -171,6 +174,7 @@ export async function overrideIngredientNutrition(
     packageUnit: data.packageQuantity != null ? (data.packageUnit ?? null) : null,
     overridden,
   });
+  await setIngredientMicronutrients(id, scaleMicronutrients(data.micronutrients ?? [], nutrition.factor));
 
   revalidatePath("/ingredients");
   return { ok: true, data: record };

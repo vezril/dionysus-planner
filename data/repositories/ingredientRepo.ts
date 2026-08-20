@@ -183,3 +183,34 @@ export async function getReferencesTo(db: Db, id: number): Promise<IngredientRef
 export async function remove(db: Db, id: number): Promise<void> {
   await db.delete(ingredient).where(eq(ingredient.id, id));
 }
+
+/** openspec: vitamin-tracking — sparse micronutrient rows. Replace-set
+ * writes (same posture as recipe tags); reads return entries in registry
+ * insertion-agnostic key order (sorted for stability). */
+export interface MicronutrientRow {
+  key: string;
+  amountPerRef: number;
+}
+
+export async function getMicronutrients(db: Db, ingredientId: number): Promise<MicronutrientRow[]> {
+  const rows = await db
+    .select()
+    .from(schema.ingredientMicronutrient)
+    .where(eq(schema.ingredientMicronutrient.ingredientId, ingredientId));
+  return rows
+    .map((row) => ({ key: row.nutrientKey, amountPerRef: row.amountPerRef }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+}
+
+export function replaceMicronutrients(db: Db, ingredientId: number, entries: MicronutrientRow[]): void {
+  db.transaction((tx) => {
+    tx.delete(schema.ingredientMicronutrient)
+      .where(eq(schema.ingredientMicronutrient.ingredientId, ingredientId))
+      .run();
+    for (const entry of entries) {
+      tx.insert(schema.ingredientMicronutrient)
+        .values({ ingredientId, nutrientKey: entry.key, amountPerRef: entry.amountPerRef })
+        .run();
+    }
+  });
+}

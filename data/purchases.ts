@@ -19,6 +19,7 @@ export interface PantryItemDetail {
   item: PantryItemRecord;
   ingredient: IngredientRecord;
   purchases: PurchaseRecord[];
+  micronutrients: ingredientRepo.MicronutrientRow[];
 }
 
 /**
@@ -35,7 +36,9 @@ export async function getPantryItemDetail(pantryItemId: number): Promise<PantryI
     const ingredient = await ingredientRepo.getById(db, item.ingredientId);
     if (!ingredient) return null;
     const purchases = await purchaseRepo.listByIngredientId(db, item.ingredientId);
-    return { item, ingredient, purchases };
+    // openspec: vitamin-tracking — sparse rows for the detail page.
+    const micronutrients = await ingredientRepo.getMicronutrients(db, item.ingredientId);
+    return { item, ingredient, purchases, micronutrients };
   } finally {
     db.$client.close();
   }

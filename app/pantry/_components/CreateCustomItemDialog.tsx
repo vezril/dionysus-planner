@@ -13,7 +13,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Controller, useForm, type Resolver } from "react-hook-form";
+import { Controller, useFieldArray, useForm, type Resolver } from "react-hook-form";
 import { createCustomPantryItem } from "@/app/actions/custom-pantry-item-actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UNITS } from "@/domain/units";
 import { referenceBasisFor, unitsForClass } from "@/domain/nutritionBasis";
+import { MICRONUTRIENTS } from "@/domain/micronutrients";
 import {
   customPantryItemSchema,
   type CustomPantryItemSchemaInput,
@@ -37,6 +38,7 @@ type FormValues = {
   sugarPerRef: number | undefined;
   sodiumMgPerRef: number | undefined;
   alcoholGPerRef: number | undefined;
+  micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   brand: string | undefined;
   barcode: string | undefined;
   packageQuantity: number | undefined;
@@ -67,6 +69,7 @@ const DEFAULT_VALUES: FormValues = {
   sugarPerRef: undefined,
   sodiumMgPerRef: undefined,
   alcoholGPerRef: undefined,
+  micronutrients: [],
   brand: undefined,
   barcode: undefined,
   packageQuantity: undefined,
@@ -106,6 +109,9 @@ export function CreateCustomItemDialog() {
     resolver: zodResolver(customPantryItemSchema) as unknown as Resolver<FormValues>,
     defaultValues: DEFAULT_VALUES,
   });
+
+  // openspec: vitamin-tracking — repeatable micronutrient rows (D3).
+  const micronutrientRows = useFieldArray({ control, name: "micronutrients" });
 
   // openspec: nutrition-basis-and-edit — basis follows the selected class,
   // defaulting to its reference so an untouched form behaves as before.
@@ -327,6 +333,60 @@ export function CreateCustomItemDialog() {
                     ) : null}
                   </div>
                 ))}
+              </div>
+              {/* openspec: vitamin-tracking — sparse rows, same basis as the
+                  macros above. */}
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium">Micronutrients</span>
+                {micronutrientRows.fields.map((row, index) => (
+                  <div key={row.id} className="flex flex-wrap items-center gap-2" data-testid="micronutrient-row">
+                    <Controller
+                      control={control}
+                      name={`micronutrients.${index}.key`}
+                      render={({ field }) => (
+                        <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                          <SelectTrigger aria-label="Micronutrient" className="min-w-40">
+                            <SelectValue placeholder="Nutrient" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(MICRONUTRIENTS).map(([key, def]) => (
+                              <SelectItem key={key} value={key}>
+                                {def.label} ({def.unit})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    <Input
+                      aria-label="Micronutrient amount"
+                      type="number"
+                      step="any"
+                      className="w-24"
+                      {...register(`micronutrients.${index}.amountPerRef`, { setValueAs: toOptionalNumber })}
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={() => micronutrientRows.remove(index)}>
+                      Remove
+                    </Button>
+                    {errors.micronutrients?.[index]?.amountPerRef ? (
+                      <p className="w-full text-sm text-destructive">Enter a positive amount.</p>
+                    ) : null}
+                  </div>
+                ))}
+                {errors.micronutrients?.root?.message || errors.micronutrients?.message ? (
+                  <p data-testid="field-error-micronutrients" className="text-sm text-destructive">
+                    {errors.micronutrients?.root?.message ?? errors.micronutrients?.message}
+                  </p>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-fit"
+                  onClick={() => micronutrientRows.append({ key: "", amountPerRef: undefined })}
+                >
+                  Add micronutrient
+                </Button>
               </div>
             </fieldset>
 
