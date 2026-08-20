@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -33,6 +34,11 @@ export function MainNav() {
       aria-label="Main"
       className="flex w-32 shrink-0 flex-col gap-1 border-r border-border bg-card p-2 sm:w-56 sm:p-4"
     >
+      {/* openspec: app-logo — the neon Dionysus mark, linking home. */}
+      <Link href="/what-can-i-cook" className="mb-2 flex items-center gap-2 px-2">
+        <Image src="/logo.png" alt="Dionysus" width={40} height={40} className="rounded-md" priority />
+        <span aria-hidden="true" className="hidden text-sm font-semibold tracking-wide text-primary sm:inline">Dionysus</span>
+      </Link>
       <ul className="flex flex-col gap-1">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
