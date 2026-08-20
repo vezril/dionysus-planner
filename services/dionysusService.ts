@@ -16,6 +16,8 @@ export interface NutritionJson {
   carbsG: number;
   fatG: number;
   sodiumMg: number;
+  /** openspec: meal-micronutrients — always written by the service (may be {}). */
+  micronutrients: Record<string, number>;
 }
 
 export interface IngredientJson {
@@ -28,6 +30,8 @@ export interface IngredientJson {
   sodiumMg: number;
   abvPercent: number | null;
   directlyLoggable: boolean;
+  /** openspec: meal-micronutrients — optional on requests, echoed on responses. */
+  micronutrients?: Record<string, number>;
 }
 
 export interface RecipeLineJson {

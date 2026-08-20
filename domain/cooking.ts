@@ -121,12 +121,17 @@ export interface MirrorNutrition {
   carbsG: number;
   fatG: number;
   sodiumMg: number;
+  /** openspec: meal-micronutrients — sparse, ÷REF like the macros. */
+  micronutrients: Record<string, number>;
 }
 
 /** Nutrition per 1 canonical unit of the ingredient's class (perRef ÷ REF).
  * Null sodium mirrors as 0 — the service's fields are non-null (design D2,
  * documented fidelity loss). */
-export function mirrorNutritionPerCanonicalUnit(ingredient: CookLineIngredient): MirrorNutrition {
+export function mirrorNutritionPerCanonicalUnit(
+  ingredient: CookLineIngredient,
+  micronutrients: Array<{ key: string; amountPerRef: number }> = [],
+): MirrorNutrition {
   const ref = REFERENCE_QUANTITY_BY_CLASS[ingredient.unitClass];
   return {
     caloriesKcal: ingredient.caloriesPerRef / ref,
@@ -134,6 +139,9 @@ export function mirrorNutritionPerCanonicalUnit(ingredient: CookLineIngredient):
     carbsG: ingredient.carbsPerRef / ref,
     fatG: ingredient.fatPerRef / ref,
     sodiumMg: (ingredient.sodiumMgPerRef ?? 0) / ref,
+    micronutrients: Object.fromEntries(
+      micronutrients.map((entry) => [entry.key, entry.amountPerRef / ref]),
+    ),
   };
 }
 

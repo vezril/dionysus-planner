@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MICRONUTRIENTS } from "@/domain/micronutrients";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { formatInstantIn, resolveDionysusTimezone, todayIsoDateIn } from "@/app/lib/dionysusTimezone";
 import { getDayLog } from "@/services/dionysusService";
@@ -108,6 +109,26 @@ export default async function MealLogPage({
           </div>
         ))}
       </div>
+
+      {/* openspec: meal-micronutrients — present-only, registry labels with
+          raw-key fallback (design D2); empty map renders nothing. */}
+      {Object.keys(dayLog.totalNutrition.micronutrients ?? {}).length > 0 ? (
+        <div data-testid="day-log-micronutrients" className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-md border border-border p-4 sm:grid-cols-4">
+          {Object.entries(dayLog.totalNutrition.micronutrients)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, amount]) => (
+              <div key={key} className="flex flex-col">
+                <span className="text-xs text-muted-foreground">{MICRONUTRIENTS[key]?.label ?? key}</span>
+                <span data-testid={`day-log-micronutrient-${key}`} className="text-lg font-semibold">
+                  {Math.round(amount * 10) / 10}
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">
+                    {MICRONUTRIENTS[key]?.unit ?? ""}
+                  </span>
+                </span>
+              </div>
+            ))}
+        </div>
+      ) : null}
 
       {dayLog.meals.length === 0 ? (
         <p data-testid="day-log-no-meals" className="text-sm text-muted-foreground">

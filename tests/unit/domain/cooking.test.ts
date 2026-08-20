@@ -109,6 +109,7 @@ describe("mirrorNutritionPerCanonicalUnit", () => {
       carbsG: 0.11,
       fatG: 0,
       sodiumMg: 0,
+      micronutrients: {},
     });
     expect(mirrorNutritionPerCanonicalUnit(flour).caloriesKcal).toBeCloseTo(3.64, 10);
   });
@@ -119,5 +120,23 @@ describe("canonicalUnitForClass", () => {
     expect(canonicalUnitForClass("MASS")).toBe("g");
     expect(canonicalUnitForClass("VOLUME")).toBe("mL");
     expect(canonicalUnitForClass("COUNT")).toBe("each");
+  });
+});
+
+describe("mirrorNutritionPerCanonicalUnit micronutrients (openspec: meal-micronutrients)", () => {
+  it("divides amounts by the class reference (100 for VOLUME)", () => {
+    const mirror = mirrorNutritionPerCanonicalUnit(fanta, [{ key: "vitaminC", amountPerRef: 16.9014 }]);
+    expect(mirror.micronutrients.vitaminC).toBeCloseTo(0.169014, 10);
+  });
+
+  it("COUNT reference is 1 — amounts pass through", () => {
+    const supplement = { ...flour, unitClass: "COUNT" as const };
+    expect(
+      mirrorNutritionPerCanonicalUnit(supplement, [{ key: "vitaminD", amountPerRef: 25 }]).micronutrients,
+    ).toEqual({ vitaminD: 25 });
+  });
+
+  it("no rows → empty map (unchanged mirror otherwise)", () => {
+    expect(mirrorNutritionPerCanonicalUnit(fanta).micronutrients).toEqual({});
   });
 });
