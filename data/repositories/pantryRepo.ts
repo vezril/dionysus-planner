@@ -115,6 +115,7 @@ export interface PantryListRow {
   stockedAt: string | null;
   shelfLifeDays: number | null;
   readyToEat: boolean;
+  category: "FOOD" | "DRINK" | "SUPPLEMENT";
   unitClass: "MASS" | "VOLUME" | "COUNT";
   packageQuantity: number | null;
   packageUnit: string | null;
@@ -136,6 +137,7 @@ export async function getAllWithIngredientNames(db: Db): Promise<PantryListRow[]
       stockedAt: pantryItem.stockedAt,
       shelfLifeDays: ingredient.shelfLifeDays,
       readyToEat: ingredient.readyToEat,
+      category: ingredient.category,
       unitClass: ingredient.unitClass,
       packageQuantity: ingredient.packageQuantity,
       packageUnit: ingredient.packageUnit,

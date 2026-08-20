@@ -65,6 +65,8 @@ type FormValues = {
   readyToEat: boolean;
   /** openspec: ingredient-categories-auto-tags — comma-separated entry. */
   categoriesText: string;
+  /** openspec: ratings-variants-links — one URL per line. */
+  merchantLinksText: string;
   alcoholAbvPercent: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   densityGPerMl: number | undefined;
@@ -93,6 +95,7 @@ export interface IngredientFormInitialValues {
   genericOfId: number | null;
   readyToEat: boolean;
   categories?: string[];
+  merchantLinks?: string[];
   micronutrients?: Array<{ key: string; amountPerRef: number }>;
   densityGPerMl: number | null;
 }
@@ -124,6 +127,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       genericOfId: undefined,
       readyToEat: false,
       categoriesText: "",
+      merchantLinksText: "",
       alcoholAbvPercent: undefined,
       micronutrients: [],
       densityGPerMl: undefined,
@@ -156,6 +160,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     genericOfId: initial.genericOfId ?? undefined,
     readyToEat: initial.readyToEat,
     categoriesText: (initial.categories ?? []).join(", "),
+    merchantLinksText: (initial.merchantLinks ?? []).join("\n"),
     // openspec: batch-nutrition-and-abv-entry — VOLUME drinks edit in ABV.
     alcoholAbvPercent:
       initial.unitClass === "VOLUME" && initial.category === "DRINK" && initial.alcoholGPerRef != null
@@ -274,6 +279,7 @@ export function IngredientForm({
     const payload = {
       ...values,
       categories: (getValues("categoriesText") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean),
+      merchantLinks: (getValues("merchantLinksText") ?? "").split("\n").map((url) => url.trim()).filter(Boolean),
     };
     const result =
       mode === "create"
@@ -288,7 +294,9 @@ export function IngredientForm({
     if (result.error.fieldErrors) {
       for (const [field, messages] of Object.entries(result.error.fieldErrors)) {
         if (messages && messages.length > 0) {
-          setError(field as keyof FormValues, { type: "server", message: messages[0] });
+          // Text-entry fields validated server-side under their parsed names.
+          const target = field === "merchantLinks" ? "merchantLinksText" : field === "categories" ? "categoriesText" : field;
+          setError(target as keyof FormValues, { type: "server", message: messages[0] });
         }
       }
     } else {
@@ -375,11 +383,32 @@ export function IngredientForm({
         />
       </div>
 
+      {/* openspec: ratings-variants-links — local stores carrying this
+          product; future demeter deal-finding input. */}
+      <div className="flex max-w-sm flex-col gap-1">
+        <label htmlFor="ingredient-merchant-links" className="text-sm font-medium">
+          Merchant links{" "}
+          <span className="font-normal text-muted-foreground">(one URL per line)</span>
+        </label>
+        <textarea
+          id="ingredient-merchant-links"
+          rows={3}
+          placeholder="https://store.example/salmon"
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          {...register("merchantLinksText")}
+        />
+        {errors.merchantLinksText ? (
+          <p data-testid="field-error-merchantLinks" className="text-sm text-destructive">
+            {errors.merchantLinksText.message ?? "Invalid merchant link."}
+          </p>
+        ) : null}
+      </div>
+
       {/* openspec: pantry-quick-eat — eatable straight from the pantry;
           still fully usable inside recipes. */}
       <label className="flex max-w-sm items-center gap-2 text-sm font-medium text-foreground">
         <input type="checkbox" {...register("readyToEat")} />
-        Ready to eat (can be consumed directly from the pantry)
+        Ready to consume (can be eaten or drunk straight from the pantry)
       </label>
 
       {/* openspec: generic-products — link a branded product to its
@@ -572,6 +601,11 @@ export function IngredientForm({
           {errors[name] ? (
             <p data-testid={`field-error-${name}`} className="text-sm text-destructive">
               {errors[name]?.message}
+            </p>
+          ) : null}
+          {name === "alcoholGPerRef" ? (
+            <p data-testid="abv-hint" className="text-xs text-muted-foreground">
+              Drinks measured in volume enter % ABV instead — set Category to Drink and Unit class to Volume.
             </p>
           ) : null}
         </div>

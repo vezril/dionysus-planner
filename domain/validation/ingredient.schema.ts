@@ -64,6 +64,17 @@ export const ingredientSchema = z
       .array(z.string().trim().min(1, { message: "Categories cannot be blank." }))
       .transform((tags) => Array.from(new Set(tags)))
       .nullish(),
+    // openspec: ratings-variants-links — local-merchant product URLs.
+    merchantLinks: z
+      .array(
+        z
+          .string()
+          .trim()
+          .url({ message: "Merchant links must be full URLs." })
+          .refine((url) => /^https?:\/\//.test(url), { message: "Merchant links must be http(s) URLs." }),
+      )
+      .transform((urls) => Array.from(new Set(urls)))
+      .nullish(),
     densityGPerMl: z.number().gt(0).nullish(),
     // openspec: custom-pantry-items — optional product identity. Barcode is
     // free text (trimmed, non-empty when present): format normalization is

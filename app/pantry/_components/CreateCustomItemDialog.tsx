@@ -286,7 +286,7 @@ export function CreateCustomItemDialog({
 
             <label className="flex items-center gap-2 text-sm font-medium">
               <input type="checkbox" {...register("readyToEat")} />
-              Ready to eat
+              Ready to consume
             </label>
 
             <div className="flex flex-col gap-1">
@@ -456,6 +456,12 @@ export function CreateCustomItemDialog({
                     {errors[name] ? (
                       <p data-testid={`field-error-${name}`} className="text-sm text-destructive">
                         {errors[name]?.message}
+                      </p>
+                    ) : null}
+                    {name === "alcoholGPerRef" ? (
+                      <p data-testid="abv-hint" className="text-xs text-muted-foreground">
+                        Drinks measured in volume enter % ABV instead — set Category to Drink and Unit class to
+                        Volume.
                       </p>
                     ) : null}
                   </div>

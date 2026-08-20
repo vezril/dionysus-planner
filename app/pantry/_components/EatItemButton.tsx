@@ -15,6 +15,8 @@ import type { PantryListRow } from "@/data/pantry";
 
 export function EatItemButton({ item }: { item: PantryListRow }) {
   const router = useRouter();
+  // openspec: ratings-variants-links — drink-aware wording.
+  const verb = item.category === "DRINK" ? "Drink" : "Eat";
   const [open, setOpen] = useState(false);
   const prefill =
     item.unitClass === "COUNT"
@@ -30,12 +32,12 @@ export function EatItemButton({ item }: { item: PantryListRow }) {
   return (
     <>
       <Button type="button" size="sm" data-testid="eat-item" onClick={() => setOpen(true)}>
-        Eat
+        {verb}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Eat {item.ingredientName}</DialogTitle>
+            <DialogTitle>{verb} {item.ingredientName}</DialogTitle>
           </DialogHeader>
           <div className="flex items-end gap-2">
             <div className="flex flex-col gap-1">
@@ -81,7 +83,7 @@ export function EatItemButton({ item }: { item: PantryListRow }) {
                 })
               }
             >
-              {pending ? "Logging…" : "Eat it"}
+              {pending ? "Logging…" : `${verb} it`}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -42,6 +42,10 @@ export interface RecipeRecord {
   name: string;
   servings: number;
   instructions: string;
+  /** openspec: ratings-variants-links — 1–5 stars, null = unrated. */
+  rating: number | null;
+  /** openspec: ratings-variants-links — root recipe id, null = original. */
+  variantOfId: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -92,6 +96,8 @@ function toRecipeRecord(row: typeof recipe.$inferSelect): RecipeRecord {
     name: row.name,
     servings: row.servings,
     instructions: row.instructions,
+    rating: row.rating,
+    variantOfId: row.variantOfId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -350,6 +356,16 @@ export async function getAllDerivedTags(db: Db): Promise<Map<number, string[]>> 
     byRecipeId.set(line.recipeId, set);
   }
   return new Map([...byRecipeId].map(([recipeId, set]) => [recipeId, [...set]]));
+}
+
+/** openspec: ratings-variants-links */
+export async function setRating(db: Db, id: number, rating: number | null): Promise<void> {
+  await db.update(recipe).set({ rating }).where(eq(recipe.id, id));
+}
+
+/** openspec: ratings-variants-links — link a duplicate to its root. */
+export async function setVariantOf(db: Db, id: number, variantOfId: number): Promise<void> {
+  await db.update(recipe).set({ variantOfId }).where(eq(recipe.id, id));
 }
 
 export async function getAllTags(db: Db): Promise<Map<number, string[]>> {

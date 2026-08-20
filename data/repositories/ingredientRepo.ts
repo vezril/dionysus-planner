@@ -275,6 +275,24 @@ export async function getAllCategories(db: Db): Promise<Map<number, string[]>> {
   return byIngredientId;
 }
 
+/** openspec: ratings-variants-links — merchant URLs, replace-set. */
+export function replaceMerchantLinks(db: Db, ingredientId: number, urls: string[]): void {
+  db.transaction((tx) => {
+    tx.delete(schema.ingredientLink).where(eq(schema.ingredientLink.ingredientId, ingredientId)).run();
+    for (const url of urls) {
+      tx.insert(schema.ingredientLink).values({ ingredientId, url }).run();
+    }
+  });
+}
+
+export async function getMerchantLinks(db: Db, ingredientId: number): Promise<string[]> {
+  const rows = await db
+    .select({ url: schema.ingredientLink.url })
+    .from(schema.ingredientLink)
+    .where(eq(schema.ingredientLink.ingredientId, ingredientId));
+  return rows.map((row) => row.url);
+}
+
 /** openspec: generic-products — id → genericOfId for every ingredient
  * (group-root resolution) plus products linked to a given generic. */
 export async function getGenericLinks(db: Db): Promise<Map<number, number | null>> {

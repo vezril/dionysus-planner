@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getIngredientRecordById } from "@/data/ingredients";
+import { getIngredientMerchantLinks, getIngredientRecordById } from "@/data/ingredients";
 import { getPantryItemDetail } from "@/data/purchases";
 import { gramsPer100MlToAbvPercent } from "@/domain/abv";
 import { computeFreshness } from "@/domain/freshness";
@@ -44,6 +44,8 @@ export default async function PantryItemDetailPage({
   const { item, ingredient, purchases, micronutrients } = detail;
   // openspec: generic-products
   const generic = ingredient.genericOfId !== null ? await getIngredientRecordById(ingredient.genericOfId) : null;
+  // openspec: ratings-variants-links — local stores carrying this product.
+  const merchantLinks = await getIngredientMerchantLinks(ingredient.id);
   // openspec: pantry-freshness
   const freshness = item.displayQuantity > 0 ? computeFreshness(item.stockedAt, ingredient.shelfLifeDays, new Date()) : null;
 
@@ -248,6 +250,27 @@ export default async function PantryItemDetailPage({
         <h3 className="text-base font-semibold">Log a purchase</h3>
         <AddPurchaseForm ingredientId={ingredient.id} />
       </section>
+
+      {merchantLinks.length > 0 ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-lg font-medium">Where to buy</h2>
+          <ul data-testid="merchant-links" className="flex flex-col gap-1 text-sm">
+            {merchantLinks.map((url) => (
+              <li key={url}>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="merchant-link"
+                  className="break-all font-medium text-primary hover:underline"
+                >
+                  {url}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }
