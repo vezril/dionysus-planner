@@ -82,7 +82,37 @@ export default async function DashboardPage({
     { label: "Alcohol", value: `${alcoholUnits} units`, testid: "alcohol-units", status: alcoholStatus },
   ];
 
-  // Breakdown: per day for day/week/month; per month for year.
+  // openspec: dashboard-week-day-cards — the week period renders one
+  // mini day view per calendar date (unlogged days included), each
+  // linking to the day view; other periods keep the table.
+  const weekDates: string[] = [];
+  if (period === "week") {
+    for (let offset = 0; offset < 7; offset += 1) {
+      const date = new Date(`${range.from}T00:00:00Z`);
+      date.setUTCDate(date.getUTCDate() + offset);
+      weekDates.push(date.toISOString().slice(0, 10));
+    }
+  }
+  const dayByDate = new Map(days.map((day) => [day.date, day]));
+  const weekCards = weekDates.map((date) => {
+    const day = dayByDate.get(date);
+    const kcal = day?.totalNutrition.caloriesKcal ?? 0;
+    const proteinG = day?.totalNutrition.proteinG ?? 0;
+    return {
+      date,
+      weekday: new Date(`${date}T00:00:00Z`).toLocaleDateString("en-CA", { weekday: "short", timeZone: "UTC" }),
+      meals: day?.mealCount ?? 0,
+      kcal,
+      proteinG,
+      carbsG: day?.totalNutrition.carbsG ?? 0,
+      fatG: day?.totalNutrition.fatG ?? 0,
+      alcoholUnits: alcoholUnitsFromGrams(day ? alcoholGramsOf(day) : 0),
+      kcalStatus: day ? fitStatus(kcal, targets.values.caloriesKcal, "cap") : null,
+      proteinStatus: day ? fitStatus(proteinG, targets.values.proteinG, "goal") : null,
+    };
+  });
+
+  // Breakdown: per day for day/month; per month for year.
   const breakdown =
     period === "year"
       ? [...days.reduce((byMonth, day) => {
@@ -175,7 +205,63 @@ export default async function DashboardPage({
             ))}
           </div>
 
-          {breakdown.length === 0 ? (
+          {period === "week" ? (
+            <div data-testid="dashboard-week-days" className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+              {weekCards.map((card) => (
+                <Link
+                  key={card.date}
+                  href={`/dashboard?period=day&date=${card.date}`}
+                  data-testid="dashboard-day-card"
+                  className={`flex flex-col gap-1 rounded-md border p-3 transition-colors hover:border-primary ${
+                    card.date === today ? "border-primary/60" : "border-border"
+                  }`}
+                >
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {card.weekday}{" "}
+                    <span className="font-mono tabular-nums">{card.date.slice(5)}</span>
+                  </span>
+                  {card.meals === 0 ? (
+                    <span data-testid="day-card-empty" className="text-xs text-muted-foreground">
+                      Nothing logged
+                    </span>
+                  ) : (
+                    <>
+                      <span
+                        data-testid="day-card-kcal"
+                        className={`text-sm font-semibold ${
+                          card.kcalStatus === "over"
+                            ? "text-destructive"
+                            : card.kcalStatus === "near"
+                              ? "text-status-near"
+                              : "text-status-cookable"
+                        }`}
+                      >
+                        {Math.round(card.kcal)} kcal
+                      </span>
+                      <span
+                        className={`text-xs ${
+                          card.proteinStatus === "met"
+                            ? "text-status-cookable"
+                            : card.proteinStatus === "partial"
+                              ? "text-status-near"
+                              : "text-muted-foreground"
+                        }`}
+                      >
+                        {Math.round(card.proteinG)} g protein
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {Math.round(card.carbsG)} c · {Math.round(card.fatG)} f
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {card.meals} {card.meals === 1 ? "meal" : "meals"}
+                        {card.alcoholUnits > 0 ? ` · ${card.alcoholUnits} u` : ""}
+                      </span>
+                    </>
+                  )}
+                </Link>
+              ))}
+            </div>
+          ) : breakdown.length === 0 ? (
             <p data-testid="dashboard-empty" className="text-sm text-muted-foreground">
               Nothing consumed in this {period}.
             </p>
