@@ -1,0 +1,5 @@
+- [x] 1.1 Migration 0009 `plan_entry(date, recipeId FK cascade, portions)`; repo (week list, add, remove) + facade
+- [x] 1.2 `domain/planner.ts`: week dates (Mon-start), plan depletion (reuse planCookConsumption), suggestion assembly (depleted index → computeCookableAndNearMatch; expiring flags + tier-stable boost) + unit tests
+- [x] 1.3 Actions addPlanEntry/removePlanEntry (+ zod) + integration tests (persist, cascade on recipe delete, depletion end-to-end)
+- [x] 1.4 `/planner` view: week nav, day columns with entries + remove, add form (recipe select + portions + day), suggestions panel with add-to-day; nav entry + pinned spec updates
+- [x] 1.5 e2e (plan entry round-trip; suggestion depletion; expiring badge); full gate; walkthrough; train v2.17.0
