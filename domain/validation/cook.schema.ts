@@ -30,6 +30,9 @@ export const cookLineChoiceSchema = z.discriminatedUnion("action", [consumeLine,
 export const cookRecipeSchema = z.object({
   recipeId: z.number().int().positive(),
   portions: z.number().gt(0),
+  // openspec: eat-now-and-quick-log — portions logged as eaten immediately
+  // after the cook (≤ portions enforced in the action, not here).
+  eatNowPortions: z.number().min(0).default(0),
   lines: z.array(cookLineChoiceSchema).min(1),
 });
 

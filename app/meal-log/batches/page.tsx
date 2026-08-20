@@ -2,6 +2,7 @@ import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { formatInstantIn, resolveDionysusTimezone } from "@/app/lib/dionysusTimezone";
 import { listBatches, listRecipes } from "@/services/dionysusService";
 import { CookBatchForm } from "./_components/CookBatchForm";
+import { LogPortionButton } from "./_components/LogPortionButton";
 
 /**
  * openspec: meal-log-integration — dionysus-service batches (cook events).
@@ -37,6 +38,10 @@ export default async function MealLogBatchesPage() {
               <span className="text-sm text-muted-foreground">
                 cooked {formatInstantIn(batch.cookedAt, timeZone)} · {batch.remainingPortions} portions remaining
               </span>
+              {/* openspec: eat-now-and-quick-log — leftovers, one click. */}
+              {batch.remainingPortions >= 1 && batch.id !== null ? (
+                <LogPortionButton batchId={batch.id} />
+              ) : null}
             </li>
           ))}
         </ul>
