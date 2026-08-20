@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { DeleteIngredientButton } from "@/app/ingredients/_components/delete-ingredient-button";
 import { IngredientForm } from "@/app/ingredients/_components/ingredient-form";
-import { getIngredientRecordById } from "@/data/ingredients";
+import { getIngredientMicronutrients, getIngredientRecordById } from "@/data/ingredients";
 
 /**
  * S-302 edit/override form (FR-3). RSC wrapper (ADR-002) that fetches the
@@ -29,6 +29,8 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
   if (!ingredient) {
     notFound();
   }
+  // openspec: vitamin-tracking — prefill existing sparse rows.
+  const micronutrients = await getIngredientMicronutrients(ingredientId);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
@@ -51,6 +53,7 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
           sugarPerRef: ingredient.sugarPerRef,
           sodiumMgPerRef: ingredient.sodiumMgPerRef,
           alcoholGPerRef: ingredient.alcoholGPerRef,
+          micronutrients,
           densityGPerMl: ingredient.densityGPerMl,
         }}
       />

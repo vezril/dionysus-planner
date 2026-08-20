@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPantryItemDetail } from "@/data/purchases";
+import { MICRONUTRIENTS } from "@/domain/micronutrients";
 import { computePriceStats } from "@/domain/priceStats";
 import { REFERENCE_QUANTITY_BY_CLASS } from "@/domain/types";
 import { AddPurchaseForm } from "./_components/AddPurchaseForm";
@@ -37,7 +38,7 @@ export default async function PantryItemDetailPage({
   const detail = await getPantryItemDetail(id);
   if (!detail) notFound();
 
-  const { item, ingredient, purchases } = detail;
+  const { item, ingredient, purchases, micronutrients } = detail;
   const stats = computePriceStats(purchases);
   // Sanity: REFERENCE_QUANTITY_BY_CLASS backs the label (100/100/1).
   void REFERENCE_QUANTITY_BY_CLASS;
@@ -125,6 +126,28 @@ export default async function PantryItemDetailPage({
           ))}
         </dl>
       </section>
+
+      {/* openspec: vitamin-tracking — only the nutrients present (D4). */}
+      {micronutrients.length > 0 ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">
+            Micronutrients{" "}
+            <span className="text-sm font-normal text-muted-foreground">
+              ({REFERENCE_LABEL[ingredient.unitClass]})
+            </span>
+          </h2>
+          <dl data-testid="micronutrient-facts" className="grid grid-cols-2 gap-x-6 gap-y-1 rounded-md border border-border p-4 sm:grid-cols-4">
+            {micronutrients.map(({ key, amountPerRef }) => (
+              <div key={key} className="flex flex-col">
+                <dt className="text-xs text-muted-foreground">{MICRONUTRIENTS[key]?.label ?? key}</dt>
+                <dd data-testid={`micronutrient-${key}`} className="text-sm font-medium">
+                  {amountPerRef} {MICRONUTRIENTS[key]?.unit ?? ""}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
 
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">Prices</h2>

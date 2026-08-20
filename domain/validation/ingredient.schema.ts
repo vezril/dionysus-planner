@@ -11,6 +11,7 @@
  * when present (FR-12).
  */
 import { z } from "zod";
+import { MICRONUTRIENTS } from "../micronutrients";
 import { UNITS } from "../units";
 
 const nonNegativeNumber = z.number().min(0);
@@ -29,6 +30,19 @@ export const ingredientSchema = z
     sodiumMgPerRef: optionalNonNegative,
     // openspec: alcohol-tracking — same optional-nutrient semantics.
     alcoholGPerRef: optionalNonNegative,
+    // openspec: vitamin-tracking — sparse micronutrient rows (registry
+    // keys, per-reference amounts, no duplicates).
+    micronutrients: z
+      .array(
+        z.object({
+          key: z.string().refine((key) => key in MICRONUTRIENTS, { message: "Unknown micronutrient." }),
+          amountPerRef: z.number().gt(0),
+        }),
+      )
+      .refine((entries) => new Set(entries.map((entry) => entry.key)).size === entries.length, {
+        message: "Each micronutrient can only appear once.",
+      })
+      .nullish(),
     densityGPerMl: z.number().gt(0).nullish(),
     // openspec: custom-pantry-items — optional product identity. Barcode is
     // free text (trimmed, non-empty when present): format normalization is

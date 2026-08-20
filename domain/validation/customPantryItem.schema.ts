@@ -7,6 +7,7 @@
  * and the Server Action's re-parse (ADR-005).
  */
 import { z } from "zod";
+import { MICRONUTRIENTS } from "@/domain/micronutrients";
 import { UNITS } from "@/domain/units";
 
 const unitKeys = Object.keys(UNITS) as [string, ...string[]];
@@ -25,6 +26,19 @@ export const customPantryItemSchema = z
     sugarPerRef: optionalNonNegative,
     sodiumMgPerRef: optionalNonNegative,
     alcoholGPerRef: optionalNonNegative,
+    // openspec: vitamin-tracking — sparse micronutrient rows (registry
+    // keys, per-reference amounts, no duplicates).
+    micronutrients: z
+      .array(
+        z.object({
+          key: z.string().refine((key) => key in MICRONUTRIENTS, { message: "Unknown micronutrient." }),
+          amountPerRef: z.number().gt(0),
+        }),
+      )
+      .refine((entries) => new Set(entries.map((entry) => entry.key)).size === entries.length, {
+        message: "Each micronutrient can only appear once.",
+      })
+      .nullish(),
     densityGPerMl: z.number().gt(0).nullish(),
     brand: z.string().trim().min(1).nullish(),
     barcode: z.string().trim().min(1).nullish(),

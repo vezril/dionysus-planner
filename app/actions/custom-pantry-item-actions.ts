@@ -8,6 +8,8 @@
  * ingredient+pantry transaction).
  */
 import { revalidatePath } from "next/cache";
+import { scaleMicronutrients } from "@/domain/micronutrients";
+import { setIngredientMicronutrients } from "@/data/ingredients";
 import { customPantryItemSchema } from "@/domain/validation/customPantryItem.schema";
 import { toCanonical } from "@/domain/units";
 import { nutritionScaleFactor, scaleNutritionFields } from "@/domain/nutritionBasis";
@@ -72,6 +74,7 @@ export async function createCustomPantryItem(
     sodiumMgPerRef: data.sodiumMgPerRef ?? null,
     alcoholGPerRef: data.alcoholGPerRef ?? null,
   };
+  let basisFactor = 1;
   if (data.nutritionBasisQuantity != null && data.nutritionBasisUnit != null) {
     const factor = nutritionScaleFactor(data.nutritionBasisQuantity, data.nutritionBasisUnit, data.unitClass);
     if (!factor.ok) {
@@ -91,6 +94,7 @@ export async function createCustomPantryItem(
       };
     }
     nutrition = scaleNutritionFields(nutrition, factor.factor);
+    basisFactor = factor.factor;
   }
 
   const { quantityCanonical, entryUnitClass } = toCanonical(data.initialQuantity, data.unit);
@@ -110,6 +114,12 @@ export async function createCustomPantryItem(
       displayQuantity: data.initialQuantity,
       displayUnit: data.unit,
     });
+
+    // openspec: vitamin-tracking — basis-scaled sparse rows.
+    await setIngredientMicronutrients(
+      result.ingredient.id,
+      scaleMicronutrients(data.micronutrients ?? [], basisFactor),
+    );
 
     revalidatePath("/pantry", "layout");
     revalidatePath("/ingredients");
