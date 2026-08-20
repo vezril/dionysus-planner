@@ -5,6 +5,7 @@ import { getPlannerWeek } from "@/data/planner";
 import { shiftWeek, weekStartOf } from "@/domain/planner";
 import { AddPlanEntryForm } from "./_components/AddPlanEntryForm";
 import { PlanDayColumn } from "./_components/PlanDayColumn";
+import { ShoppingListPanel } from "./_components/ShoppingListPanel";
 import { SuggestionList } from "./_components/SuggestionList";
 
 /**
@@ -68,6 +69,8 @@ export default async function PlannerPage({
           />
         ))}
       </div>
+
+      <ShoppingListPanel list={week.shoppingList} />
 
       <SuggestionList suggestions={week.suggestions} />
     </div>

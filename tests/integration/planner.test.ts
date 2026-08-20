@@ -89,6 +89,22 @@ describe("weekly planner", () => {
     expect(after.suggestions.find((suggestion) => suggestion.name === "Bread")!.tier).toBe("near");
   });
 
+  it("the week's shopping list collects what the plan can't cover", async () => {
+    const { addPlanEntry } = await import("@/app/actions/planner-actions");
+    const { getPlannerWeek } = await import("@/data/planner");
+
+    const covered = await getPlannerWeek("2026-08-17", 3);
+    expect(covered.shoppingList.items).toEqual([]);
+
+    // Two loaves need 800 g; the pantry holds 500 g → buy 300 g.
+    await addPlanEntry({ date: "2026-08-17", recipeId: breadId, portions: 1 });
+    await addPlanEntry({ date: "2026-08-19", recipeId: breadId, portions: 1 });
+    const week = await getPlannerWeek("2026-08-17", 3);
+    expect(week.shoppingList.items).toEqual([
+      { ingredientId: flourId, name: "Flour", quantity: 300, unit: "g" },
+    ]);
+  });
+
   it("deleting the recipe cascades its plan entries", async () => {
     const { addPlanEntry } = await import("@/app/actions/planner-actions");
     await addPlanEntry({ date: "2026-08-19", recipeId: breadId, portions: 1 });

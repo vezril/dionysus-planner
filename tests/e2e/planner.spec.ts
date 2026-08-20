@@ -74,6 +74,30 @@ test.describe("weekly planner", () => {
     ).toBeVisible();
   });
 
+  test("planning past the pantry fills the shopping list", async ({ page }) => {
+    await page.goto("/planner");
+    // First entry (300 of 400 mL) is covered — nothing to buy yet.
+    await expect(page.getByTestId("shopping-list-empty")).toBeVisible();
+
+    // Second smoothie: 600 needed vs 400 held → buy 200 mL.
+    await page.getByRole("combobox", { name: "Plan recipe" }).click();
+    await page.getByRole("option", { name: RECIPE_NAME }).click();
+    await page.getByTestId("plan-add").click();
+
+    const item = page.getByTestId("shopping-list-item").filter({ hasText: JUICE_NAME });
+    await expect(item).toContainText("200 mL");
+    await expect(page.getByTestId("shopping-list-copy")).toBeVisible();
+
+    // Clean up the second entry so the removal test below sees one entry.
+    await page
+      .getByTestId("plan-entry")
+      .filter({ hasText: RECIPE_NAME })
+      .last()
+      .getByRole("button", { name: `Remove ${RECIPE_NAME}` })
+      .click();
+    await expect(page.getByTestId("plan-entry").filter({ hasText: RECIPE_NAME })).toHaveCount(1);
+  });
+
   test("removing the entry restores the suggestion and empties the day", async ({ page }) => {
     await page.goto("/planner");
     const entry = page.getByTestId("plan-entry").filter({ hasText: RECIPE_NAME });
