@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRecipeDetail } from "@/data/recipes";
+import { getResolvedTargets } from "@/data/nutritionTargets";
+import { percentOfTarget } from "@/domain/nutritionTargets";
 import type { NutritionTotals } from "@/domain/nutrition";
 import { humanizeMentions } from "@/domain/cooklangParser";
 import { computeRecipeAbv } from "@/domain/abv";
@@ -53,6 +55,19 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
   }
 
   const { recipe, lines, nutrition, tags } = detail;
+  // openspec: nutrition-targets-guide — per-serving % of the daily target.
+  const targets = await getResolvedTargets();
+  const TARGET_KEY_BY_ROW: Record<string, string> = {
+    calories: "caloriesKcal",
+    protein: "proteinG",
+    carbs: "carbsG",
+    fat: "fatG",
+    fiber: "fiberG",
+    sugar: "sugarG",
+    sodiumMg: "sodiumMg",
+    saturatedFatG: "saturatedFatG",
+    cholesterolMg: "cholesterolMg",
+  };
   // openspec: drinks-and-abv — estimate; null renders nothing.
   const abv = computeRecipeAbv(
     lines.map((line) => ({
@@ -119,6 +134,10 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
           kind: row.kind,
           totalValue: nutrition.totals[row.key].value,
           perServingValue: nutrition.perServing[row.key].value,
+          perServingPercent:
+            nutrition.perServing[row.key].value !== null && TARGET_KEY_BY_ROW[row.key] !== undefined
+              ? percentOfTarget(nutrition.perServing[row.key].value!, targets.values[TARGET_KEY_BY_ROW[row.key]])
+              : null,
         }))}
       />
 

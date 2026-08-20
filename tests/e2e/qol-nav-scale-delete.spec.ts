@@ -46,6 +46,7 @@ test.describe("qol-nav-scale-delete", () => {
       "Dionysus", // openspec: app-logo — the brand link precedes the sections
       "What Can I Cook",
       "Dashboard", // openspec: consumption-dashboard
+      "Guide", // openspec: nutrition-targets-guide
       "Products",
       "Pantry",
       "Recipes",

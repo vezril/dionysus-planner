@@ -33,6 +33,9 @@ export interface ScalerNutrientRow {
   totalValue: number | null;
   /** Factor-independent by definition — rendered verbatim. */
   perServingValue: number | null;
+  /** openspec: nutrition-targets-guide — % of the daily target; null when
+   * no target or no value. */
+  perServingPercent: number | null;
 }
 
 export function PortionScaler({
@@ -116,8 +119,18 @@ export function PortionScaler({
           {totalRows.map((row) => (
             <div key={row.key} className="flex items-center justify-between gap-4 text-sm">
               <span className="text-muted-foreground">{row.label}</span>
-              <span data-testid={`nutrition-per-serving-${row.testid}`} className="font-mono tabular-nums">
-                {formatNutritionForDisplay(row.perServingValue, row.kind)}
+              <span className="flex items-baseline gap-1">
+                <span data-testid={`nutrition-per-serving-${row.testid}`} className="font-mono tabular-nums">
+                  {formatNutritionForDisplay(row.perServingValue, row.kind)}
+                </span>
+                {row.perServingPercent !== null ? (
+                  <span
+                    data-testid={`nutrition-target-percent-${row.testid}`}
+                    className="text-xs text-muted-foreground"
+                  >
+                    · {row.perServingPercent}%
+                  </span>
+                ) : null}
               </span>
             </div>
           ))}

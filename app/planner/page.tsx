@@ -2,6 +2,8 @@ import Link from "next/link";
 import { resolveDionysusTimezone, todayIsoDateIn } from "@/app/lib/dionysusTimezone";
 import { resolveDefaultThreshold } from "@/app/lib/threshold";
 import { getPlannerWeek } from "@/data/planner";
+import { getResolvedTargets } from "@/data/nutritionTargets";
+import { fitStatus } from "@/domain/nutritionTargets";
 import { shiftWeek, weekStartOf } from "@/domain/planner";
 import { PlannerBoard } from "./_components/PlannerBoard";
 import { ShoppingListPanel } from "./_components/ShoppingListPanel";
@@ -29,6 +31,13 @@ export default async function PlannerPage({
 
   const threshold = resolveDefaultThreshold();
   const week = await getPlannerWeek(weekStart, threshold);
+  // openspec: nutrition-targets-guide — planned calories vs 7 daily budgets.
+  const targets = await getResolvedTargets();
+  const plannedKcal = Object.values(week.entriesByDate)
+    .flat()
+    .reduce((total, entry) => total + (entry.caloriesKcal ?? 0), 0);
+  const weeklyKcalTarget = targets.values.caloriesKcal * 7;
+  const plannedStatus = plannedKcal > 0 ? fitStatus(plannedKcal, weeklyKcalTarget, "cap") : null;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
@@ -54,6 +63,20 @@ export default async function PlannerPage({
           </Link>
         </div>
       </div>
+
+      {plannedStatus !== null ? (
+        <p data-testid="planner-week-fit" className="text-sm text-muted-foreground">
+          Planned: <span className="font-mono tabular-nums">{Math.round(plannedKcal)} kcal</span> of{" "}
+          <span className="font-mono tabular-nums">{Math.round(weeklyKcalTarget)} kcal</span> weekly budget{" "}
+          <span
+            className={`font-medium ${
+              plannedStatus === "ok" ? "text-status-cookable" : plannedStatus === "near" ? "text-status-near" : "text-destructive"
+            }`}
+          >
+            ({plannedStatus})
+          </span>
+        </p>
+      ) : null}
 
       <PlannerBoard
         dates={week.dates}

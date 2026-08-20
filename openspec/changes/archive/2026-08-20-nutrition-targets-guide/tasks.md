@@ -1,0 +1,4 @@
+- [x] 1.1 `domain/nutritionTargets.ts` (defs, defaults from the skill, fitStatus goal/cap) + unit tests; migration 0012 + repo/facade + update action
+- [x] 1.2 `/guide` page (guide content w/ sources + targets editor) + nav (+ pin)
+- [x] 1.3 Fit displays: recipe per-serving %, dashboard status chips (incl. weekly alcohol cap), planner week calories line
+- [x] 1.4 Integration + e2e; full gate; train v2.25.0

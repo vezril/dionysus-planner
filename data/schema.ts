@@ -163,3 +163,12 @@ export const planEntry = sqliteTable("plan_entry", {
   portions: real("portions").notNull(),
   createdAt: text("createdAt").notNull(),
 });
+
+/** openspec: nutrition-targets-guide — personal daily targets keyed by
+ * domain/nutritionTargets.ts TARGET_DEFS (+ micronutrient registry keys
+ * prefixed "micro:"). Rows exist only for values Calvin changed; defaults
+ * live in code. */
+export const nutritionTarget = sqliteTable("nutrition_target", {
+  key: text("key").primaryKey(),
+  value: real("value").notNull(),
+});
