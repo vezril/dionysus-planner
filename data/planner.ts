@@ -16,17 +16,24 @@ import {
   type Suggestion,
 } from "@/domain/planner";
 import { buildShoppingList, type ShoppingList } from "@/domain/shoppingList";
+import { computeRecipeNutrition } from "@/domain/nutrition";
 import * as ingredientRepo from "@/data/repositories/ingredientRepo";
 import { mergeRowsByGroup, normalizeLineToRoot } from "@/domain/interchange";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { listBatches, listRecipes as listServiceRecipes } from "@/services/dionysusService";
 
-export type { PlanEntryRecord, PlanEntryRow } from "@/data/repositories/plannerRepo";
+export type { PlanEntryRecord } from "@/data/repositories/plannerRepo";
+
+/** openspec: planner-day-click-and-calories — repo row + display calories
+ * (total for the entry's portions; null when uncomputable). */
+export interface PlanEntryRow extends plannerRepo.PlanEntryRow {
+  caloriesKcal: number | null;
+}
 
 export interface PlannerWeek {
   weekStart: string;
   dates: string[];
-  entriesByDate: Record<string, plannerRepo.PlanEntryRow[]>;
+  entriesByDate: Record<string, PlanEntryRow[]>;
   suggestions: Suggestion[];
   shoppingList: ShoppingList;
   /** openspec: planner-ready-to-eat — service batches, week-plan-adjusted. */
@@ -105,10 +112,6 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
       now: new Date(),
     });
 
-    const entriesByDate: Record<string, plannerRepo.PlanEntryRow[]> = Object.fromEntries(dates.map((date) => [date, []]));
-    for (const entry of entries) {
-      entriesByDate[entry.date]?.push(entry);
-    }
 
     // openspec: shopping-list — same planned array, collected instead of
     // discarded (buildShoppingList copies rows; order matches entry order).
@@ -125,10 +128,19 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
     // Ready to eat: service batches minus this week's planned batch portions.
     let readyToEat: Array<{ batchId: number; label: string; availablePortions: number }> = [];
     let serviceAvailable = true;
+    const batchCaloriesPerServing = new Map<number, number>();
     try {
       const baseUrl = resolveDionysusServiceUrl();
       const [batches, serviceRecipes] = await Promise.all([listBatches(baseUrl), listServiceRecipes(baseUrl)]);
       const nameByRecipeId = new Map(serviceRecipes.map((recipe) => [recipe.id, recipe.name]));
+      const perServingByRecipeId = new Map(
+        serviceRecipes.map((recipe) => [recipe.id, recipe.perServingNutrition?.caloriesKcal ?? null]),
+      );
+      for (const batch of batches) {
+        if (batch.id === null) continue;
+        const perServing = perServingByRecipeId.get(batch.recipeId);
+        if (perServing !== undefined && perServing !== null) batchCaloriesPerServing.set(batch.id, perServing);
+      }
       const plannedByBatch = new Map<number, number>();
       for (const entry of entries) {
         if (entry.kind === "eat_batch" && entry.batchId !== null) {
@@ -146,6 +158,42 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
         .filter((batch) => batch.availablePortions > 0);
     } catch {
       serviceAvailable = false;
+    }
+
+    // openspec: planner-day-click-and-calories — per-entry calorie totals.
+    const cookCaloriesPerServing = new Map<number, number | null>();
+    for (const [cookRecipeId, full] of recipeCache) {
+      if (!full) {
+        cookCaloriesPerServing.set(cookRecipeId, null);
+        continue;
+      }
+      const nutrition = computeRecipeNutrition(
+        {
+          id: full.id,
+          servings: full.servings,
+          lines: full.lines.map((line) => ({
+            id: line.id,
+            ingredientId: line.ingredientId,
+            quantityCanonical: line.quantityCanonical,
+            entryUnitClass: line.entryUnitClass,
+          })),
+        },
+        Object.fromEntries(full.lines.map((line) => [line.ingredient.id, line.ingredient])),
+      );
+      cookCaloriesPerServing.set(cookRecipeId, nutrition.perServing.calories.value);
+    }
+
+    const entriesByDate: Record<string, PlanEntryRow[]> = Object.fromEntries(dates.map((date) => [date, []]));
+    for (const entry of entries) {
+      let caloriesKcal: number | null = null;
+      if (entry.kind === "cook" && entry.recipeId !== null) {
+        const perServing = cookCaloriesPerServing.get(entry.recipeId) ?? null;
+        if (perServing !== null) caloriesKcal = Math.round(perServing * entry.portions);
+      } else if (entry.kind === "eat_batch" && entry.batchId !== null) {
+        const perServing = batchCaloriesPerServing.get(entry.batchId) ?? null;
+        if (perServing !== null) caloriesKcal = Math.round(perServing * entry.portions);
+      }
+      entriesByDate[entry.date]?.push({ ...entry, caloriesKcal });
     }
 
     return {

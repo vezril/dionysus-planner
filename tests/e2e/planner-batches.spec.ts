@@ -26,7 +26,7 @@ test.describe("planner ready-to-eat", () => {
     test.skip(testInfo.project.name !== "chromium", "functional ACs verified once on chromium");
   });
 
-  test("setup: cook a 4-portion batch (eating 0 now)", async ({ page }) => {
+  test("setup: cook a 40-portion batch (eating 0 now)", async ({ page }) => {
     await page.goto("/pantry");
     await page.getByRole("button", { name: "Create custom item" }).click();
     const dialog = page.getByRole("dialog", { name: "Create custom item" });
@@ -45,7 +45,7 @@ test.describe("planner ready-to-eat", () => {
 
     await page.goto("/recipes/new");
     await page.getByRole("textbox", { name: "Recipe name" }).fill(RECIPE_NAME);
-    await page.getByRole("spinbutton", { name: "Servings" }).fill("4");
+    await page.getByRole("spinbutton", { name: "Servings" }).fill("40");
     const textarea = page.getByRole("textbox", { name: "Instructions" });
     await textarea.click();
     await textarea.pressSequentially("Simmer ");
@@ -68,8 +68,9 @@ test.describe("planner ready-to-eat", () => {
   test("the batch appears as ready to eat, plans onto a day, and availability shrinks", async ({ page }) => {
     await page.goto("/planner");
     const ready = page.getByTestId("planner-ready-batch").filter({ hasText: RECIPE_NAME });
-    // Delta-based: a persistent local planner DB can hold stale batch plans
-    // against a recreated service container's reused ids.
+    // Delta-based AND oversized (40 portions): a persistent local planner
+    // DB can hold stale batch plans against a recreated service container's
+    // reused ids — the pool must stay positive despite them.
     await expect(ready).toBeVisible();
     const before = Number((await ready.textContent())!.match(/(\d+(?:\.\d+)?) portions available/)![1]);
 
@@ -86,5 +87,11 @@ test.describe("planner ready-to-eat", () => {
     );
     // Batch plans never touch the shopping list.
     await expect(page.getByTestId("shopping-list-empty")).toBeVisible();
+
+    // Self-clean so reruns against a persistent planner DB stay bounded.
+    await entry.getByRole("button", { name: /Remove/ }).click();
+    await expect(
+      page.getByTestId("plan-entry").filter({ hasText: RECIPE_NAME }).filter({ has: page.getByTestId("plan-entry-batch") }),
+    ).toHaveCount(0);
   });
 });

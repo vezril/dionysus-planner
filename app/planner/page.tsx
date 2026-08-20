@@ -3,8 +3,7 @@ import { resolveDionysusTimezone, todayIsoDateIn } from "@/app/lib/dionysusTimez
 import { resolveDefaultThreshold } from "@/app/lib/threshold";
 import { getPlannerWeek } from "@/data/planner";
 import { shiftWeek, weekStartOf } from "@/domain/planner";
-import { AddPlanEntryForm } from "./_components/AddPlanEntryForm";
-import { PlanDayColumn } from "./_components/PlanDayColumn";
+import { PlannerBoard } from "./_components/PlannerBoard";
 import { ShoppingListPanel } from "./_components/ShoppingListPanel";
 import { SuggestionList } from "./_components/SuggestionList";
 
@@ -56,19 +55,14 @@ export default async function PlannerPage({
         </div>
       </div>
 
-      <AddPlanEntryForm dates={week.dates} dayLabels={DAY_LABELS} recipeOptions={week.recipeOptions} batchOptions={week.readyToEat} />
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7">
-        {week.dates.map((date, index) => (
-          <PlanDayColumn
-            key={date}
-            date={date}
-            label={DAY_LABELS[index]}
-            isToday={date === today}
-            entries={week.entriesByDate[date] ?? []}
-          />
-        ))}
-      </div>
+      <PlannerBoard
+        dates={week.dates}
+        dayLabels={DAY_LABELS}
+        today={today}
+        entriesByDate={week.entriesByDate}
+        recipeOptions={week.recipeOptions}
+        batchOptions={week.readyToEat}
+      />
 
       <ShoppingListPanel list={week.shoppingList} />
 

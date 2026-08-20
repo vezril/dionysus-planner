@@ -17,7 +17,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 // openspec: planner-ready-to-eat — a tiny in-memory service.
 const serviceMock = {
   batches: [] as Array<{ id: number; recipeId: number; cookedAt: string; servingsMade: number; remainingPortions: number }>,
-  recipes: [] as Array<{ id: number; name: string }>,
+  recipes: [] as Array<{ id: number; name: string; perServingNutrition?: Record<string, unknown> }>,
   fail: false,
 };
 vi.mock("@/services/dionysusService", () => ({
@@ -52,7 +52,7 @@ describe("weekly planner", () => {
     process.env.DIONYSUS_SERVICE_URL = "http://service.test";
     vi.resetModules();
     serviceMock.batches = [{ id: 7, recipeId: 1, cookedAt: "2026-08-19T12:00:00Z", servingsMade: 4, remainingPortions: 4 }];
-    serviceMock.recipes = [{ id: 1, name: "Chili" }];
+    serviceMock.recipes = [{ id: 1, name: "Chili", perServingNutrition: { caloriesKcal: 100, proteinG: 5, carbsG: 10, fatG: 3, sodiumMg: 50, micronutrients: {} } }];
     serviceMock.fail = false;
 
     const sqlite = new Database(dbPath);
@@ -90,7 +90,8 @@ describe("weekly planner", () => {
 
     const week = await getPlannerWeek("2026-08-17", 3);
     expect(week.entriesByDate["2026-08-18"]).toHaveLength(1);
-    expect(week.entriesByDate["2026-08-18"][0]).toMatchObject({ recipeName: "Bread", portions: 1 });
+    // openspec: planner-day-click-and-calories — 400 g flour × 40 kcal/100 g.
+    expect(week.entriesByDate["2026-08-18"][0]).toMatchObject({ recipeName: "Bread", portions: 1, caloriesKcal: 160 });
 
     const entryId = added.ok ? added.data.id : -1;
     expect((await removePlanEntry(entryId)).ok).toBe(true);
@@ -149,7 +150,12 @@ describe("weekly planner", () => {
     expect(added.ok).toBe(true);
 
     const week = await getPlannerWeek("2026-08-17", 3);
-    expect(week.entriesByDate["2026-08-19"][0]).toMatchObject({ kind: "eat_batch", batchLabel: "Chili", portions: 3 });
+    expect(week.entriesByDate["2026-08-19"][0]).toMatchObject({
+      kind: "eat_batch",
+      batchLabel: "Chili",
+      portions: 3,
+      caloriesKcal: 300, // 100 per serving × 3 portions
+    });
     expect(week.readyToEat).toEqual([{ batchId: 7, label: "Chili", availablePortions: 1 }]);
     expect(week.shoppingList.items).toEqual([]); // batches consume no pantry
     expect(week.suggestions.find((suggestion) => suggestion.name === "Bread")!.tier).toBe("cookable");

@@ -9,18 +9,18 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function AddPlanEntryForm({
-  dates,
-  dayLabels,
+  selectedDate,
+  selectedLabel,
   recipeOptions,
   batchOptions,
 }: {
-  dates: string[];
-  dayLabels: string[];
+  selectedDate: string;
+  selectedLabel: string;
   recipeOptions: Array<{ id: number; name: string; servings: number }>;
   batchOptions: Array<{ batchId: number; label: string; availablePortions: number }>;
 }) {
   const [recipeId, setRecipeId] = useState<string>("");
-  const [date, setDate] = useState<string>(dates[0]);
+  const date = selectedDate;
   const [portions, setPortions] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -67,19 +67,12 @@ export function AddPlanEntryForm({
         </Select>
       </div>
       <div className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Day</span>
-        <Select value={date} onValueChange={setDate}>
-          <SelectTrigger aria-label="Plan day" className="min-w-28">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {dates.map((candidate, index) => (
-              <SelectItem key={candidate} value={candidate}>
-                {dayLabels[index]} {candidate.slice(5)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <span className="text-sm font-medium">Adding to</span>
+        {/* openspec: planner-day-click-and-calories — the calendar IS the
+            picker; click a day card to change this. */}
+        <span data-testid="plan-target-day" className="rounded-md border border-primary/40 px-3 py-2 text-sm font-medium text-primary">
+          {selectedLabel}
+        </span>
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="plan-portions" className="text-sm font-medium">
