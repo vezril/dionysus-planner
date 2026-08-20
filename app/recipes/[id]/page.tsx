@@ -85,6 +85,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
           into one client component so the factor rescales them together
           (design D2); per-serving values pass through factor-independent. */}
       <PortionScaler
+        recipeId={recipe.id}
         servings={recipe.servings}
         lines={lines.map((line) => ({
           id: line.id,

@@ -136,10 +136,10 @@ jobs:
         env:
           DIONYSUS_SERVICE_URL: http://localhost:8080
         run: pnpm build
-      - name: E2E — Meal Log flow only
+      - name: E2E — Meal Log flow + cook flow
         env:
           DIONYSUS_SERVICE_URL: http://localhost:8080
-        run: pnpm exec playwright test tests/e2e/meal-log-flow.spec.ts --project=chromium
+        run: pnpm exec playwright test tests/e2e/meal-log-flow.spec.ts tests/e2e/cook-recipe.spec.ts --project=chromium
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4

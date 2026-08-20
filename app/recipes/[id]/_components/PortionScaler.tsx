@@ -15,6 +15,7 @@ import { useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { formatNutritionForDisplay } from "@/domain/nutrition";
 import { scaleDisplayQuantity, scaleNutrientValue } from "@/domain/portionScaling";
+import { CookRecipeDialog } from "./CookRecipeDialog";
 
 export interface ScalerLine {
   id: number;
@@ -35,10 +36,12 @@ export interface ScalerNutrientRow {
 }
 
 export function PortionScaler({
+  recipeId,
   servings,
   lines,
   totalRows,
 }: {
+  recipeId: number;
   servings: number;
   lines: ScalerLine[];
   totalRows: ScalerNutrientRow[];
@@ -63,6 +66,8 @@ export function PortionScaler({
           step={1}
           onValueChange={(values: number[]) => setPortions(values[0])}
         />
+        {/* openspec: cook-recipe-into-meals — cook at the slider's count. */}
+        <CookRecipeDialog recipeId={recipeId} portions={portions} />
       </div>
 
       <div className="flex flex-col gap-2">

@@ -11,6 +11,7 @@
  * not here (docs/stories/S-202-repositories.md Dev Notes carried forward).
  */
 import { createDb } from "@/data/db";
+import { UNITS } from "@/domain/units";
 import * as pantryRepo from "@/data/repositories/pantryRepo";
 import type {
   PantryItemInsertInput,
@@ -81,6 +82,31 @@ export async function removePantryItem(id: number): Promise<void> {
   const db = createDb();
   try {
     await pantryRepo.remove(db, id);
+  } finally {
+    db.$client.close();
+  }
+}
+
+/**
+ * openspec: cook-recipe-into-meals — one-transaction pantry consumption
+ * (floors at zero, reports shortfalls). Amounts are in each row's own
+ * canonical basis, resolved by the cook action beforehand.
+ */
+export async function getAllPantryRows(): Promise<pantryRepo.PantryItemRecord[]> {
+  const db = createDb();
+  try {
+    return await pantryRepo.getAll(db);
+  } finally {
+    db.$client.close();
+  }
+}
+
+export async function consumeFromPantry(
+  decrements: pantryRepo.PantryDecrement[],
+): Promise<pantryRepo.AppliedDecrement[]> {
+  const db = createDb();
+  try {
+    return pantryRepo.consume(db, decrements, (displayUnit) => UNITS[displayUnit].toCanonicalFactor);
   } finally {
     db.$client.close();
   }
