@@ -13,6 +13,7 @@
  */
 import { revalidatePath } from "next/cache";
 import { scaleMicronutrients } from "@/domain/micronutrients";
+import { getProductsOfGeneric } from "@/data/ingredients";
 import { ingredientSchema } from "@/domain/validation/ingredient.schema";
 import {
   nutritionScaleFactor,
@@ -112,6 +113,23 @@ function validationError(fieldErrors: Record<string, string[]>): ActionResult<ne
  * `overrideIngredientNutrition` editing a SEEDED row. Optional fields not
  * supplied by the caller persist as `null` (A-1).
  */
+
+/**
+ * openspec: generic-products — a product's generic must exist, be a
+ * generic itself (one level), and share the unit class.
+ */
+async function validateGenericLink(
+  genericOfId: number | null | undefined,
+  unitClass: "MASS" | "VOLUME" | "COUNT",
+): Promise<{ ok: true; value: number | null } | { ok: false; message: string }> {
+  if (genericOfId == null) return { ok: true, value: null };
+  const generic = await getIngredientRecordById(genericOfId);
+  if (!generic) return { ok: false, message: "Generic ingredient not found." };
+  if (generic.genericOfId !== null) return { ok: false, message: "That ingredient is itself a product — link to its generic instead." };
+  if (generic.unitClass !== unitClass) return { ok: false, message: `The generic's unit class (${generic.unitClass}) must match.` };
+  return { ok: true, value: genericOfId };
+}
+
 export async function createIngredient(input: unknown): Promise<ActionResult<IngredientRecord>> {
   const parsed = ingredientSchema.safeParse(input);
   if (!parsed.success) {
@@ -121,11 +139,16 @@ export async function createIngredient(input: unknown): Promise<ActionResult<Ing
   const data = parsed.data;
   const nutrition = resolveNutrition(data);
   if (!nutrition.ok) return nutrition;
+  const genericLink = await validateGenericLink(data.genericOfId, data.unitClass);
+  if (!genericLink.ok) {
+    return validationError({ genericOfId: [genericLink.message] });
+  }
   const record = await createIngredientRecord({
     name: data.name,
     unitClass: data.unitClass,
     category: data.category,
     shelfLifeDays: data.shelfLifeDays ?? null,
+    genericOfId: genericLink.value,
     ...nutrition.values,
     densityGPerMl: data.densityGPerMl ?? null,
     brand: data.brand ?? null,
@@ -171,11 +194,16 @@ export async function overrideIngredientNutrition(
 
   const nutrition = resolveNutrition(data);
   if (!nutrition.ok) return nutrition;
+  const editGenericLink = await validateGenericLink(data.genericOfId, data.unitClass);
+  if (!editGenericLink.ok) {
+    return validationError({ genericOfId: [editGenericLink.message] });
+  }
   const record = await updateIngredientNutritionRecord(id, {
     name: data.name,
     unitClass: data.unitClass,
     category: data.category,
     shelfLifeDays: data.shelfLifeDays ?? null,
+    genericOfId: editGenericLink.value,
     ...nutrition.values,
     densityGPerMl: data.densityGPerMl ?? null,
     brand: data.brand ?? null,
@@ -246,6 +274,20 @@ export async function deleteIngredient(id: number): Promise<ActionResult<{ id: n
     };
   }
 
+  // openspec: generic-products — a generic with linked products is load-
+  // bearing for interchangeable stock; refuse with names.
+  const linkedProducts = await getProductsOfGeneric(id);
+  if (linkedProducts.length > 0) {
+    return {
+      ok: false,
+      error: {
+        code: "REFERENCED",
+        message: `Cannot delete this ingredient — it is the generic for product(s) ${linkedProducts
+          .map((product) => product.name)
+          .join(", ")}.`,
+      },
+    };
+  }
   const references = await getIngredientReferences(id);
   if (references.recipes.length > 0 || references.inPantry) {
     return { ok: false, error: { code: "REFERENCED", message: referencedMessage(references) } };

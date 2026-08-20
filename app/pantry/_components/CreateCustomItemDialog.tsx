@@ -43,6 +43,7 @@ type FormValues = {
   cholesterolMgPerRef: number | undefined;
   category: "FOOD" | "DRINK" | "SUPPLEMENT" | undefined;
   shelfLifeDays: number | undefined;
+  genericOfId: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   brand: string | undefined;
   barcode: string | undefined;
@@ -79,6 +80,7 @@ const DEFAULT_VALUES: FormValues = {
   cholesterolMgPerRef: undefined,
   category: "FOOD",
   shelfLifeDays: undefined,
+  genericOfId: undefined,
   micronutrients: [],
   brand: undefined,
   barcode: undefined,
@@ -105,7 +107,11 @@ const NUTRITION_FIELDS: Array<{ name: keyof FormValues & string; label: string }
   { name: "shelfLifeDays", label: "Shelf life (days)" },
 ];
 
-export function CreateCustomItemDialog() {
+export function CreateCustomItemDialog({
+  genericOptions = [],
+}: {
+  genericOptions?: Array<{ id: number; name: string; unitClass: "MASS" | "VOLUME" | "COUNT" }>;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -249,6 +255,40 @@ export function CreateCustomItemDialog() {
                   </p>
                 ) : null}
               </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium">Generic of (optional)</span>
+              <Controller
+                control={control}
+                name="genericOfId"
+                render={({ field }) => (
+                  <Select
+                    value={field.value?.toString() ?? "none"}
+                    onValueChange={(value) => field.onChange(value === "none" ? undefined : Number(value))}
+                    disabled={!watchedUnitClass}
+                  >
+                    <SelectTrigger aria-label="Generic of">
+                      <SelectValue placeholder="None — this IS a generic" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None — this IS a generic</SelectItem>
+                      {genericOptions
+                        .filter((option) => option.unitClass === watchedUnitClass)
+                        .map((option) => (
+                          <SelectItem key={option.id} value={option.id.toString()}>
+                            {option.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.genericOfId ? (
+                <p data-testid="field-error-genericOfId" className="text-sm text-destructive">
+                  {errors.genericOfId.message}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-col gap-1">

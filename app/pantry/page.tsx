@@ -1,6 +1,7 @@
 import { getPantryList } from "@/data/pantry";
 import { EmptyState } from "@/components/empty-state";
 import { CreateCustomItemDialog } from "@/app/pantry/_components/CreateCustomItemDialog";
+import { listGenericOptions } from "@/data/ingredients";
 import { PantryItemForm } from "@/app/pantry/_components/PantryItemForm";
 import { PantryRow } from "@/app/pantry/_components/PantryRow";
 
@@ -27,7 +28,7 @@ export default async function PantryPage() {
           <h1 className="text-2xl font-semibold">Pantry</h1>
           <EmptyState description="Your pantry is empty — add items to start tracking what you have on hand.">
             <PantryItemForm triggerLabel="Add your first pantry item" />
-            <CreateCustomItemDialog />
+            <CreateCustomItemDialog genericOptions={await listGenericOptions()} />
           </EmptyState>
         </>
       ) : (
@@ -35,7 +36,7 @@ export default async function PantryPage() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h1 className="text-2xl font-semibold">Pantry</h1>
             <div className="flex flex-wrap gap-2">
-              <CreateCustomItemDialog />
+              <CreateCustomItemDialog genericOptions={await listGenericOptions()} />
               <PantryItemForm triggerLabel="Add pantry item" />
             </div>
           </div>

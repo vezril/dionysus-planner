@@ -60,6 +60,7 @@ type FormValues = {
   cholesterolMgPerRef: number | undefined;
   category: "FOOD" | "DRINK" | "SUPPLEMENT" | undefined;
   shelfLifeDays: number | undefined;
+  genericOfId: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   densityGPerMl: number | undefined;
 };
@@ -84,6 +85,7 @@ export interface IngredientFormInitialValues {
   cholesterolMgPerRef: number | null;
   category: "FOOD" | "DRINK" | "SUPPLEMENT";
   shelfLifeDays: number | null;
+  genericOfId: number | null;
   micronutrients?: Array<{ key: string; amountPerRef: number }>;
   densityGPerMl: number | null;
 }
@@ -112,6 +114,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       cholesterolMgPerRef: undefined,
       category: "FOOD",
       shelfLifeDays: undefined,
+      genericOfId: undefined,
       micronutrients: [],
       densityGPerMl: undefined,
     };
@@ -140,6 +143,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     cholesterolMgPerRef: initial.cholesterolMgPerRef ?? undefined,
     category: initial.category,
     shelfLifeDays: initial.shelfLifeDays ?? undefined,
+    genericOfId: initial.genericOfId ?? undefined,
     micronutrients: initial.micronutrients ?? [],
     densityGPerMl: initial.densityGPerMl ?? undefined,
   };
@@ -197,10 +201,12 @@ export function IngredientForm({
   mode,
   ingredientId,
   initialValues,
+  genericOptions = [],
 }: {
   mode: "create" | "edit";
   ingredientId?: number;
   initialValues?: IngredientFormInitialValues;
+  genericOptions?: Array<{ id: number; name: string; unitClass: "MASS" | "VOLUME" | "COUNT" }>;
 }) {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -328,6 +334,43 @@ export function IngredientForm({
             </Select>
           )}
         />
+      </div>
+
+      {/* openspec: generic-products — link a branded product to its
+          generic ("Butter"); same-class generics only, none until a class
+          is chosen. */}
+      <div className="flex flex-col gap-1">
+        <span className="text-sm font-medium text-foreground">Generic of (optional)</span>
+        <Controller
+          control={control}
+          name="genericOfId"
+          render={({ field }) => (
+            <Select
+              value={field.value?.toString() ?? "none"}
+              onValueChange={(value) => field.onChange(value === "none" ? undefined : Number(value))}
+              disabled={!watchedUnitClass}
+            >
+              <SelectTrigger aria-label="Generic of" className="max-w-sm">
+                <SelectValue placeholder="None — this IS a generic" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None — this IS a generic</SelectItem>
+                {genericOptions
+                  .filter((option) => option.unitClass === watchedUnitClass && option.id !== ingredientId)
+                  .map((option) => (
+                    <SelectItem key={option.id} value={option.id.toString()}>
+                      {option.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.genericOfId ? (
+          <p data-testid="field-error-genericOfId" className="text-sm text-destructive">
+            {errors.genericOfId.message}
+          </p>
+        ) : null}
       </div>
 
       {/* openspec: custom-pantry-items — optional product identity, for

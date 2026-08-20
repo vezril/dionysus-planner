@@ -16,6 +16,8 @@ import {
   type Suggestion,
 } from "@/domain/planner";
 import { buildShoppingList, type ShoppingList } from "@/domain/shoppingList";
+import * as ingredientRepo from "@/data/repositories/ingredientRepo";
+import { mergeRowsByGroup, normalizeLineToRoot } from "@/domain/interchange";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { listBatches, listRecipes as listServiceRecipes } from "@/services/dionysusService";
 
@@ -37,12 +39,19 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
   const db = createDb();
   try {
     const dates = weekDates(weekStart);
-    const [entries, pantryRows, pantryList, allRecipes] = await Promise.all([
+    const [entries, rawPantryRows, pantryList, rawRecipes, genericLinks] = await Promise.all([
       plannerRepo.listForDates(db, dates),
       pantryRepo.getAll(db),
       pantryRepo.getAllWithIngredientNames(db),
       recipeRepo.getAllWithLines(db),
+      ingredientRepo.getGenericLinks(db),
     ]);
+    // openspec: generic-products — one virtual pool per group.
+    const pantryRows = mergeRowsByGroup(rawPantryRows, genericLinks);
+    const allRecipes = rawRecipes.map((recipe) => ({
+      ...recipe,
+      lines: recipe.lines.map((line) => normalizeLineToRoot(line, genericLinks)),
+    }));
 
     // Planned consumption needs full ingredient records — one fetch per
     // DISTINCT planned recipe (a handful per week).
@@ -58,14 +67,20 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
       planned.push({
         servings: full.servings,
         portions: entry.portions,
-        lines: full.lines.map((line) => ({
-          id: line.id,
-          quantityCanonical: line.quantityCanonical,
-          entryUnitClass: line.entryUnitClass,
-          displayQuantity: line.displayQuantity,
-          displayUnit: line.displayUnit,
-          ingredient: line.ingredient,
-        })),
+        lines: full.lines.map((line) =>
+          normalizeLineToRoot(
+            {
+              id: line.id,
+              ingredientId: line.ingredientId,
+              quantityCanonical: line.quantityCanonical,
+              entryUnitClass: line.entryUnitClass,
+              displayQuantity: line.displayQuantity,
+              displayUnit: line.displayUnit,
+              ingredient: line.ingredient,
+            },
+            genericLinks,
+          ),
+        ),
       });
     }
     const depleted = depletePantryByPlan(

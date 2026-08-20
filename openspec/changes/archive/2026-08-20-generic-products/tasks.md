@@ -1,0 +1,4 @@
+- [x] 1.1 Migration 0011 (`genericOfId` self-FK); schema/validation (one level, class match, exists) + repo/action/form threading; detail display; delete-generic protection message
+- [x] 1.2 `domain/interchange.ts` (root resolution, group aggregation, line normalization) + unit tests; wire into whatCanICook/recipes-annotated/planner/shopping facades
+- [x] 1.3 Cook flow: preview candidates per line (choose status when >1 stocked), dialog product radios (required), confirm consumes the chosen row (server-validated) + integration tests
+- [x] 1.4 e2e (two butters: aggregate cookability, forced choice, chosen row decremented); full gate; walkthrough; train v2.20.0

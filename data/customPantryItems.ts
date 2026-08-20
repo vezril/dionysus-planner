@@ -30,6 +30,7 @@ export interface CustomPantryItemInput {
   cholesterolMgPerRef: number | null;
   category: "FOOD" | "DRINK" | "SUPPLEMENT";
   shelfLifeDays: number | null;
+  genericOfId: number | null;
   brand: string | null;
   barcode: string | null;
   packageQuantity: number | null;
@@ -74,6 +75,7 @@ export async function createCustomPantryItemRecords(
           cholesterolMgPerRef: input.cholesterolMgPerRef,
           category: input.category,
           shelfLifeDays: input.shelfLifeDays,
+          genericOfId: input.genericOfId,
           source: "CUSTOM",
           overridden: false,
           brand: input.brand,
@@ -120,6 +122,7 @@ export async function createCustomPantryItemRecords(
           cholesterolMgPerRef: ingredientRow.cholesterolMgPerRef,
           category: ingredientRow.category,
           shelfLifeDays: ingredientRow.shelfLifeDays,
+          genericOfId: ingredientRow.genericOfId,
           source: ingredientRow.source,
           overridden: ingredientRow.overridden,
           brand: ingredientRow.brand,

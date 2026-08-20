@@ -86,6 +86,7 @@ export interface IngredientNutritionFields {
   cholesterolMgPerRef?: number | null;
   category?: "FOOD" | "DRINK" | "SUPPLEMENT";
   shelfLifeDays?: number | null;
+  genericOfId?: number | null;
   densityGPerMl?: number | null;
   // openspec: custom-pantry-items — optional product identity.
   brand?: string | null;
@@ -124,6 +125,7 @@ export async function createIngredientRecord(input: IngredientNutritionFields): 
       cholesterolMgPerRef: input.cholesterolMgPerRef ?? null,
       category: input.category ?? "FOOD",
       shelfLifeDays: input.shelfLifeDays ?? null,
+      genericOfId: input.genericOfId ?? null,
       source: "CUSTOM",
       brand: input.brand ?? null,
       barcode: input.barcode ?? null,
@@ -157,6 +159,7 @@ export async function updateIngredientNutritionRecord(
       cholesterolMgPerRef: patch.cholesterolMgPerRef ?? null,
       category: patch.category ?? "FOOD",
       shelfLifeDays: patch.shelfLifeDays ?? null,
+      genericOfId: patch.genericOfId ?? null,
       overridden: patch.overridden,
       brand: patch.brand ?? null,
       barcode: patch.barcode ?? null,
@@ -224,6 +227,46 @@ export async function getIngredientMicronutrients(
   const db = createDb();
   try {
     return await ingredientRepo.getMicronutrients(db, ingredientId);
+  } finally {
+    db.$client.close();
+  }
+}
+
+/** openspec: generic-products */
+export async function getGenericLinksMap(): Promise<Map<number, number | null>> {
+  const db = createDb();
+  try {
+    return await ingredientRepo.getGenericLinks(db);
+  } finally {
+    db.$client.close();
+  }
+}
+
+export async function getProductsOfGeneric(genericId: number): Promise<Array<{ id: number; name: string }>> {
+  const db = createDb();
+  try {
+    return await ingredientRepo.listProductsOfGeneric(db, genericId);
+  } finally {
+    db.$client.close();
+  }
+}
+
+export interface GenericOption {
+  id: number;
+  name: string;
+  unitClass: "MASS" | "VOLUME" | "COUNT";
+}
+
+/** openspec: generic-products — pickable generics (no generic link of
+ * their own) for the product forms. */
+export async function listGenericOptions(): Promise<GenericOption[]> {
+  const db = createDb();
+  try {
+    const all = await ingredientRepo.listAll(db);
+    return all
+      .filter((record) => record.genericOfId === null)
+      .map((record) => ({ id: record.id, name: record.name, unitClass: record.unitClass }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   } finally {
     db.$client.close();
   }
