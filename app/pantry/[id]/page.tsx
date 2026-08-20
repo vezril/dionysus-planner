@@ -62,6 +62,14 @@ export default async function PantryItemDetailPage({
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl font-semibold">{ingredient.name}</h1>
         <div className="flex items-baseline gap-4">
+          {ingredient.category !== "FOOD" ? (
+            <span
+              data-testid="category-badge"
+              className="rounded-full border border-primary/40 px-2 py-0.5 text-xs font-medium text-primary"
+            >
+              {ingredient.category}
+            </span>
+          ) : null}
           <span data-testid="pantry-detail-on-hand" className="font-mono text-sm tabular-nums text-muted-foreground">
             {item.displayQuantity} {item.displayUnit} on hand
           </span>

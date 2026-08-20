@@ -40,6 +40,7 @@ describe("data/customPantryItems", () => {
     return {
       name: "Ritz crackers",
       unitClass: "MASS" as const,
+      category: "FOOD" as const,
       densityGPerMl: null,
       caloriesPerRef: 492,
       proteinPerRef: 7,

@@ -22,6 +22,7 @@ export interface IngredientSummary {
   name: string;
   unitClass: "MASS" | "VOLUME" | "COUNT";
   source: "SEEDED" | "CUSTOM";
+  category: "FOOD" | "DRINK" | "SUPPLEMENT";
   caloriesPerRef: number;
   proteinPerRef: number;
   carbsPerRef: number;
@@ -34,6 +35,7 @@ function toSummary(record: IngredientRecord): IngredientSummary {
     name: record.name,
     unitClass: record.unitClass,
     source: record.source,
+    category: record.category,
     caloriesPerRef: record.caloriesPerRef,
     proteinPerRef: record.proteinPerRef,
     carbsPerRef: record.carbsPerRef,
@@ -82,6 +84,7 @@ export interface IngredientNutritionFields {
   saturatedFatGPerRef?: number | null;
   transFatGPerRef?: number | null;
   cholesterolMgPerRef?: number | null;
+  category?: "FOOD" | "DRINK" | "SUPPLEMENT";
   densityGPerMl?: number | null;
   // openspec: custom-pantry-items — optional product identity.
   brand?: string | null;
@@ -118,6 +121,7 @@ export async function createIngredientRecord(input: IngredientNutritionFields): 
       saturatedFatGPerRef: input.saturatedFatGPerRef ?? null,
       transFatGPerRef: input.transFatGPerRef ?? null,
       cholesterolMgPerRef: input.cholesterolMgPerRef ?? null,
+      category: input.category ?? "FOOD",
       source: "CUSTOM",
       brand: input.brand ?? null,
       barcode: input.barcode ?? null,
@@ -149,6 +153,7 @@ export async function updateIngredientNutritionRecord(
       saturatedFatGPerRef: patch.saturatedFatGPerRef ?? null,
       transFatGPerRef: patch.transFatGPerRef ?? null,
       cholesterolMgPerRef: patch.cholesterolMgPerRef ?? null,
+      category: patch.category ?? "FOOD",
       overridden: patch.overridden,
       brand: patch.brand ?? null,
       barcode: patch.barcode ?? null,
