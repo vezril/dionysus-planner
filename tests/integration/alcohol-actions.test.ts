@@ -66,9 +66,8 @@ describe("alcohol through the actions", () => {
       expect(result.data.alcoholGPerRef).toBeNull();
     }
   });
-});
 
-describe("ABV entry (openspec: batch-nutrition-and-abv-entry)", () => {
+  describe("ABV entry (openspec: batch-nutrition-and-abv-entry)", () => {
   it("a VOLUME drink's ABV converts to grams and ignores the nutrition basis", async () => {
     const { createIngredient } = await import("@/app/actions/ingredient-actions");
     const result = await createIngredient({
@@ -105,4 +104,6 @@ describe("ABV entry (openspec: batch-nutrition-and-abv-entry)", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.fieldErrors?.alcoholAbvPercent).toBeDefined();
   });
+});
+
 });
