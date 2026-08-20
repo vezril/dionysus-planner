@@ -13,6 +13,11 @@
  */
 import { revalidatePath } from "next/cache";
 import { ingredientSchema } from "@/domain/validation/ingredient.schema";
+import {
+  nutritionScaleFactor,
+  scaleNutritionFields,
+  type NutritionFieldValues,
+} from "@/domain/nutritionBasis";
 import type { IngredientRecord } from "@/data/repositories/ingredientRepo";
 import {
   createIngredientRecord,
@@ -29,6 +34,56 @@ export interface ActionError {
 }
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: ActionError };
+
+/**
+ * openspec: nutrition-basis-and-edit — converts label-basis nutrition
+ * ("per 355 mL") to per-reference values before persisting. Absent basis
+ * = factor 1 (unchanged behavior). A basis unit outside the ingredient's
+ * class is a field error, never a silent guess.
+ */
+function resolveNutrition(data: {
+  unitClass: "MASS" | "VOLUME" | "COUNT";
+  caloriesPerRef: number;
+  proteinPerRef: number;
+  carbsPerRef: number;
+  fatPerRef: number;
+  fiberPerRef?: number | null;
+  sugarPerRef?: number | null;
+  sodiumMgPerRef?: number | null;
+  nutritionBasisQuantity?: number | null;
+  nutritionBasisUnit?: string | null;
+}): { ok: true; values: NutritionFieldValues } | { ok: false; error: ActionError } {
+  const values: NutritionFieldValues = {
+    caloriesPerRef: data.caloriesPerRef,
+    proteinPerRef: data.proteinPerRef,
+    carbsPerRef: data.carbsPerRef,
+    fatPerRef: data.fatPerRef,
+    fiberPerRef: data.fiberPerRef ?? null,
+    sugarPerRef: data.sugarPerRef ?? null,
+    sodiumMgPerRef: data.sodiumMgPerRef ?? null,
+  };
+  if (data.nutritionBasisQuantity == null || data.nutritionBasisUnit == null) {
+    return { ok: true, values };
+  }
+  const factor = nutritionScaleFactor(data.nutritionBasisQuantity, data.nutritionBasisUnit, data.unitClass);
+  if (!factor.ok) {
+    const message =
+      factor.error === "CLASS_MISMATCH"
+        ? `The basis unit must match the ingredient's unit class (${data.unitClass}).`
+        : factor.error === "UNKNOWN_UNIT"
+          ? "Unknown basis unit."
+          : "Basis quantity must be positive.";
+    return {
+      ok: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Ingredient input failed validation.",
+        fieldErrors: { nutritionBasisUnit: [message] },
+      },
+    };
+  }
+  return { ok: true, values: scaleNutritionFields(values, factor.factor) };
+}
 
 function validationError(fieldErrors: Record<string, string[]>): ActionResult<never> {
   return {
@@ -55,16 +110,12 @@ export async function createIngredient(input: unknown): Promise<ActionResult<Ing
   }
 
   const data = parsed.data;
+  const nutrition = resolveNutrition(data);
+  if (!nutrition.ok) return nutrition;
   const record = await createIngredientRecord({
     name: data.name,
     unitClass: data.unitClass,
-    caloriesPerRef: data.caloriesPerRef,
-    proteinPerRef: data.proteinPerRef,
-    carbsPerRef: data.carbsPerRef,
-    fatPerRef: data.fatPerRef,
-    fiberPerRef: data.fiberPerRef ?? null,
-    sugarPerRef: data.sugarPerRef ?? null,
-    sodiumMgPerRef: data.sodiumMgPerRef ?? null,
+    ...nutrition.values,
     densityGPerMl: data.densityGPerMl ?? null,
     brand: data.brand ?? null,
     barcode: data.barcode ?? null,
@@ -105,16 +156,12 @@ export async function overrideIngredientNutrition(
   const data = parsed.data;
   const overridden = existing.source === "SEEDED" ? true : existing.overridden;
 
+  const nutrition = resolveNutrition(data);
+  if (!nutrition.ok) return nutrition;
   const record = await updateIngredientNutritionRecord(id, {
     name: data.name,
     unitClass: data.unitClass,
-    caloriesPerRef: data.caloriesPerRef,
-    proteinPerRef: data.proteinPerRef,
-    carbsPerRef: data.carbsPerRef,
-    fatPerRef: data.fatPerRef,
-    fiberPerRef: data.fiberPerRef ?? null,
-    sugarPerRef: data.sugarPerRef ?? null,
-    sodiumMgPerRef: data.sodiumMgPerRef ?? null,
+    ...nutrition.values,
     densityGPerMl: data.densityGPerMl ?? null,
     brand: data.brand ?? null,
     barcode: data.barcode ?? null,

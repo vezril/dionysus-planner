@@ -17,13 +17,14 @@
  */
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { createIngredient, overrideIngredientNutrition } from "@/app/actions/ingredient-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ingredientSchema, type IngredientSchemaInput } from "@/domain/validation/ingredient.schema";
+import { referenceBasisFor, unitsForClass } from "@/domain/nutritionBasis";
 
 const UNIT_CLASS_OPTIONS: Array<{ value: IngredientSchemaInput["unitClass"]; label: string }> = [
   { value: "MASS", label: "Mass" },
@@ -42,6 +43,8 @@ type FormValues = {
   barcode: string | undefined;
   packageQuantity: number | undefined;
   packageUnit: string | undefined;
+  nutritionBasisQuantity: number | undefined;
+  nutritionBasisUnit: string | undefined;
   caloriesPerRef: number | undefined;
   proteinPerRef: number | undefined;
   carbsPerRef: number | undefined;
@@ -78,6 +81,8 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       barcode: undefined,
       packageQuantity: undefined,
       packageUnit: undefined,
+      nutritionBasisQuantity: undefined,
+      nutritionBasisUnit: undefined,
       caloriesPerRef: undefined,
       proteinPerRef: undefined,
       carbsPerRef: undefined,
@@ -95,6 +100,10 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     barcode: initial.barcode ?? undefined,
     packageQuantity: initial.packageQuantity ?? undefined,
     packageUnit: initial.packageUnit ?? undefined,
+    // Stored values are per-reference; the edit form states that basis
+    // explicitly (design.md: no original-basis reconstruction).
+    nutritionBasisQuantity: referenceBasisFor(initial.unitClass).quantity,
+    nutritionBasisUnit: referenceBasisFor(initial.unitClass).unit,
     caloriesPerRef: initial.caloriesPerRef,
     proteinPerRef: initial.proteinPerRef,
     carbsPerRef: initial.carbsPerRef,
@@ -154,6 +163,8 @@ export function IngredientForm({
     handleSubmit,
     control,
     setError,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     // `FormValues` intentionally widens every schema-required field to
@@ -164,6 +175,23 @@ export function IngredientForm({
     resolver: zodResolver(ingredientSchema) as unknown as Resolver<FormValues>,
     defaultValues: toDefaultValues(initialValues),
   });
+
+  // openspec: nutrition-basis-and-edit — the basis follows the selected
+  // unit class, defaulting to that class's reference (100 g / 100 mL / 1)
+  // so an untouched form behaves exactly as before.
+  const watchedUnitClass = watch("unitClass");
+  const watchedBasisQuantity = watch("nutritionBasisQuantity");
+  const watchedBasisUnit = watch("nutritionBasisUnit");
+  useEffect(() => {
+    if (!watchedUnitClass) return;
+    const reference = referenceBasisFor(watchedUnitClass);
+    const unitStillValid =
+      watchedBasisUnit != null && unitsForClass(watchedUnitClass).includes(watchedBasisUnit);
+    if (!unitStillValid) {
+      setValue("nutritionBasisQuantity", reference.quantity);
+      setValue("nutritionBasisUnit", reference.unit);
+    }
+  }, [watchedUnitClass, watchedBasisUnit, setValue]);
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
@@ -272,6 +300,60 @@ export function IngredientForm({
           ) : null}
         </div>
       </div>
+
+      {/* openspec: nutrition-basis-and-edit — enter label values against
+          any same-class basis; the action converts to per-reference. */}
+      <div className="flex max-w-sm flex-wrap items-end gap-3">
+        <div className="flex min-w-28 flex-1 flex-col gap-1">
+          <label htmlFor="ingredient-nutritionBasisQuantity" className="text-sm font-medium text-foreground">
+            Nutrition values are per
+          </label>
+          <Input
+            id="ingredient-nutritionBasisQuantity"
+            type="number"
+            step="any"
+            {...register("nutritionBasisQuantity", { setValueAs: toOptionalNumber })}
+          />
+        </div>
+        <div className="flex min-w-24 flex-col gap-1">
+          <span className="text-sm font-medium text-foreground">Basis unit</span>
+          <Controller
+            control={control}
+            name="nutritionBasisUnit"
+            render={({ field }) => (
+              <Select
+                value={field.value ?? ""}
+                onValueChange={field.onChange}
+                disabled={!watchedUnitClass}
+              >
+                <SelectTrigger aria-label="Basis unit">
+                  <SelectValue placeholder="Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(watchedUnitClass ? unitsForClass(watchedUnitClass) : []).map((unit) => (
+                    <SelectItem key={unit} value={unit}>
+                      {unit}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
+      </div>
+      {errors.nutritionBasisUnit ? (
+        <p data-testid="field-error-nutritionBasisUnit" className="text-sm text-destructive">
+          {errors.nutritionBasisUnit.message}
+        </p>
+      ) : null}
+      <p className="text-xs text-muted-foreground">
+        Nutrition below is per{" "}
+        <span data-testid="nutrition-basis-label" className="font-medium">
+          {watchedBasisQuantity ?? "—"} {watchedBasisUnit ?? ""}
+        </span>
+        {" "}— stored per {watchedUnitClass === "COUNT" ? "1" : "100"}{" "}
+        {watchedUnitClass === "VOLUME" ? "mL" : watchedUnitClass === "COUNT" ? "count" : "g"} automatically.
+      </p>
 
       {NUMBER_FIELDS.map(({ name, label }) => (
         <div key={name} className="flex flex-col gap-1">

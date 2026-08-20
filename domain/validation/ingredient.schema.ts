@@ -34,10 +34,19 @@ export const ingredientSchema = z
     barcode: z.string().trim().min(1).nullish(),
     packageQuantity: z.number().gt(0).nullish(),
     packageUnit: z.string().trim().min(1).nullish(),
+    // openspec: nutrition-basis-and-edit — optional entry basis ("per 355
+    // mL"). Structural checks only here; the class-consistency rule and the
+    // actual conversion live in the Server Action (design.md Decision 2).
+    nutritionBasisQuantity: z.number().gt(0).nullish(),
+    nutritionBasisUnit: z.string().trim().min(1).nullish(),
   })
   .refine((value) => value.packageQuantity == null || value.packageUnit != null, {
     message: "A package size needs a unit.",
     path: ["packageUnit"],
+  })
+  .refine((value) => value.nutritionBasisQuantity == null || value.nutritionBasisUnit != null, {
+    message: "A nutrition basis needs a unit.",
+    path: ["nutritionBasisUnit"],
   });
 
 export type IngredientSchemaInput = z.infer<typeof ingredientSchema>;
