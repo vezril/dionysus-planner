@@ -83,3 +83,13 @@ export function stripMentionIds(body: string): string {
     quantityBlock === undefined ? `@${name}` : `@${name}{${quantityBlock}}`,
   );
 }
+
+/**
+ * openspec: recipe-display-polish — mentions as plain prose: bare
+ * ingredient name, no `@`/id/quantity braces (quantities belong to the
+ * ingredient list). Non-mention text, including a bare unlinked `@`,
+ * is untouched.
+ */
+export function humanizeMentions(body: string): string {
+  return body.replace(MENTION_PATTERN, (_fullMatch, name: string) => name);
+}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRecipeDetail } from "@/data/recipes";
 import type { NutritionTotals } from "@/domain/nutrition";
-import { stripMentionIds } from "@/domain/cooklangParser";
+import { humanizeMentions } from "@/domain/cooklangParser";
 import { computeRecipeAbv } from "@/domain/abv";
 import { DeleteRecipeButton } from "@/app/recipes/_components/delete-recipe-button";
 import { PortionScaler } from "./_components/PortionScaler";
@@ -79,11 +79,10 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
           </span>
         ) : null}
       </p>
-      {/* openspec: cooklang-recipe-editor — the stored `instructions` text
-          carries @Name(id){qty%unit} mentions; readers never see the raw
-          numeric id (design.md Decision 7). */}
+      {/* openspec: recipe-display-polish — mentions render as plain prose;
+          quantities live in the ingredient list below. */}
       <p data-testid="recipe-instructions" className="whitespace-pre-wrap text-sm">
-        {stripMentionIds(recipe.instructions)}
+        {humanizeMentions(recipe.instructions)}
       </p>
 
       {tags.length > 0 ? (

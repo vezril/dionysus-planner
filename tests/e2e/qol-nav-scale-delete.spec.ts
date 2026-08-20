@@ -72,6 +72,12 @@ test.describe("qol-nav-scale-delete", () => {
       await page.getByTestId("recipe-row").filter({ hasText: RECIPE_NAME }).getByRole("link").first().click();
     }
 
+    // openspec: recipe-display-polish — instructions are prose (no braces),
+    // ingredient rows read quantity-first.
+    await expect(page.getByTestId("recipe-instructions")).toContainText("Mince Garlic powder and serve.");
+    await expect(page.getByTestId("recipe-instructions")).not.toContainText("{");
+    await expect(page.getByTestId("recipe-line").first()).toContainText("2 g, Garlic powder");
+
     const slider = page.getByRole("slider", { name: "Portions" });
     await expect(slider).toBeVisible();
     await expect(page.getByTestId("portion-count")).toHaveText("4");

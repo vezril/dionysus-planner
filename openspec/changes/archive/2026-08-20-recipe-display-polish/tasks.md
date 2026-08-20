@@ -1,0 +1,2 @@
+- [x] 1.1 `humanizeMentions` + unit tests; detail page uses it
+- [x] 1.2 PortionScaler rows quantity-first; e2e assertion; full gate; train v2.24.0
