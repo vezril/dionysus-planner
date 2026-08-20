@@ -11,8 +11,8 @@ import { expect, test, type Page } from "@playwright/test";
  * ============================ PINNED CONTRACT (demanded surface) ==========
  * `/pantry` (populated or empty state): button "Create custom item" opens
  * a dialog "Create custom item" with: textbox Name, Brand (optional),
- * Barcode (optional), spinbutton Package size (optional), textbox Package
- * unit, combobox "Unit class", nutrition spinbuttons (Calories/Protein/
+ * Barcode (optional), spinbutton Package size (optional), combobox Package
+ * unit (known unit keys — count-via-package-size), combobox "Unit class", nutrition spinbuttons (Calories/Protein/
  * Carbs/Fat required), spinbutton "On hand now (0 is fine)", combobox
  * "Pantry unit", submit "Create item".
  * A duplicate barcode surfaces `data-testid="field-error-barcode"`.
@@ -70,7 +70,9 @@ test.describe("custom pantry items", () => {
     await dialog.getByRole("textbox", { name: "Brand (optional)" }).fill("Ritz");
     await dialog.getByRole("textbox", { name: "Barcode (optional)" }).fill(BARCODE);
     await dialog.getByRole("spinbutton", { name: "Package size (optional)" }).fill("200");
-    await dialog.getByRole("textbox", { name: "Package unit" }).fill("g");
+    // openspec: count-via-package-size — package unit is a select now.
+    await dialog.getByRole("combobox", { name: "Package unit" }).click();
+    await page.getByRole("option", { name: "g", exact: true }).click();
     await fillPantryHalf(page, dialog, "200");
     await dialog.getByRole("button", { name: "Create item" }).click();
 

@@ -21,7 +21,9 @@ export type PantryIndex = Map<number, PantryEntry>;
 /**
  * A recipe line as consumed by matching. Carries its constituent
  * ingredient's `unitClass`/`densityGPerMl` inline (architecture §4 density
- * channel) — no separate ingredients lookup parameter.
+ * channel) — no separate ingredients lookup parameter. Package fields are
+ * optional (openspec: count-via-package-size) — absent means no
+ * COUNT↔MASS/VOLUME bridge, same as before they existed.
  */
 export interface RecipeLine {
   ingredientId: number;
@@ -29,7 +31,12 @@ export interface RecipeLine {
   entryUnitClass: UnitClass;
   displayQuantity: number;
   displayUnit: string;
-  ingredient: { unitClass: UnitClass; densityGPerMl: number | null };
+  ingredient: {
+    unitClass: UnitClass;
+    densityGPerMl: number | null;
+    packageQuantity?: number | null;
+    packageUnit?: string | null;
+  };
 }
 
 /** A recipe as consumed by computeCookableAndNearMatch(). */
@@ -94,6 +101,8 @@ function evaluateIngredientGroup(
       line.entryUnitClass,
       first.entryUnitClass,
       line.ingredient.densityGPerMl,
+      line.ingredient.packageQuantity ?? null,
+      line.ingredient.packageUnit ?? null,
     );
     if (resolved === "UNRESOLVED") {
       groupUnresolved = true;
@@ -135,6 +144,8 @@ function evaluateIngredientGroup(
     pantryEntry.class,
     first.entryUnitClass,
     first.ingredient.densityGPerMl,
+    first.ingredient.packageQuantity ?? null,
+    first.ingredient.packageUnit ?? null,
   );
 
   if (resolvedAvailable === "UNRESOLVED") {

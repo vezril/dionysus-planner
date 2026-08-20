@@ -11,6 +11,7 @@
  * when present (FR-12).
  */
 import { z } from "zod";
+import { UNITS } from "../units";
 
 const nonNegativeNumber = z.number().min(0);
 const optionalNonNegative = z.number().min(0).nullish();
@@ -33,7 +34,12 @@ export const ingredientSchema = z
     brand: z.string().trim().min(1).nullish(),
     barcode: z.string().trim().min(1).nullish(),
     packageQuantity: z.number().gt(0).nullish(),
-    packageUnit: z.string().trim().min(1).nullish(),
+    // openspec: count-via-package-size — a real unit key, not free text:
+    // the package size now drives COUNT↔MASS/VOLUME resolution.
+    packageUnit: z
+      .string()
+      .refine((unit) => unit in UNITS, { message: "Pick a known unit." })
+      .nullish(),
     // openspec: nutrition-basis-and-edit — optional entry basis ("per 355
     // mL"). Structural checks only here; the class-consistency rule and the
     // actual conversion live in the Server Action (design.md Decision 2).

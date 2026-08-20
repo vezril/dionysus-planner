@@ -144,6 +144,8 @@ export async function addOrUpdatePantryItem(input: unknown): Promise<PantryActio
     incoming.entryUnitClass,
     existing.entryUnitClass,
     densityGPerMl,
+    ingredientRecord?.packageQuantity ?? null,
+    ingredientRecord?.packageUnit ?? null,
   );
 
   if (convertedOntoExistingBasis === "UNRESOLVED") {
@@ -152,7 +154,7 @@ export async function addOrUpdatePantryItem(input: unknown): Promise<PantryActio
       error: {
         code: "INCREMENT_REJECTED_NO_DENSITY",
         message:
-          "Cannot convert to this pantry item's existing unit — no density is set for this ingredient. Choose Replace instead.",
+          "Cannot convert to this pantry item's existing unit — no density or package size is set for this ingredient. Choose Replace instead.",
         existing,
       },
     };

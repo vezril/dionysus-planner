@@ -78,6 +78,8 @@ export interface RecipeUpdateInput {
 export interface DensityIngredientProjection {
   unitClass: UnitClass;
   densityGPerMl: number | null;
+  packageQuantity: number | null;
+  packageUnit: string | null;
 }
 
 function nowIso(): string {
@@ -214,6 +216,8 @@ export async function getAllWithLines(
       line: recipeLine,
       ingredientUnitClass: ingredient.unitClass,
       ingredientDensity: ingredient.densityGPerMl,
+      ingredientPackageQuantity: ingredient.packageQuantity,
+      ingredientPackageUnit: ingredient.packageUnit,
     })
     .from(recipe)
     .leftJoin(recipeLine, eq(recipeLine.recipeId, recipe.id))
@@ -233,7 +237,12 @@ export async function getAllWithLines(
     if (row.line !== null) {
       entry.lines.push({
         ...toLineRecord(row.line),
-        ingredient: { unitClass: row.ingredientUnitClass!, densityGPerMl: row.ingredientDensity ?? null },
+        ingredient: {
+          unitClass: row.ingredientUnitClass!,
+          densityGPerMl: row.ingredientDensity ?? null,
+          packageQuantity: row.ingredientPackageQuantity ?? null,
+          packageUnit: row.ingredientPackageUnit ?? null,
+        },
       });
     }
   }

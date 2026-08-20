@@ -28,7 +28,12 @@ export const customPantryItemSchema = z
     brand: z.string().trim().min(1).nullish(),
     barcode: z.string().trim().min(1).nullish(),
     packageQuantity: z.number().gt(0).nullish(),
-    packageUnit: z.string().trim().min(1).nullish(),
+    // openspec: count-via-package-size — a real unit key, not free text:
+    // the package size now drives COUNT↔MASS/VOLUME resolution.
+    packageUnit: z
+      .string()
+      .refine((unit) => unit in UNITS, { message: "Pick a known unit." })
+      .nullish(),
     initialQuantity: z
       .number({ error: "Quantity is required (0 is fine)." })
       .min(0, { message: "Quantity cannot be negative." }),

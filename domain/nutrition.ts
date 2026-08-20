@@ -33,6 +33,9 @@ export interface NutritionIngredient {
   id: number;
   unitClass: UnitClass;
   densityGPerMl: number | null;
+  /** openspec: count-via-package-size — optional COUNT↔MASS/VOLUME bridge. */
+  packageQuantity?: number | null;
+  packageUnit?: string | null;
   caloriesPerRef: number;
   proteinPerRef: number;
   carbsPerRef: number;
@@ -152,6 +155,8 @@ export function computeRecipeNutrition(
       line.entryUnitClass,
       ingredient.unitClass,
       ingredient.densityGPerMl,
+      ingredient.packageQuantity ?? null,
+      ingredient.packageUnit ?? null,
     );
 
     if (resolvedQuantity === "UNRESOLVED") {
