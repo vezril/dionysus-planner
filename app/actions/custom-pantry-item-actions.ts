@@ -8,6 +8,7 @@
  * ingredient+pantry transaction).
  */
 import { revalidatePath } from "next/cache";
+import { abvPercentToGramsPer100Ml } from "@/domain/abv";
 import { scaleMicronutrients } from "@/domain/micronutrients";
 import { getIngredientRecordById, setIngredientMicronutrients } from "@/data/ingredients";
 import { customPantryItemSchema } from "@/domain/validation/customPantryItem.schema";
@@ -115,6 +116,21 @@ export async function createCustomPantryItem(
     }
     nutrition = scaleNutritionFields(nutrition, factor.factor);
     basisFactor = factor.factor;
+  }
+
+  // openspec: batch-nutrition-and-abv-entry — ratio, basis-exempt.
+  if (data.alcoholAbvPercent != null) {
+    if (data.unitClass !== "VOLUME") {
+      return {
+        ok: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Custom item input failed validation.",
+          fieldErrors: { alcoholAbvPercent: ["ABV entry needs a volume-class item."] },
+        },
+      };
+    }
+    nutrition = { ...nutrition, alcoholGPerRef: abvPercentToGramsPer100Ml(data.alcoholAbvPercent) };
   }
 
   const genericLink = await validateGenericLink(data.genericOfId, data.unitClass);

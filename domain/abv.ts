@@ -77,3 +77,13 @@ export function computeRecipeAbv(lines: AbvLine[]): AbvResult | null {
     totalVolumeMl,
   };
 }
+
+/** openspec: batch-nutrition-and-abv-entry — label ABV% ↔ stored grams per
+ * 100 mL (VOLUME reference). A ratio: basis-independent by definition. */
+export function abvPercentToGramsPer100Ml(abvPercent: number): number {
+  return Math.round(abvPercent * ETHANOL_DENSITY_G_PER_ML * 10_000) / 10_000;
+}
+
+export function gramsPer100MlToAbvPercent(gramsPer100Ml: number): number {
+  return Math.round((gramsPer100Ml / ETHANOL_DENSITY_G_PER_ML) * 10) / 10;
+}

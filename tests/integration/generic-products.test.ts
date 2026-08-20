@@ -14,11 +14,21 @@ import {
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-const serviceMock = { batches: [] as unknown[], recipes: [] as unknown[], meals: [] as unknown[], nextId: 100 };
+const serviceMock = {
+  batches: [] as unknown[],
+  recipes: [] as unknown[],
+  ingredients: [] as Array<Record<string, unknown> & { id: number; name: string }>,
+  meals: [] as unknown[],
+  nextId: 100,
+};
 vi.mock("@/services/dionysusService", () => ({
   DionysusServiceError: class DionysusServiceError extends Error {},
-  listIngredients: vi.fn(async () => []),
-  createIngredient: vi.fn(async (_b: string, input: object) => ({ ...input, id: serviceMock.nextId++ })),
+  listIngredients: vi.fn(async () => serviceMock.ingredients),
+  createIngredient: vi.fn(async (_b: string, input: object) => {
+    const created = { ...input, id: serviceMock.nextId++ } as (typeof serviceMock.ingredients)[number];
+    serviceMock.ingredients.push(created);
+    return created;
+  }),
   listRecipes: vi.fn(async () => serviceMock.recipes),
   createRecipe: vi.fn(async (_b: string, input: object) => {
     const created = { ...input, id: serviceMock.nextId++ };
@@ -55,6 +65,7 @@ describe("generic products", () => {
     vi.resetModules();
     serviceMock.recipes = [];
     serviceMock.batches = [];
+    serviceMock.ingredients = [];
 
     const sqlite = new Database(dbPath);
     runMigrations(sqlite);
@@ -129,6 +140,30 @@ describe("generic products", () => {
     const line = preview.data.lines[0];
     expect(line.status).toBe("choice");
     expect(line.candidates.map((candidate) => candidate.name).sort()).toEqual(["Kirkland Butter", "Lactantia Butter"]);
+  });
+
+  it("the mirror uses the PICKED product; variant picks make variant service recipes; repeats reuse", async () => {
+    // Plenty of stock so three consecutive cooks keep both rows as candidates.
+    const sqlite = new Database(dbPath);
+    sqlite.prepare("UPDATE pantry_item SET quantityCanonical = 1000, displayQuantity = 1000").run();
+    sqlite.close();
+
+    const { cookRecipe, previewCook } = await import("@/app/actions/cook-actions");
+    const preview = await previewCook(recipeId, 1);
+    const lineId = preview.ok ? preview.data.lines[0].lineId : -1;
+    const cookWith = (rowId: number) =>
+      cookRecipe({ recipeId, portions: 1, eatNowPortions: 0, lines: [{ lineId, action: "consume", usePantryItemId: rowId }] });
+
+    expect((await cookWith(lactantiaRowId)).ok).toBe(true);
+    expect(serviceMock.recipes).toHaveLength(1);
+    const first = serviceMock.recipes[0] as { lines: Array<{ ingredientId: number }> };
+    void first;
+
+    expect((await cookWith(kirklandRowId)).ok).toBe(true);
+    expect(serviceMock.recipes).toHaveLength(2); // different butter → variant recipe
+
+    expect((await cookWith(kirklandRowId)).ok).toBe(true);
+    expect(serviceMock.recipes).toHaveLength(2); // exact repeat → reused
   });
 
   it("cook without a pick is rejected; the chosen product's row is consumed", async () => {
