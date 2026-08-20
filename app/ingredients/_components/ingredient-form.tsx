@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ingredientSchema, type IngredientSchemaInput } from "@/domain/validation/ingredient.schema";
 import { referenceBasisFor, unitsForClass } from "@/domain/nutritionBasis";
+import { UNITS } from "@/domain/units";
 
 const UNIT_CLASS_OPTIONS: Array<{ value: IngredientSchemaInput["unitClass"]; label: string }> = [
   { value: "MASS", label: "Mass" },
@@ -289,10 +290,27 @@ export function IngredientForm({
           />
         </div>
         <div className="flex min-w-24 flex-col gap-1">
-          <label htmlFor="ingredient-packageUnit" className="text-sm font-medium text-foreground">
-            Package unit
-          </label>
-          <Input id="ingredient-packageUnit" type="text" {...register("packageUnit", { setValueAs: emptyToUndefined })} />
+          {/* openspec: count-via-package-size — a real unit key (any class),
+              since the package size now drives COUNT↔MASS/VOLUME resolution. */}
+          <span className="text-sm font-medium text-foreground">Package unit</span>
+          <Controller
+            control={control}
+            name="packageUnit"
+            render={({ field }) => (
+              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                <SelectTrigger aria-label="Package unit">
+                  <SelectValue placeholder="Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(UNITS).map((unit) => (
+                    <SelectItem key={unit} value={unit}>
+                      {unit}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
           {errors.packageUnit ? (
             <p data-testid="field-error-packageUnit" className="text-sm text-destructive">
               {errors.packageUnit.message}

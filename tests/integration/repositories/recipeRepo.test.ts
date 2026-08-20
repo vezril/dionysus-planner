@@ -248,9 +248,15 @@ describe("data/repositories/recipeRepo", () => {
       expect(line.entryUnitClass).toBe("VOLUME");
       expect(line.quantityCanonical).toBe(240);
 
-      // The density channel: the ingredient's PRIMARY class + density,
-      // nested under `ingredient`, distinct from entryUnitClass above.
-      expect(line.ingredient).toEqual({ unitClass: "MASS", densityGPerMl: 0.85 });
+      // The resolution channel: the ingredient's PRIMARY class + density +
+      // package size (openspec: count-via-package-size), nested under
+      // `ingredient`, distinct from entryUnitClass above.
+      expect(line.ingredient).toEqual({
+        unitClass: "MASS",
+        densityGPerMl: 0.85,
+        packageQuantity: null,
+        packageUnit: null,
+      });
     });
   });
 

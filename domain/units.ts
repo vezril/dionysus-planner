@@ -57,12 +57,21 @@ export function toCanonical(
  * strategy". Used identically by nutrition computation (S-103) and
  * matching (S-104). Never throws, never returns 0 or NaN for an
  * unresolved comparison — the literal sentinel `'UNRESOLVED'` instead.
+ *
+ * openspec: count-via-package-size — a package size ("1 each = 355 mL")
+ * additionally bridges COUNT↔MASS/VOLUME, evaluated at comparison time so
+ * editing an ingredient's package retroactively changes resolution (same
+ * live semantics as density). The bridge applies only when exactly one
+ * side is COUNT and the package's class equals the other side; a missing,
+ * non-positive, or unknown-unit package falls through to UNRESOLVED.
  */
 export function resolveQuantityForComparison(
   entryQtyCanonical: number,
   entryClass: UnitClass,
   targetClass: UnitClass,
   densityGPerMl: number | null,
+  packageQuantity: number | null = null,
+  packageUnit: string | null = null,
 ): number | "UNRESOLVED" {
   if (entryClass === targetClass) {
     return entryQtyCanonical;
@@ -76,6 +85,17 @@ export function resolveQuantityForComparison(
     if (entryClass === "VOLUME" && targetClass === "MASS") {
       // mL -> g: g = mL * density
       return entryQtyCanonical * densityGPerMl;
+    }
+  }
+
+  if ((entryClass === "COUNT") !== (targetClass === "COUNT")) {
+    const pkg = packageUnit !== null ? UNITS[packageUnit] : undefined;
+    const nonCountClass = entryClass === "COUNT" ? targetClass : entryClass;
+    if (pkg && pkg.class === nonCountClass && packageQuantity !== null && packageQuantity > 0) {
+      const packageCanonical = packageQuantity * pkg.toCanonicalFactor;
+      return entryClass === "COUNT"
+        ? entryQtyCanonical * packageCanonical
+        : entryQtyCanonical / packageCanonical;
     }
   }
 

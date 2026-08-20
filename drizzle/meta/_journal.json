@@ -22,6 +22,13 @@
       "when": 1787175210495,
       "tag": "0002_purple_whizzer",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1787193507244,
+      "tag": "0003_normalize_package_unit",
+      "breakpoints": true
     }
   ]
 }

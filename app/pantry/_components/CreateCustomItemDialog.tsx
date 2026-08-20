@@ -199,10 +199,27 @@ export function CreateCustomItemDialog() {
                 />
               </div>
               <div className="flex min-w-20 flex-col gap-1">
-                <label htmlFor="custom-item-package-unit" className="text-sm font-medium">
-                  Package unit
-                </label>
-                <Input id="custom-item-package-unit" type="text" {...register("packageUnit", { setValueAs: emptyToUndefined })} />
+                {/* openspec: count-via-package-size — a real unit key (any
+                    class); drives COUNT↔MASS/VOLUME resolution. */}
+                <span className="text-sm font-medium">Package unit</span>
+                <Controller
+                  control={control}
+                  name="packageUnit"
+                  render={({ field }) => (
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <SelectTrigger aria-label="Package unit">
+                        <SelectValue placeholder="Unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.keys(UNITS).map((unit) => (
+                          <SelectItem key={unit} value={unit}>
+                            {unit}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.packageUnit ? (
                   <p data-testid="field-error-packageUnit" className="text-sm text-destructive">
                     {errors.packageUnit.message}
