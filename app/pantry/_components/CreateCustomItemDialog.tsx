@@ -41,6 +41,7 @@ type FormValues = {
   saturatedFatGPerRef: number | undefined;
   transFatGPerRef: number | undefined;
   cholesterolMgPerRef: number | undefined;
+  category: "FOOD" | "DRINK" | "SUPPLEMENT" | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   brand: string | undefined;
   barcode: string | undefined;
@@ -75,6 +76,7 @@ const DEFAULT_VALUES: FormValues = {
   saturatedFatGPerRef: undefined,
   transFatGPerRef: undefined,
   cholesterolMgPerRef: undefined,
+  category: "FOOD",
   micronutrients: [],
   brand: undefined,
   barcode: undefined,
@@ -244,6 +246,26 @@ export function CreateCustomItemDialog() {
                   </p>
                 ) : null}
               </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium">Category</span>
+              <Controller
+                control={control}
+                name="category"
+                render={({ field }) => (
+                  <Select value={field.value ?? "FOOD"} onValueChange={field.onChange}>
+                    <SelectTrigger aria-label="Category">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FOOD">Food</SelectItem>
+                      <SelectItem value="DRINK">Drink</SelectItem>
+                      <SelectItem value="SUPPLEMENT">Supplement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
 
             <div className="flex flex-col gap-1">

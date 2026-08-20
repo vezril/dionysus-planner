@@ -106,6 +106,7 @@ export async function createCustomPantryItem(
     const result = await createCustomPantryItemRecords({
       name: data.name,
       unitClass: data.unitClass,
+      category: data.category,
       densityGPerMl: data.densityGPerMl ?? null,
       ...nutrition,
       brand: data.brand ?? null,

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getRecipeDetail } from "@/data/recipes";
 import type { NutritionTotals } from "@/domain/nutrition";
 import { stripMentionIds } from "@/domain/cooklangParser";
+import { computeRecipeAbv } from "@/domain/abv";
 import { DeleteRecipeButton } from "@/app/recipes/_components/delete-recipe-button";
 import { PortionScaler } from "./_components/PortionScaler";
 
@@ -52,6 +53,14 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
   }
 
   const { recipe, lines, nutrition, tags } = detail;
+  // openspec: drinks-and-abv — estimate; null renders nothing.
+  const abv = computeRecipeAbv(
+    lines.map((line) => ({
+      quantityCanonical: line.quantityCanonical,
+      entryUnitClass: line.entryUnitClass,
+      ingredient: line.ingredient,
+    })),
+  );
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
@@ -63,6 +72,12 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
       </div>
       <p data-testid="recipe-servings" className="text-sm text-muted-foreground">
         Servings: {recipe.servings}
+        {abv !== null ? (
+          <span data-testid="recipe-abv" className="ml-3 font-medium text-primary">
+            ~{Math.round(abv.abvPercent * 10) / 10}% ABV
+            <span className="ml-1 font-normal text-muted-foreground">(estimated)</span>
+          </span>
+        ) : null}
       </p>
       {/* openspec: cooklang-recipe-editor — the stored `instructions` text
           carries @Name(id){qty%unit} mentions; readers never see the raw

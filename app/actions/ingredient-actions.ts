@@ -124,6 +124,7 @@ export async function createIngredient(input: unknown): Promise<ActionResult<Ing
   const record = await createIngredientRecord({
     name: data.name,
     unitClass: data.unitClass,
+    category: data.category,
     ...nutrition.values,
     densityGPerMl: data.densityGPerMl ?? null,
     brand: data.brand ?? null,
@@ -172,6 +173,7 @@ export async function overrideIngredientNutrition(
   const record = await updateIngredientNutritionRecord(id, {
     name: data.name,
     unitClass: data.unitClass,
+    category: data.category,
     ...nutrition.values,
     densityGPerMl: data.densityGPerMl ?? null,
     brand: data.brand ?? null,

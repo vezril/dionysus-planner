@@ -50,6 +50,13 @@
       "when": 1787239351756,
       "tag": "0006_expanded_nutrients",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1787240246539,
+      "tag": "0007_drink_category",
+      "breakpoints": true
     }
   ]
 }

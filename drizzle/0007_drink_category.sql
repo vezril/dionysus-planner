@@ -1,0 +1,1 @@
+ALTER TABLE `ingredient` ADD `category` text DEFAULT 'FOOD' NOT NULL;

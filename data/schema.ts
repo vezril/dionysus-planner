@@ -31,6 +31,8 @@ export const ingredient = sqliteTable(
     transFatGPerRef: real("transFatGPerRef"),
     cholesterolMgPerRef: real("cholesterolMgPerRef"),
     source: text("source", { enum: ["SEEDED", "CUSTOM"] }).notNull(),
+    // openspec: drinks-and-abv — what kind of consumable this is.
+    category: text("category", { enum: ["FOOD", "DRINK", "SUPPLEMENT"] }).notNull().default("FOOD"),
     overridden: integer("overridden", { mode: "boolean" }).notNull().default(false),
     // openspec: custom-pantry-items — product identity for branded items
     // (design.md Decision 1: a branded product IS a custom ingredient, no

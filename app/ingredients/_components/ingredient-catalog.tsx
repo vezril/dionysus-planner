@@ -68,6 +68,14 @@ export function IngredientCatalog({ ingredients }: { ingredients: IngredientSumm
                 <span>{ingredient.proteinPerRef}g protein</span>
                 <span>{ingredient.carbsPerRef}g carbs</span>
                 <span>{ingredient.fatPerRef}g fat</span>
+                {ingredient.category !== "FOOD" ? (
+                  <span
+                    data-testid="category-badge"
+                    className="rounded-full border border-primary/40 px-2 py-0.5 text-xs font-medium text-primary"
+                  >
+                    {ingredient.category}
+                  </span>
+                ) : null}
                 <span
                   data-testid="source-badge"
                   className="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-foreground"

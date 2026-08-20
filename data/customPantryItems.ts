@@ -28,6 +28,7 @@ export interface CustomPantryItemInput {
   saturatedFatGPerRef: number | null;
   transFatGPerRef: number | null;
   cholesterolMgPerRef: number | null;
+  category: "FOOD" | "DRINK" | "SUPPLEMENT";
   brand: string | null;
   barcode: string | null;
   packageQuantity: number | null;
@@ -70,6 +71,7 @@ export async function createCustomPantryItemRecords(
           saturatedFatGPerRef: input.saturatedFatGPerRef,
           transFatGPerRef: input.transFatGPerRef,
           cholesterolMgPerRef: input.cholesterolMgPerRef,
+          category: input.category,
           source: "CUSTOM",
           overridden: false,
           brand: input.brand,
@@ -113,6 +115,7 @@ export async function createCustomPantryItemRecords(
           saturatedFatGPerRef: ingredientRow.saturatedFatGPerRef,
           transFatGPerRef: ingredientRow.transFatGPerRef,
           cholesterolMgPerRef: ingredientRow.cholesterolMgPerRef,
+          category: ingredientRow.category,
           source: ingredientRow.source,
           overridden: ingredientRow.overridden,
           brand: ingredientRow.brand,

@@ -58,6 +58,7 @@ type FormValues = {
   saturatedFatGPerRef: number | undefined;
   transFatGPerRef: number | undefined;
   cholesterolMgPerRef: number | undefined;
+  category: "FOOD" | "DRINK" | "SUPPLEMENT" | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   densityGPerMl: number | undefined;
 };
@@ -80,6 +81,7 @@ export interface IngredientFormInitialValues {
   saturatedFatGPerRef: number | null;
   transFatGPerRef: number | null;
   cholesterolMgPerRef: number | null;
+  category: "FOOD" | "DRINK" | "SUPPLEMENT";
   micronutrients?: Array<{ key: string; amountPerRef: number }>;
   densityGPerMl: number | null;
 }
@@ -106,6 +108,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       saturatedFatGPerRef: undefined,
       transFatGPerRef: undefined,
       cholesterolMgPerRef: undefined,
+      category: "FOOD",
       micronutrients: [],
       densityGPerMl: undefined,
     };
@@ -132,6 +135,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     saturatedFatGPerRef: initial.saturatedFatGPerRef ?? undefined,
     transFatGPerRef: initial.transFatGPerRef ?? undefined,
     cholesterolMgPerRef: initial.cholesterolMgPerRef ?? undefined,
+    category: initial.category,
     micronutrients: initial.micronutrients ?? [],
     densityGPerMl: initial.densityGPerMl ?? undefined,
   };
@@ -160,6 +164,13 @@ interface NumberFieldConfig {
   );
   label: string;
 }
+
+
+const CATEGORY_OPTIONS = [
+  { value: "FOOD", label: "Food" },
+  { value: "DRINK", label: "Drink" },
+  { value: "SUPPLEMENT", label: "Supplement" },
+] as const;
 
 const NUMBER_FIELDS: NumberFieldConfig[] = [
   { name: "caloriesPerRef", label: "Calories (kcal)" },
@@ -288,6 +299,29 @@ export function IngredientForm({
             {errors.unitClass.message}
           </p>
         ) : null}
+      </div>
+
+      {/* openspec: drinks-and-abv — what kind of consumable this is. */}
+      <div className="flex flex-col gap-1">
+        <span className="text-sm font-medium text-foreground">Category</span>
+        <Controller
+          control={control}
+          name="category"
+          render={({ field }) => (
+            <Select value={field.value ?? "FOOD"} onValueChange={field.onChange}>
+              <SelectTrigger aria-label="Category" className="max-w-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       </div>
 
       {/* openspec: custom-pantry-items — optional product identity, for

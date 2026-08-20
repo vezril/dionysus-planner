@@ -56,6 +56,7 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
           saturatedFatGPerRef: ingredient.saturatedFatGPerRef,
           transFatGPerRef: ingredient.transFatGPerRef,
           cholesterolMgPerRef: ingredient.cholesterolMgPerRef,
+          category: ingredient.category,
           micronutrients,
           densityGPerMl: ingredient.densityGPerMl,
         }}

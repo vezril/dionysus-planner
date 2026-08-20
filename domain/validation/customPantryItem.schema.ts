@@ -29,6 +29,8 @@ export const customPantryItemSchema = z
     saturatedFatGPerRef: optionalNonNegative,
     transFatGPerRef: optionalNonNegative,
     cholesterolMgPerRef: optionalNonNegative,
+    // openspec: drinks-and-abv
+    category: z.enum(["FOOD", "DRINK", "SUPPLEMENT"]).default("FOOD"),
     // openspec: vitamin-tracking — sparse micronutrient rows (registry
     // keys, per-reference amounts, no duplicates).
     micronutrients: z

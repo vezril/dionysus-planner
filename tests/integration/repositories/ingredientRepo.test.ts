@@ -94,6 +94,7 @@ describe("data/repositories/ingredientRepo", () => {
     transFatGPerRef: null,
     cholesterolMgPerRef: null,
     source: "CUSTOM" as const,
+    category: "FOOD" as const,
   };
 
   describe("create() + getById() round-trip", () => {
@@ -133,6 +134,8 @@ describe("data/repositories/ingredientRepo", () => {
           "saturatedFatGPerRef",
           "transFatGPerRef",
           "cholesterolMgPerRef",
+          // openspec: drinks-and-abv
+          "category",
           "source",
           "overridden",
           // openspec: custom-pantry-items — optional product identity.
