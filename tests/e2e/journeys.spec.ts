@@ -92,7 +92,7 @@ async function createCustomIngredient(
   },
 ): Promise<void> {
   await page.goto("/ingredients/new");
-  await expect(page.getByRole("heading", { level: 1, name: "Add ingredient", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Add product", exact: true })).toBeVisible();
 
   await page.getByRole("textbox", { name: "Name" }).fill(opts.name);
   await page.getByRole("combobox", { name: "Unit class" }).click();
@@ -266,7 +266,7 @@ test("AC1/FR-29: fresh install — Pantry, Recipes render empty states with CTAs
 
   const ingredientsResponse = await page.goto("/ingredients");
   expect(ingredientsResponse?.ok()).toBe(true);
-  await expect(page.getByRole("heading", { level: 1, name: "Ingredients", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Products", exact: true })).toBeVisible();
   // FR-29's carve-out: the ingredient catalog is SEEDED at boot (S-204),
   // so this route is never empty on a fresh install, unlike Pantry/Recipes.
   const ingredientRows = page.getByTestId("ingredient-row");

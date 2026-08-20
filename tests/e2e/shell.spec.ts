@@ -32,7 +32,7 @@ const SECTIONS = [
   { path: "/what-can-i-cook", heading: "What Can I Cook" },
   { path: "/pantry", heading: "Pantry" },
   { path: "/recipes", heading: "Recipes" },
-  { path: "/ingredients", heading: "Ingredients" },
+  { path: "/ingredients", heading: "Products" },
 ] as const;
 
 /**
@@ -144,7 +144,7 @@ test.describe("S-105 app shell", () => {
     expect(response?.ok()).toBe(true);
 
     await expect(
-      page.getByRole("heading", { level: 1, name: "Ingredients", exact: true })
+      page.getByRole("heading", { level: 1, name: "Products", exact: true })
     ).toBeVisible();
   });
 

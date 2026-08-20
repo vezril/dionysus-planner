@@ -64,7 +64,7 @@ const FOUR_MISSING_RECIPE_NAME = `E2E Threshold Four Missing ${RUN_ID}`;
 
 async function createCustomIngredient(page: Page, name: string): Promise<void> {
   await page.goto("/ingredients/new");
-  await expect(page.getByRole("heading", { level: 1, name: "Add ingredient", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Add product", exact: true })).toBeVisible();
 
   await page.getByRole("textbox", { name: "Name" }).fill(name);
   await page.getByRole("combobox", { name: "Unit class" }).click();

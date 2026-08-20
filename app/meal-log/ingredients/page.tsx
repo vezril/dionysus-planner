@@ -17,7 +17,7 @@ export default async function MealLogIngredientsPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Meals Ingredients</h1>
+      <h1 className="text-2xl font-semibold">Inventory Products</h1>
       <p className="text-sm text-muted-foreground">
         The ingredient catalog for the Meal Log section (dionysus-service) — separate from this app&apos;s
         own <span className="font-medium">Ingredients</span> page.

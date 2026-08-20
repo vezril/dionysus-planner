@@ -7,7 +7,7 @@ import { expect, test, type Page } from "@playwright/test";
  *
  * ============================ PINNED CONTRACT (demanded surface) ==========
  * Sidebar (`role=navigation` "Main"): links in order What Can I Cook,
- * Ingredients, Pantry, Recipes, Meals; "Meals" → /meal-log.
+ * Products, Pantry, Recipes, Inventory; "Inventory" → /meal-log.
  * `/recipes/{id}`: `data-testid="portion-slider"` wrapping
  * `getByRole("slider", { name: "Portions" })` (keyboard-operable, min 1,
  * max 4×servings, default servings, `data-testid="portion-count"` shows the
@@ -39,17 +39,17 @@ test.describe("qol-nav-scale-delete", () => {
     test.skip(testInfo.project.name !== "chromium", "functional ACs verified once on chromium");
   });
 
-  test("sidebar order is WCIC, Ingredients, Pantry, Recipes, Meals", async ({ page }) => {
+  test("sidebar order is WCIC, Products, Pantry, Recipes, Inventory", async ({ page }) => {
     await page.goto("/pantry");
     const nav = page.getByRole("navigation", { name: "Main" });
     await expect(nav.getByRole("link")).toHaveText([
       "What Can I Cook",
-      "Ingredients",
+      "Products",
       "Pantry",
       "Recipes",
-      "Meals",
+      "Inventory",
     ]);
-    await expect(nav.getByRole("link", { name: "Meals" })).toHaveAttribute("href", "/meal-log");
+    await expect(nav.getByRole("link", { name: "Inventory" })).toHaveAttribute("href", "/meal-log");
   });
 
   test("portion slider rescales lines and totals linearly; per-serving fixed", async ({ page }) => {

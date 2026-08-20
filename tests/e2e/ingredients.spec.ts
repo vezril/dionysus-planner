@@ -17,7 +17,7 @@ import { expect, test } from "@playwright/test";
  *
  * ============================ PINNED CONTRACT (demanded surface) ==========
  * Page (`/app/ingredients`, RSC):
- *   - One `<h1>` "Ingredients" (unchanged from S-105).
+ *   - One `<h1>` "Products" (renamed by qol-cta-labels-renames).
  *   - One row per ingredient, each carrying `data-testid="ingredient-row"`
  *     (works whichever markup the implementer picks — shadcn `<Table>` rows
  *     or stacked mobile cards, per the story's task list — the testid is
@@ -60,7 +60,7 @@ test.describe("S-301 ingredient catalog & search", () => {
     const response = await page.goto("/ingredients");
     expect(response?.ok()).toBe(true);
 
-    await expect(page.getByRole("heading", { level: 1, name: "Ingredients", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Products", exact: true })).toBeVisible();
 
     const rows = page.getByTestId("ingredient-row");
     await expect(rows.first()).toBeVisible();

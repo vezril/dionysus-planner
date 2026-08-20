@@ -9,7 +9,7 @@ import { IngredientForm } from "@/app/ingredients/_components/ingredient-form";
 export default function NewIngredientPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Add ingredient</h1>
+      <h1 className="text-2xl font-semibold">Add product</h1>
       <IngredientForm mode="create" />
     </div>
   );
