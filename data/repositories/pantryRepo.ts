@@ -19,6 +19,7 @@ export interface PantryItemRecord {
   entryUnitClass: UnitClass;
   displayQuantity: number;
   displayUnit: string;
+  stockedAt: string | null;
   updatedAt: string;
 }
 
@@ -35,6 +36,8 @@ export interface PantryItemQuantityPatch {
   entryUnitClass: UnitClass;
   displayQuantity: number;
   displayUnit: string;
+  /** openspec: pantry-freshness — set by the ACTION only when stock increased. */
+  stockedAt?: string;
 }
 
 export interface PantryIndexEntry {
@@ -50,6 +53,7 @@ function toRecord(row: typeof pantryItem.$inferSelect): PantryItemRecord {
     entryUnitClass: row.entryUnitClass,
     displayQuantity: row.displayQuantity,
     displayUnit: row.displayUnit,
+    stockedAt: row.stockedAt,
     updatedAt: row.updatedAt,
   };
 }
@@ -68,6 +72,7 @@ export async function insert(db: Db, input: PantryItemInsertInput): Promise<Pant
       displayQuantity: input.displayQuantity,
       displayUnit: input.displayUnit,
       updatedAt: nowIso(),
+      stockedAt: nowIso(),
     })
     .returning();
   return toRecord(row);
@@ -107,6 +112,8 @@ export interface PantryListRow {
   ingredientName: string;
   displayQuantity: number;
   displayUnit: string;
+  stockedAt: string | null;
+  shelfLifeDays: number | null;
 }
 
 /**
@@ -122,6 +129,8 @@ export async function getAllWithIngredientNames(db: Db): Promise<PantryListRow[]
       ingredientName: ingredient.name,
       displayQuantity: pantryItem.displayQuantity,
       displayUnit: pantryItem.displayUnit,
+      stockedAt: pantryItem.stockedAt,
+      shelfLifeDays: ingredient.shelfLifeDays,
     })
     .from(pantryItem)
     .innerJoin(ingredient, eq(ingredient.id, pantryItem.ingredientId))

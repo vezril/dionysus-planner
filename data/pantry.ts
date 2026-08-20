@@ -92,6 +92,15 @@ export async function removePantryItem(id: number): Promise<void> {
  * (floors at zero, reports shortfalls). Amounts are in each row's own
  * canonical basis, resolved by the cook action beforehand.
  */
+export async function getPantryItemRecordById(id: number): Promise<pantryRepo.PantryItemRecord | null> {
+  const db = createDb();
+  try {
+    return await pantryRepo.getById(db, id);
+  } finally {
+    db.$client.close();
+  }
+}
+
 export async function getAllPantryRows(): Promise<pantryRepo.PantryItemRecord[]> {
   const db = createDb();
   try {

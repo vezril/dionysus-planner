@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPantryItemDetail } from "@/data/purchases";
+import { computeFreshness } from "@/domain/freshness";
 import { MICRONUTRIENTS } from "@/domain/micronutrients";
 import { computePriceStats } from "@/domain/priceStats";
 import { REFERENCE_QUANTITY_BY_CLASS } from "@/domain/types";
@@ -39,6 +40,9 @@ export default async function PantryItemDetailPage({
   if (!detail) notFound();
 
   const { item, ingredient, purchases, micronutrients } = detail;
+  // openspec: pantry-freshness
+  const freshness = item.displayQuantity > 0 ? computeFreshness(item.stockedAt, ingredient.shelfLifeDays, new Date()) : null;
+
   const stats = computePriceStats(purchases);
   // Sanity: REFERENCE_QUANTITY_BY_CLASS backs the label (100/100/1).
   void REFERENCE_QUANTITY_BY_CLASS;
@@ -73,6 +77,20 @@ export default async function PantryItemDetailPage({
           <span data-testid="pantry-detail-on-hand" className="font-mono text-sm tabular-nums text-muted-foreground">
             {item.displayQuantity} {item.displayUnit} on hand
           </span>
+          {freshness !== null ? (
+            <span data-testid="pantry-detail-freshness" className="text-sm text-muted-foreground">
+              stocked {freshness.daysSinceStocked === 0 ? "today" : `${freshness.daysSinceStocked}d ago`}
+              {freshness.daysLeft !== null ? (
+                freshness.status === "expired" ? (
+                  <span className="ml-1 font-medium text-destructive">likely expired</span>
+                ) : (
+                  <span className={freshness.status === "expiring" ? "ml-1 font-medium text-status-near" : "ml-1"}>
+                    · ~{freshness.daysLeft}d left
+                  </span>
+                )
+              ) : null}
+            </span>
+          ) : null}
           {/* openspec: nutrition-basis-and-edit — one click from the pantry
               to editing nutrition/name/product identity. */}
           <Link

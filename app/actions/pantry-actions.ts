@@ -25,6 +25,7 @@ import type { PantryItemRecord } from "@/data/repositories/pantryRepo";
 import {
   getIngredientRecordById,
   getPantryItemByIngredientId,
+  getPantryItemRecordById,
   insertPantryItem,
   removePantryItem,
   updatePantryItemQuantity,
@@ -89,6 +90,36 @@ function validationError(fieldErrors: Record<string, string[]>): PantryActionRes
  * Display fields (`displayQuantity`/`displayUnit`) always reflect the
  * just-submitted entry after any successful write.
  */
+
+/**
+ * openspec: pantry-freshness — stockedAt resets only when stock INCREASES
+ * (restock); decreases and corrections keep the existing clock. When the
+ * new and old quantities aren't comparable (unit-class switch, no bridge),
+ * treat it as new stock.
+ */
+function stockedAtPatch(
+  existing: { quantityCanonical: number; entryUnitClass: "MASS" | "VOLUME" | "COUNT" },
+  incoming: { quantityCanonical: number; entryUnitClass: "MASS" | "VOLUME" | "COUNT" },
+  ingredient: {
+    densityGPerMl: number | null;
+    packageQuantity?: number | null;
+    packageUnit?: string | null;
+  } | null,
+): { stockedAt?: string } {
+  const resolved = resolveQuantityForComparison(
+    incoming.quantityCanonical,
+    incoming.entryUnitClass,
+    existing.entryUnitClass,
+    ingredient?.densityGPerMl ?? null,
+    ingredient?.packageQuantity ?? null,
+    ingredient?.packageUnit ?? null,
+  );
+  if (resolved !== "UNRESOLVED" && resolved <= existing.quantityCanonical) {
+    return {};
+  }
+  return { stockedAt: new Date().toISOString() };
+}
+
 export async function addOrUpdatePantryItem(input: unknown): Promise<PantryActionResult> {
   const parsed = pantryItemSchema.safeParse(input);
   if (!parsed.success) {
@@ -125,11 +156,13 @@ export async function addOrUpdatePantryItem(input: unknown): Promise<PantryActio
   }
 
   if (mode === "replace") {
+    const replaceIngredient = await getIngredientRecordById(ingredientId);
     const record = await updatePantryItemQuantity(existing.id, {
       quantityCanonical: incoming.quantityCanonical,
       entryUnitClass: incoming.entryUnitClass,
       displayQuantity: quantity,
       displayUnit: unit,
+      ...stockedAtPatch(existing, incoming, replaceIngredient),
     });
     revalidatePath("/pantry");
     return { ok: true, data: record };
@@ -165,6 +198,7 @@ export async function addOrUpdatePantryItem(input: unknown): Promise<PantryActio
     entryUnitClass: existing.entryUnitClass,
     displayQuantity: quantity,
     displayUnit: unit,
+    stockedAt: new Date().toISOString(), // increment is always new stock
   });
   revalidatePath("/pantry");
   return { ok: true, data: record };
@@ -192,11 +226,14 @@ export async function updatePantryItem(
   const { quantity, unit } = parsed.data;
   const canonical = toCanonical(quantity, unit);
 
+  const existingRow = await getPantryItemRecordById(id);
+  const editIngredient = existingRow ? await getIngredientRecordById(existingRow.ingredientId) : null;
   const record = await updatePantryItemQuantity(id, {
     quantityCanonical: canonical.quantityCanonical,
     entryUnitClass: canonical.entryUnitClass,
     displayQuantity: quantity,
     displayUnit: unit,
+    ...(existingRow ? stockedAtPatch(existingRow, canonical, editIngredient) : {}),
   });
   revalidatePath("/pantry");
   return { ok: true, data: record };

@@ -95,6 +95,7 @@ describe("data/repositories/ingredientRepo", () => {
     cholesterolMgPerRef: null,
     source: "CUSTOM" as const,
     category: "FOOD" as const,
+    shelfLifeDays: null,
   };
 
   describe("create() + getById() round-trip", () => {
@@ -136,6 +137,8 @@ describe("data/repositories/ingredientRepo", () => {
           "cholesterolMgPerRef",
           // openspec: drinks-and-abv
           "category",
+          // openspec: pantry-freshness
+          "shelfLifeDays",
           "source",
           "overridden",
           // openspec: custom-pantry-items — optional product identity.

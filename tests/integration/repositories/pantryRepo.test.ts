@@ -90,7 +90,7 @@ describe("data/repositories/pantryRepo", () => {
 
       const found = await pantryRepo.getByIngredientId(db, ingredientId);
       expect(Object.keys(found!).sort()).toEqual(
-        ["id", "ingredientId", "quantityCanonical", "entryUnitClass", "displayQuantity", "displayUnit", "updatedAt"].sort(),
+        ["id", "ingredientId", "quantityCanonical", "entryUnitClass", "displayQuantity", "displayUnit", "stockedAt", "updatedAt"].sort(),
       );
     });
   });

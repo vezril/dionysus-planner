@@ -33,6 +33,8 @@ export const ingredient = sqliteTable(
     source: text("source", { enum: ["SEEDED", "CUSTOM"] }).notNull(),
     // openspec: drinks-and-abv — what kind of consumable this is.
     category: text("category", { enum: ["FOOD", "DRINK", "SUPPLEMENT"] }).notNull().default("FOOD"),
+    // openspec: pantry-freshness — optional label shelf life.
+    shelfLifeDays: real("shelfLifeDays"),
     overridden: integer("overridden", { mode: "boolean" }).notNull().default(false),
     // openspec: custom-pantry-items — product identity for branded items
     // (design.md Decision 1: a branded product IS a custom ingredient, no
@@ -62,6 +64,8 @@ export const pantryItem = sqliteTable("pantry_item", {
   entryUnitClass: text("entryUnitClass", { enum: ["MASS", "VOLUME", "COUNT"] }).notNull(),
   displayQuantity: real("displayQuantity").notNull(),
   displayUnit: text("displayUnit").notNull(),
+  // openspec: pantry-freshness — when this stock (most recently) arrived.
+  stockedAt: text("stockedAt"),
   updatedAt: text("updatedAt").notNull(),
 });
 

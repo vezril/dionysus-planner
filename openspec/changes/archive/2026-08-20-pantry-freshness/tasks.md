@@ -1,0 +1,5 @@
+- [x] 1.1 Migration 0008 (pantry_item.stockedAt backfilled; ingredient.shelfLifeDays); repo/facade threading; actions reset stockedAt on quantity increase only
+- [x] 1.2 `domain/freshness.ts` + unit tests (fresh/expiring/expired, no-shelf-life, boundary)
+- [x] 1.3 Forms: Shelf life (days) on both; pantry list age + badges; detail stocked/expiry line
+- [x] 1.4 Integration tests (create sets, increase resets, decrease keeps, consume keeps); e2e (badge on short-shelf-life item)
+- [x] 1.5 Full gate; walkthrough; train v2.16.0

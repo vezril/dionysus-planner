@@ -31,6 +31,7 @@ export const customPantryItemSchema = z
     cholesterolMgPerRef: optionalNonNegative,
     // openspec: drinks-and-abv
     category: z.enum(["FOOD", "DRINK", "SUPPLEMENT"]).default("FOOD"),
+    shelfLifeDays: z.number().gt(0).nullish(),
     // openspec: vitamin-tracking — sparse micronutrient rows (registry
     // keys, per-reference amounts, no duplicates).
     micronutrients: z

@@ -59,6 +59,7 @@ type FormValues = {
   transFatGPerRef: number | undefined;
   cholesterolMgPerRef: number | undefined;
   category: "FOOD" | "DRINK" | "SUPPLEMENT" | undefined;
+  shelfLifeDays: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   densityGPerMl: number | undefined;
 };
@@ -82,6 +83,7 @@ export interface IngredientFormInitialValues {
   transFatGPerRef: number | null;
   cholesterolMgPerRef: number | null;
   category: "FOOD" | "DRINK" | "SUPPLEMENT";
+  shelfLifeDays: number | null;
   micronutrients?: Array<{ key: string; amountPerRef: number }>;
   densityGPerMl: number | null;
 }
@@ -109,6 +111,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       transFatGPerRef: undefined,
       cholesterolMgPerRef: undefined,
       category: "FOOD",
+      shelfLifeDays: undefined,
       micronutrients: [],
       densityGPerMl: undefined,
     };
@@ -136,6 +139,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     transFatGPerRef: initial.transFatGPerRef ?? undefined,
     cholesterolMgPerRef: initial.cholesterolMgPerRef ?? undefined,
     category: initial.category,
+    shelfLifeDays: initial.shelfLifeDays ?? undefined,
     micronutrients: initial.micronutrients ?? [],
     densityGPerMl: initial.densityGPerMl ?? undefined,
   };
@@ -160,6 +164,7 @@ interface NumberFieldConfig {
     | "saturatedFatGPerRef"
     | "transFatGPerRef"
     | "cholesterolMgPerRef"
+    | "shelfLifeDays"
     | "densityGPerMl"
   );
   label: string;
@@ -185,6 +190,7 @@ const NUMBER_FIELDS: NumberFieldConfig[] = [
   { name: "transFatGPerRef", label: "Trans fat (g)" },
   { name: "cholesterolMgPerRef", label: "Cholesterol (mg)" },
   { name: "densityGPerMl", label: "Density (g/mL)" },
+  { name: "shelfLifeDays", label: "Shelf life (days)" },
 ];
 
 export function IngredientForm({

@@ -85,6 +85,7 @@ export interface IngredientNutritionFields {
   transFatGPerRef?: number | null;
   cholesterolMgPerRef?: number | null;
   category?: "FOOD" | "DRINK" | "SUPPLEMENT";
+  shelfLifeDays?: number | null;
   densityGPerMl?: number | null;
   // openspec: custom-pantry-items — optional product identity.
   brand?: string | null;
@@ -122,6 +123,7 @@ export async function createIngredientRecord(input: IngredientNutritionFields): 
       transFatGPerRef: input.transFatGPerRef ?? null,
       cholesterolMgPerRef: input.cholesterolMgPerRef ?? null,
       category: input.category ?? "FOOD",
+      shelfLifeDays: input.shelfLifeDays ?? null,
       source: "CUSTOM",
       brand: input.brand ?? null,
       barcode: input.barcode ?? null,
@@ -154,6 +156,7 @@ export async function updateIngredientNutritionRecord(
       transFatGPerRef: patch.transFatGPerRef ?? null,
       cholesterolMgPerRef: patch.cholesterolMgPerRef ?? null,
       category: patch.category ?? "FOOD",
+      shelfLifeDays: patch.shelfLifeDays ?? null,
       overridden: patch.overridden,
       brand: patch.brand ?? null,
       barcode: patch.barcode ?? null,
