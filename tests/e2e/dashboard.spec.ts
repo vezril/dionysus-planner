@@ -77,6 +77,25 @@ test.describe("consumption dashboard", () => {
     expect(value).toBeGreaterThanOrEqual(1.04);
   });
 
+  // openspec: dashboard-week-day-cards — the week is seven mini day
+  // views; clicking one opens that day's detailed view.
+  test("week view shows seven day cards and clicks through to the day", async ({ page }) => {
+    await page.goto("/dashboard?period=week");
+    const cards = page.getByTestId("dashboard-day-card");
+    await expect(cards).toHaveCount(7);
+
+    // Today holds the shandy logged above: a kcal summary, not "Nothing logged".
+    const todayCard = cards.filter({ has: page.getByTestId("day-card-kcal") }).first();
+    await expect(todayCard).toBeVisible();
+    await expect(todayCard).toContainText("kcal");
+    await expect(todayCard).toContainText(/meals?/);
+
+    await todayCard.click();
+    await expect(page).toHaveURL(/period=day&date=\d{4}-\d{2}-\d{2}/);
+    await expect(page.getByTestId("dashboard-range")).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
+    await expect(page.getByTestId("dashboard-total-meals")).not.toHaveText("0");
+  });
+
   test("period tabs and navigation render", async ({ page }) => {
     await page.goto("/dashboard?period=week");
     await expect(page.getByTestId("dashboard-range")).toContainText("week of");
