@@ -81,17 +81,59 @@ test.describe("cook recipe into meals", () => {
     await expect(dialog.getByTestId("cook-line").filter({ hasText: SODA_NAME })).toBeVisible();
     await expect(dialog.getByTestId("cook-line-status-ok")).toBeVisible();
 
+    // openspec: eat-now-and-quick-log — defaults to eating 1 now.
+    await expect(dialog.getByRole("spinbutton", { name: "Eating now" })).toHaveValue("1");
     await dialog.getByTestId("cook-confirm").click();
     await expect(dialog.getByTestId("cook-result")).toBeVisible();
     await expect(dialog.getByTestId("cook-result")).toContainText("pantry updated");
+    await expect(dialog.getByTestId("cook-eaten-now")).toContainText("1 logged as eaten now");
 
     // Pantry decremented 400 → 100 mL.
     await page.goto("/pantry");
     await expect(page.getByTestId("pantry-row").filter({ hasText: SODA_NAME })).toContainText("100 mL");
 
-    // Batch visible under Meals › Batches, named after the mirrored recipe.
+    // Batch visible under Meals › Batches; 1 of 1 portions eaten now → 0 remaining.
     await page.goto("/meal-log/batches");
-    await expect(page.getByText(RECIPE_NAME).first()).toBeVisible();
+    const batchRow = page.getByTestId("meal-log-batch-row").filter({ hasText: RECIPE_NAME });
+    await expect(batchRow).toContainText("0 portions remaining");
+    // Exhausted batch offers no quick-log control.
+    await expect(batchRow.getByTestId("log-portion")).toHaveCount(0);
+
+    // The eaten portion shows on today's Meals view.
+    await page.goto("/meal-log");
+    await expect(page.getByTestId("day-log-meals")).toBeVisible();
+  });
+
+  test("quick-log decrements a batch with remaining portions", async ({ page }) => {
+    // The missing-recipe cook (next test's fixture order) hasn't run yet, so
+    // cook a fresh 2-portion batch eating 0 now, then quick-log one.
+    const leftoverRecipe = `E2E Leftovers ${RUN_ID}`;
+    await page.goto("/recipes/new");
+    await page.getByRole("textbox", { name: "Recipe name" }).fill(leftoverRecipe);
+    await page.getByRole("spinbutton", { name: "Servings" }).fill("2");
+    const textarea = page.getByRole("textbox", { name: "Instructions" });
+    await textarea.click();
+    await textarea.pressSequentially("Pour ");
+    await insertMention(page, SODA_NAME, "20", "mL");
+    await textarea.pressSequentially("done.");
+    await page.getByRole("button", { name: "Save recipe" }).click();
+    await expect(page).toHaveURL(/\/recipes(\/\d+)?$/);
+    if (!/\/recipes\/\d+$/.test(new URL(page.url()).pathname)) {
+      await page.goto("/recipes");
+      await page.getByTestId("recipe-row").filter({ hasText: leftoverRecipe }).getByRole("link").first().click();
+    }
+
+    await page.getByTestId("cook-recipe").click();
+    const dialog = page.getByRole("dialog", { name: /cook/i });
+    await dialog.getByRole("spinbutton", { name: "Eating now" }).fill("0");
+    await dialog.getByTestId("cook-confirm").click();
+    await expect(dialog.getByTestId("cook-result")).toBeVisible();
+
+    await page.goto("/meal-log/batches");
+    const row = page.getByTestId("meal-log-batch-row").filter({ hasText: leftoverRecipe });
+    await expect(row).toContainText("2 portions remaining");
+    await row.getByTestId("log-portion").click();
+    await expect(row).toContainText("1 portions remaining");
   });
 
   test("a missing ingredient defaults to Ignore and cooking still succeeds", async ({ page }) => {

@@ -42,6 +42,7 @@ export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; por
   const [result, setResult] = useState<CookResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [eatNow, setEatNow] = useState(1);
 
   async function loadPreview() {
     setPreview(null);
@@ -53,6 +54,7 @@ export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; por
       return;
     }
     setPreview(response.data);
+    setEatNow(Math.min(1, Math.floor(response.data.portions)));
     const initial: Record<number, LineChoice> = {};
     for (const line of response.data.lines) {
       initial[line.lineId] =
@@ -81,6 +83,7 @@ export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; por
     const response = await cookRecipe({
       recipeId,
       portions,
+      eatNowPortions: eatNow,
       lines: preview.lines.map((line) => {
         const choice = choices[line.lineId] ?? { action: "consume" };
         return { lineId: line.lineId, ...choice };
@@ -116,8 +119,19 @@ export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; por
           <div data-testid="cook-result" className="flex flex-col gap-3">
             <p className="text-sm">
               Cooked <span className="font-semibold">{result.portions}</span>{" "}
-              {result.portions === 1 ? "portion" : "portions"} — pantry updated, batch logged.
+              {result.portions === 1 ? "portion" : "portions"} — pantry updated, batch logged
+              {result.eatenNow > 0 ? (
+                <span data-testid="cook-eaten-now">
+                  , {result.eatenNow} logged as eaten now
+                </span>
+              ) : null}
+              .
             </p>
+            {result.warnings.map((warning) => (
+              <p key={warning} data-testid="cook-warning" className="text-sm text-status-near">
+                {warning}
+              </p>
+            ))}
             {result.consumed.length > 0 ? (
               <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
                 {result.consumed.map((entry) => (
@@ -240,6 +254,24 @@ export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; por
                 );
               })}
             </ul>
+            {/* openspec: eat-now-and-quick-log — log this many portions as
+                eaten in the same confirm (0 = just cook). */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="cook-eat-now" className="text-sm font-medium">
+                Eating now
+              </label>
+              <Input
+                id="cook-eat-now"
+                type="number"
+                step="any"
+                min={0}
+                max={preview.portions}
+                className="w-24"
+                value={eatNow}
+                onChange={(event) => setEatNow(event.target.value === "" ? 0 : Number(event.target.value))}
+              />
+              <span className="text-xs text-muted-foreground">of {preview.portions} portions (0 = just cook)</span>
+            </div>
           </div>
         ) : errorMessage === null ? (
           <p className="text-sm text-muted-foreground">Checking the pantry…</p>

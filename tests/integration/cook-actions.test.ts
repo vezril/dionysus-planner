@@ -24,7 +24,9 @@ const serviceMock = {
   ingredients: [] as Array<Record<string, unknown> & { id: number; name: string }>,
   recipes: [] as Array<Record<string, unknown> & { id: number; name: string }>,
   batches: [] as Array<Record<string, unknown> & { id: number }>,
+  meals: [] as Array<Record<string, unknown>>,
   failAll: false,
+  failMeals: false,
   nextId: 1000,
 };
 
@@ -48,6 +50,12 @@ vi.mock("@/services/dionysusService", () => ({
     if (serviceMock.failAll) throw new Error("service unreachable");
     const created = { ...input, id: serviceMock.nextId++ } as (typeof serviceMock.recipes)[number];
     serviceMock.recipes.push(created);
+    return created;
+  }),
+  createMeal: vi.fn(async (_baseUrl: string, input: Record<string, unknown>) => {
+    if (serviceMock.failAll || serviceMock.failMeals) throw new Error("meal endpoint down");
+    const created = { ...input, id: serviceMock.nextId++ };
+    serviceMock.meals.push(created);
     return created;
   }),
   createBatch: vi.fn(async (_baseUrl: string, input: Record<string, unknown>) => {
@@ -78,7 +86,9 @@ describe("cookRecipe", () => {
     serviceMock.ingredients = [];
     serviceMock.recipes = [];
     serviceMock.batches = [];
+    serviceMock.meals = [];
     serviceMock.failAll = false;
+    serviceMock.failMeals = false;
 
     const sqlite = new Database(dbPath);
     runMigrations(sqlite);
@@ -273,4 +283,63 @@ describe("cookRecipe", () => {
     expect(result.error.code).toBe("SERVICE_ERROR");
     expect(sodaQuantity()).toBe(400);
   });
+
+  describe("eat-now portions (openspec: eat-now-and-quick-log)", () => {
+  function baseChoices(sodaLine: number, flourLine: number) {
+    return [
+      { lineId: sodaLine, action: "consume" as const },
+      { lineId: flourLine, action: "ignore" as const },
+    ];
+  }
+
+  it("logs a meal against the fresh batch and reports eatenNow", async () => {
+    const { cookRecipe } = await import("@/app/actions/cook-actions");
+    const [sodaLine, flourLine] = lineIds();
+    const result = await cookRecipe({ recipeId, portions: 4, eatNowPortions: 1, lines: baseChoices(sodaLine, flourLine) });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.eatenNow).toBe(1);
+    expect(result.data.warnings).toEqual([]);
+    expect(serviceMock.meals).toHaveLength(1);
+    expect(serviceMock.meals[0].lines).toEqual([
+      { lineType: "batch_portion", batchId: serviceMock.batches[0].id, portions: 1 },
+    ]);
+  });
+
+  it("eat-now 0 (and omitted) logs no meal — identical to the pre-change cook", async () => {
+    const { cookRecipe } = await import("@/app/actions/cook-actions");
+    const [sodaLine, flourLine] = lineIds();
+    expect((await cookRecipe({ recipeId, portions: 1, eatNowPortions: 0, lines: baseChoices(sodaLine, flourLine) })).ok).toBe(true);
+    expect((await cookRecipe({ recipeId, portions: 1, lines: baseChoices(sodaLine, flourLine) })).ok).toBe(true);
+    expect(serviceMock.meals).toHaveLength(0);
+  });
+
+  it("eat-now above the cooked count is rejected and writes nothing", async () => {
+    const { cookRecipe } = await import("@/app/actions/cook-actions");
+    const [sodaLine, flourLine] = lineIds();
+    const result = await cookRecipe({ recipeId, portions: 4, eatNowPortions: 5, lines: baseChoices(sodaLine, flourLine) });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.fieldErrors?.eatNowPortions).toBeDefined();
+    expect(serviceMock.batches).toHaveLength(0);
+    expect(sodaQuantity()).toBe(400);
+  });
+
+  it("a meal-endpoint failure is a warning on an otherwise successful cook (pantry consumed)", async () => {
+    serviceMock.failMeals = true;
+    const { cookRecipe } = await import("@/app/actions/cook-actions");
+    const [sodaLine, flourLine] = lineIds();
+    const result = await cookRecipe({ recipeId, portions: 4, eatNowPortions: 2, lines: baseChoices(sodaLine, flourLine) });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.eatenNow).toBe(0);
+    expect(result.data.warnings[0]).toMatch(/log it from Meals/i);
+    expect(serviceMock.batches).toHaveLength(1);
+    expect(sodaQuantity()).toBeLessThan(400);
+  });
+});
+
 });

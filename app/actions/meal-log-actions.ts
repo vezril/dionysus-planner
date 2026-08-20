@@ -139,3 +139,26 @@ export async function logMeal(input: unknown): Promise<ActionResult<MealJson>> {
     return serviceError(error);
   }
 }
+
+/**
+ * openspec: eat-now-and-quick-log — one batch portion, eaten now (design
+ * D2). The service's remaining-portions guard is authoritative under
+ * races; this action just relays its error.
+ */
+export async function quickLogBatchPortion(batchId: number): Promise<ActionResult<MealJson>> {
+  if (!Number.isInteger(batchId) || batchId <= 0) {
+    return validationError("Bad batch id.");
+  }
+  try {
+    const baseUrl = resolveDionysusServiceUrl();
+    const data = await serviceCreateMeal(baseUrl, {
+      eatenAt: new Date().toISOString(),
+      lines: [{ lineType: "batch_portion", batchId, portions: 1 }],
+    });
+    revalidatePath("/meal-log");
+    revalidatePath("/meal-log/batches");
+    return { ok: true, data };
+  } catch (error) {
+    return serviceError(error);
+  }
+}

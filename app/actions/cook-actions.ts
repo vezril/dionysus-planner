@@ -25,6 +25,7 @@ import {
   DionysusServiceError,
   createBatch as serviceCreateBatch,
   createIngredient as serviceCreateIngredient,
+  createMeal as serviceCreateMeal,
   createRecipe as serviceCreateRecipe,
   listIngredients as serviceListIngredients,
   listRecipes as serviceListRecipes,
@@ -57,6 +58,9 @@ export interface CookPreview {
 export interface CookResult {
   batchId: number | null;
   portions: number;
+  /** openspec: eat-now-and-quick-log — portions logged as eaten in the same confirm. */
+  eatenNow: number;
+  warnings: string[];
   consumed: Array<{ name: string; pantryItemId: number; consumed: number; shortfall: number }>;
   ignored: string[];
   substituted: Array<{ name: string; substituteName: string }>;
@@ -147,7 +151,17 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
       },
     };
   }
-  const { recipeId, portions, lines: choices } = parsed.data;
+  const { recipeId, portions, eatNowPortions, lines: choices } = parsed.data;
+  if (eatNowPortions > portions) {
+    return {
+      ok: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "You can't eat more portions than you're cooking.",
+        fieldErrors: { eatNowPortions: ["At most the cooked portion count."] },
+      },
+    };
+  }
 
   const loaded = await loadPlans(recipeId, portions);
   if (!loaded) {
@@ -289,7 +303,29 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
     decrements.map(({ pantryItemId, amountInRowBasis }) => ({ pantryItemId, amountInRowBasis })),
   );
 
+  // openspec: eat-now-and-quick-log — the meal log is the only step allowed
+  // to fail softly: batch + pantry are already reality (design D1).
+  const warnings: string[] = [];
+  let eatenNow = 0;
+  if (eatNowPortions > 0 && batchId !== null) {
+    try {
+      const baseUrl = resolveDionysusServiceUrl();
+      await serviceCreateMeal(baseUrl, {
+        eatenAt: new Date().toISOString(),
+        lines: [{ lineType: "batch_portion", batchId, portions: eatNowPortions }],
+      });
+      eatenNow = eatNowPortions;
+    } catch (error) {
+      warnings.push(
+        `Cooked and pantry updated, but logging the meal failed (${
+          error instanceof Error ? error.message : "service error"
+        }) — log it from Meals › Log.`,
+      );
+    }
+  }
+
   revalidatePath("/pantry");
+  revalidatePath("/meal-log");
   revalidatePath("/meal-log/batches");
 
   return {
@@ -297,6 +333,8 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
     data: {
       batchId,
       portions,
+      eatenNow,
+      warnings,
       consumed: applied.map((entry, index) => ({
         name: decrements[index].name,
         pantryItemId: entry.pantryItemId,
