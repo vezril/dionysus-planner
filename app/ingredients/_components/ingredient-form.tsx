@@ -55,6 +55,9 @@ type FormValues = {
   sugarPerRef: number | undefined;
   sodiumMgPerRef: number | undefined;
   alcoholGPerRef: number | undefined;
+  saturatedFatGPerRef: number | undefined;
+  transFatGPerRef: number | undefined;
+  cholesterolMgPerRef: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   densityGPerMl: number | undefined;
 };
@@ -74,6 +77,9 @@ export interface IngredientFormInitialValues {
   sugarPerRef: number | null;
   sodiumMgPerRef: number | null;
   alcoholGPerRef: number | null;
+  saturatedFatGPerRef: number | null;
+  transFatGPerRef: number | null;
+  cholesterolMgPerRef: number | null;
   micronutrients?: Array<{ key: string; amountPerRef: number }>;
   densityGPerMl: number | null;
 }
@@ -97,6 +103,9 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       sugarPerRef: undefined,
       sodiumMgPerRef: undefined,
       alcoholGPerRef: undefined,
+      saturatedFatGPerRef: undefined,
+      transFatGPerRef: undefined,
+      cholesterolMgPerRef: undefined,
       micronutrients: [],
       densityGPerMl: undefined,
     };
@@ -120,6 +129,9 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     sugarPerRef: initial.sugarPerRef ?? undefined,
     sodiumMgPerRef: initial.sodiumMgPerRef ?? undefined,
     alcoholGPerRef: initial.alcoholGPerRef ?? undefined,
+    saturatedFatGPerRef: initial.saturatedFatGPerRef ?? undefined,
+    transFatGPerRef: initial.transFatGPerRef ?? undefined,
+    cholesterolMgPerRef: initial.cholesterolMgPerRef ?? undefined,
     micronutrients: initial.micronutrients ?? [],
     densityGPerMl: initial.densityGPerMl ?? undefined,
   };
@@ -141,6 +153,9 @@ interface NumberFieldConfig {
     | "sugarPerRef"
     | "sodiumMgPerRef"
     | "alcoholGPerRef"
+    | "saturatedFatGPerRef"
+    | "transFatGPerRef"
+    | "cholesterolMgPerRef"
     | "densityGPerMl"
   );
   label: string;
@@ -155,6 +170,9 @@ const NUMBER_FIELDS: NumberFieldConfig[] = [
   { name: "sugarPerRef", label: "Sugar (g)" },
   { name: "sodiumMgPerRef", label: "Sodium (mg)" },
   { name: "alcoholGPerRef", label: "Alcohol (g)" },
+  { name: "saturatedFatGPerRef", label: "Saturated fat (g)" },
+  { name: "transFatGPerRef", label: "Trans fat (g)" },
+  { name: "cholesterolMgPerRef", label: "Cholesterol (mg)" },
   { name: "densityGPerMl", label: "Density (g/mL)" },
 ];
 

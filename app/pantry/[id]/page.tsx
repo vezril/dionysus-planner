@@ -52,6 +52,9 @@ export default async function PantryItemDetailPage({
     { label: "Sugar", value: ingredient.sugarPerRef, unit: "g" },
     { label: "Sodium", value: ingredient.sodiumMgPerRef, unit: "mg" },
     { label: "Alcohol", value: ingredient.alcoholGPerRef, unit: "g" },
+    { label: "Saturated fat", value: ingredient.saturatedFatGPerRef, unit: "g" },
+    { label: "Trans fat", value: ingredient.transFatGPerRef, unit: "g" },
+    { label: "Cholesterol", value: ingredient.cholesterolMgPerRef, unit: "mg" },
   ];
 
   return (

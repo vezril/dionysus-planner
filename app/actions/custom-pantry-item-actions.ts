@@ -73,6 +73,9 @@ export async function createCustomPantryItem(
     sugarPerRef: data.sugarPerRef ?? null,
     sodiumMgPerRef: data.sodiumMgPerRef ?? null,
     alcoholGPerRef: data.alcoholGPerRef ?? null,
+    saturatedFatGPerRef: data.saturatedFatGPerRef ?? null,
+    transFatGPerRef: data.transFatGPerRef ?? null,
+    cholesterolMgPerRef: data.cholesterolMgPerRef ?? null,
   };
   let basisFactor = 1;
   if (data.nutritionBasisQuantity != null && data.nutritionBasisUnit != null) {

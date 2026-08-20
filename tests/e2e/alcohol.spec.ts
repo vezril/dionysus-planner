@@ -22,7 +22,7 @@ test.describe("alcohol tracking", () => {
     await dialog.getByRole("spinbutton", { name: "Calories" }).fill("43");
     await dialog.getByRole("spinbutton", { name: "Protein" }).fill("0.5");
     await dialog.getByRole("spinbutton", { name: "Carbs" }).fill("3.6");
-    await dialog.getByRole("spinbutton", { name: "Fat" }).fill("0");
+    await dialog.getByRole("spinbutton", { name: "Fat (g)", exact: true }).fill("0");
     await dialog.getByRole("spinbutton", { name: "Alcohol" }).fill("3.9");
     await dialog.getByRole("spinbutton", { name: "On hand now (0 is fine)" }).fill("355");
     await dialog.getByRole("combobox", { name: "Pantry unit" }).click();

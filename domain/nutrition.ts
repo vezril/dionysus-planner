@@ -45,6 +45,9 @@ export interface NutritionIngredient {
   sodiumMgPerRef: number | null;
   /** openspec: alcohol-tracking — optional, grams per reference. */
   alcoholGPerRef: number | null;
+  saturatedFatGPerRef: number | null;
+  transFatGPerRef: number | null;
+  cholesterolMgPerRef: number | null;
 }
 
 /** A recipe as consumed by computeRecipeNutrition(). */
@@ -73,6 +76,9 @@ export interface NutritionTotals {
   sugar: NutrientTotal;
   sodiumMg: NutrientTotal;
   alcoholG: NutrientTotal;
+  saturatedFatG: NutrientTotal;
+  transFatG: NutrientTotal;
+  cholesterolMg: NutrientTotal;
 }
 
 export interface RecipeNutrition {
@@ -84,7 +90,7 @@ export interface RecipeNutrition {
 }
 
 const REQUIRED_KEYS = ["calories", "protein", "carbs", "fat"] as const;
-const OPTIONAL_KEYS = ["fiber", "sugar", "sodiumMg", "alcoholG"] as const;
+const OPTIONAL_KEYS = ["fiber", "sugar", "sodiumMg", "alcoholG", "saturatedFatG", "transFatG", "cholesterolMg"] as const;
 
 const REQUIRED_FIELD_BY_KEY: Record<
   (typeof REQUIRED_KEYS)[number],
@@ -98,12 +104,21 @@ const REQUIRED_FIELD_BY_KEY: Record<
 
 const OPTIONAL_FIELD_BY_KEY: Record<
   (typeof OPTIONAL_KEYS)[number],
-  "fiberPerRef" | "sugarPerRef" | "sodiumMgPerRef" | "alcoholGPerRef"
+  | "fiberPerRef"
+  | "sugarPerRef"
+  | "sodiumMgPerRef"
+  | "alcoholGPerRef"
+  | "saturatedFatGPerRef"
+  | "transFatGPerRef"
+  | "cholesterolMgPerRef"
 > = {
   fiber: "fiberPerRef",
   sugar: "sugarPerRef",
   sodiumMg: "sodiumMgPerRef",
   alcoholG: "alcoholGPerRef",
+  saturatedFatG: "saturatedFatGPerRef",
+  transFatG: "transFatGPerRef",
+  cholesterolMg: "cholesterolMgPerRef",
 };
 
 function nutrientTotal(value: number | null): NutrientTotal {
@@ -140,6 +155,9 @@ export function computeRecipeNutrition(
     sugar: 0,
     sodiumMg: 0,
     alcoholG: 0,
+    saturatedFatG: 0,
+    transFatG: 0,
+    cholesterolMg: 0,
   };
   // Optional field is only a completed total if EVERY constituent
   // ingredient (across all lines) has it set (non-null).
@@ -148,6 +166,9 @@ export function computeRecipeNutrition(
     sugar: true,
     sodiumMg: true,
     alcoholG: true,
+    saturatedFatG: true,
+    transFatG: true,
+    cholesterolMg: true,
   };
 
   const unresolvedLineIds: number[] = [];
@@ -201,6 +222,15 @@ export function computeRecipeNutrition(
     alcoholG: nutrientTotal(
       optionalPresentForAll.alcoholG ? optionalSums.alcoholG : null,
     ),
+    saturatedFatG: nutrientTotal(
+      optionalPresentForAll.saturatedFatG ? optionalSums.saturatedFatG : null,
+    ),
+    transFatG: nutrientTotal(
+      optionalPresentForAll.transFatG ? optionalSums.transFatG : null,
+    ),
+    cholesterolMg: nutrientTotal(
+      optionalPresentForAll.cholesterolMg ? optionalSums.cholesterolMg : null,
+    ),
   };
 
   const perServing: NutritionTotals = {
@@ -227,6 +257,15 @@ export function computeRecipeNutrition(
     ),
     alcoholG: nutrientTotal(
       totals.alcoholG.value === null ? null : totals.alcoholG.value / recipe.servings,
+    ),
+    saturatedFatG: nutrientTotal(
+      totals.saturatedFatG.value === null ? null : totals.saturatedFatG.value / recipe.servings,
+    ),
+    transFatG: nutrientTotal(
+      totals.transFatG.value === null ? null : totals.transFatG.value / recipe.servings,
+    ),
+    cholesterolMg: nutrientTotal(
+      totals.cholesterolMg.value === null ? null : totals.cholesterolMg.value / recipe.servings,
     ),
   };
 

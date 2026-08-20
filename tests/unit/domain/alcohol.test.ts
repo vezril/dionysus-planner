@@ -32,6 +32,9 @@ describe("alcohol as an optional nutrient", () => {
       sugarPerRef: null,
       sodiumMgPerRef: null,
       alcoholGPerRef: 14,
+      saturatedFatGPerRef: null,
+      transFatGPerRef: null,
+      cholesterolMgPerRef: null,
     };
     expect(scaleNutritionFields(fields, 100 / 355).alcoholGPerRef).toBe(3.9437);
     expect(scaleNutritionFields({ ...fields, alcoholGPerRef: null }, 0.5).alcoholGPerRef).toBeNull();
@@ -50,6 +53,9 @@ describe("alcohol as an optional nutrient", () => {
       sugarPerRef: null,
       sodiumMgPerRef: null,
       alcoholGPerRef,
+      saturatedFatGPerRef: null,
+      transFatGPerRef: null,
+      cholesterolMgPerRef: null,
     });
     const recipe = {
       id: 1,

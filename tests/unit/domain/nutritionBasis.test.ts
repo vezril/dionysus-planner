@@ -51,6 +51,9 @@ describe("scaleNutritionFields", () => {
     sugarPerRef: 39,
     sodiumMgPerRef: 30,
     alcoholGPerRef: null,
+    saturatedFatGPerRef: null,
+    transFatGPerRef: null,
+    cholesterolMgPerRef: null,
   };
 
   it("scales the soda can to per-100 mL, rounded to 4 decimals", () => {

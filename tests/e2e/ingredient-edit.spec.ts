@@ -30,7 +30,7 @@ import { expect, test } from "@playwright/test";
  *       - spinbutton "Calories"
  *       - spinbutton "Protein"
  *       - spinbutton "Carbs"
- *       - spinbutton "Fat"
+ *       - spinbutton "Fat (g)"
  *       - spinbutton "Fiber" (optional)
  *       - spinbutton "Sugar" (optional)
  *       - spinbutton "Sodium" (optional)
@@ -98,7 +98,7 @@ test.describe("S-302 ingredient create & override forms", () => {
     await page.getByRole("spinbutton", { name: "Calories" }).fill("120");
     await page.getByRole("spinbutton", { name: "Protein" }).fill("5");
     await page.getByRole("spinbutton", { name: "Carbs" }).fill("10");
-    await page.getByRole("spinbutton", { name: "Fat" }).fill("3");
+    await page.getByRole("spinbutton", { name: "Fat (g)", exact: true }).fill("3");
 
     await page.getByRole("button", { name: "Save" }).click();
 

@@ -25,6 +25,9 @@ export interface CustomPantryItemInput {
   sugarPerRef: number | null;
   sodiumMgPerRef: number | null;
   alcoholGPerRef: number | null;
+  saturatedFatGPerRef: number | null;
+  transFatGPerRef: number | null;
+  cholesterolMgPerRef: number | null;
   brand: string | null;
   barcode: string | null;
   packageQuantity: number | null;
@@ -64,6 +67,9 @@ export async function createCustomPantryItemRecords(
           sugarPerRef: input.sugarPerRef,
           sodiumMgPerRef: input.sodiumMgPerRef,
           alcoholGPerRef: input.alcoholGPerRef,
+          saturatedFatGPerRef: input.saturatedFatGPerRef,
+          transFatGPerRef: input.transFatGPerRef,
+          cholesterolMgPerRef: input.cholesterolMgPerRef,
           source: "CUSTOM",
           overridden: false,
           brand: input.brand,
@@ -104,6 +110,9 @@ export async function createCustomPantryItemRecords(
           sugarPerRef: ingredientRow.sugarPerRef,
           sodiumMgPerRef: ingredientRow.sodiumMgPerRef,
           alcoholGPerRef: ingredientRow.alcoholGPerRef,
+          saturatedFatGPerRef: ingredientRow.saturatedFatGPerRef,
+          transFatGPerRef: ingredientRow.transFatGPerRef,
+          cholesterolMgPerRef: ingredientRow.cholesterolMgPerRef,
           source: ingredientRow.source,
           overridden: ingredientRow.overridden,
           brand: ingredientRow.brand,

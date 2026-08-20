@@ -90,6 +90,9 @@ describe("data/repositories/ingredientRepo", () => {
     sugarPerRef: 4.2,
     sodiumMgPerRef: 4,
     alcoholGPerRef: null,
+    saturatedFatGPerRef: null,
+    transFatGPerRef: null,
+    cholesterolMgPerRef: null,
     source: "CUSTOM" as const,
   };
 
@@ -126,6 +129,10 @@ describe("data/repositories/ingredientRepo", () => {
           "sodiumMgPerRef",
           // openspec: alcohol-tracking — optional nutrient.
           "alcoholGPerRef",
+          // openspec: expanded-nutrients
+          "saturatedFatGPerRef",
+          "transFatGPerRef",
+          "cholesterolMgPerRef",
           "source",
           "overridden",
           // openspec: custom-pantry-items — optional product identity.
