@@ -1,0 +1,3 @@
+- [x] 1.1 Facade: PlanEntryRow += caloriesKcal (cook via computeRecipeNutrition, batch via service perServing; null when unknown) + integration tests
+- [x] 1.2 PlannerBoard client wrapper (selected-day state, day-card click + highlight, form without Day dropdown, "Adding to" label)
+- [x] 1.3 Entry rendering with "· N kcal"; e2e (click-day targeting, calorie display); full gate; train v2.22.0

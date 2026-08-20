@@ -11,11 +11,15 @@ export function PlanDayColumn({
   date,
   label,
   isToday,
+  isSelected,
+  onSelect,
   entries,
 }: {
   date: string;
   label: string;
   isToday: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
   entries: PlanEntryRow[];
 }) {
   const [pending, startTransition] = useTransition();
@@ -24,16 +28,24 @@ export function PlanDayColumn({
     <div
       data-testid="plan-day"
       data-date={date}
-      className={`flex flex-col gap-2 rounded-md border p-3 ${isToday ? "border-primary/60" : "border-border"}`}
+      data-selected={isSelected || undefined}
+      className={`flex cursor-pointer flex-col gap-2 rounded-md border p-3 transition-colors ${
+        isSelected ? "border-primary bg-primary/10" : isToday ? "border-primary/60" : "border-border hover:border-primary/40"
+      }`}
+      onClick={onSelect}
+      role="button"
+      aria-pressed={isSelected}
+      aria-label={`Select ${label} ${date}`}
     >
       <div className="flex items-baseline justify-between">
-        <span className={`text-sm font-semibold ${isToday ? "text-primary" : ""}`}>{label}</span>
+        <span className={`text-sm font-semibold ${isToday || isSelected ? "text-primary" : ""}`}>{label}</span>
         <span className="font-mono text-xs tabular-nums text-muted-foreground">{date.slice(5)}</span>
       </div>
       {entries.length === 0 ? (
         <span className="text-xs text-muted-foreground">—</span>
       ) : (
-        <ul className="flex flex-col gap-2">
+        // Inner links/buttons shouldn't retarget the day selection.
+        <ul className="flex flex-col gap-2" onClick={(event) => event.stopPropagation()}>
           {entries.map((entry) => (
             <li key={entry.id} data-testid="plan-entry" className="flex flex-col gap-1 rounded-sm border border-border/60 p-2">
               {entry.kind === "eat_batch" ? (
@@ -49,7 +61,12 @@ export function PlanDayColumn({
                 </Link>
               )}
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-muted-foreground">{entry.portions} portions</span>
+                <span className="text-xs text-muted-foreground">
+                  {entry.portions} portions
+                  {entry.caloriesKcal !== null ? (
+                    <span data-testid="plan-entry-calories"> · {entry.caloriesKcal} kcal</span>
+                  ) : null}
+                </span>
                 <Button
                   type="button"
                   variant="outline"

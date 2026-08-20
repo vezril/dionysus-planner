@@ -61,13 +61,22 @@ test.describe("weekly planner", () => {
     await expect(suggestion).toBeVisible();
     await expect(suggestion.getByTestId("uses-expiring")).toBeVisible();
 
+    // openspec: planner-day-click-and-calories — the calendar is the day
+    // picker: target Wednesday by clicking its card.
+    const wednesday = page.getByTestId("plan-day").nth(2);
+    await wednesday.click();
+    await expect(wednesday).toHaveAttribute("data-selected", "true");
+    await expect(page.getByTestId("plan-target-day")).toContainText("Wed");
+
     // Plan it once (300 of 400 mL) — it stops being cookable for the week.
     await page.getByRole("combobox", { name: "Plan recipe" }).click();
     await page.getByRole("option", { name: RECIPE_NAME }).click();
     await page.getByTestId("plan-add").click();
 
-    const entry = page.getByTestId("plan-entry").filter({ hasText: RECIPE_NAME });
+    const entry = wednesday.getByTestId("plan-entry").filter({ hasText: RECIPE_NAME });
     await expect(entry).toBeVisible();
+    // 300 mL × 47 kcal/100 mL = 141 kcal for the 1-portion plan.
+    await expect(entry.getByTestId("plan-entry-calories")).toContainText("141 kcal");
     await expect(cookable.getByTestId("planner-suggestion").filter({ hasText: RECIPE_NAME })).toHaveCount(0);
     await expect(
       page.getByTestId("planner-suggestions-near").getByTestId("planner-suggestion").filter({ hasText: RECIPE_NAME }),
