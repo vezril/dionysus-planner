@@ -16,6 +16,8 @@ import {
   type Suggestion,
 } from "@/domain/planner";
 import { buildShoppingList, type ShoppingList } from "@/domain/shoppingList";
+import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
+import { listBatches, listRecipes as listServiceRecipes } from "@/services/dionysusService";
 
 export type { PlanEntryRecord, PlanEntryRow } from "@/data/repositories/plannerRepo";
 
@@ -25,6 +27,9 @@ export interface PlannerWeek {
   entriesByDate: Record<string, plannerRepo.PlanEntryRow[]>;
   suggestions: Suggestion[];
   shoppingList: ShoppingList;
+  /** openspec: planner-ready-to-eat — service batches, week-plan-adjusted. */
+  readyToEat: Array<{ batchId: number; label: string; availablePortions: number }>;
+  serviceAvailable: boolean;
   recipeOptions: Array<{ id: number; name: string; servings: number }>;
 }
 
@@ -44,6 +49,7 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
     const planned: PlannedConsumption[] = [];
     const recipeCache = new Map<number, Awaited<ReturnType<typeof recipeRepo.getWithLinesAndIngredients>>>();
     for (const entry of entries) {
+      if (entry.kind !== "cook" || entry.recipeId === null) continue; // batch entries consume no pantry
       if (!recipeCache.has(entry.recipeId)) {
         recipeCache.set(entry.recipeId, await recipeRepo.getWithLinesAndIngredients(db, entry.recipeId));
       }
@@ -101,12 +107,40 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
       planned,
     );
 
+    // Ready to eat: service batches minus this week's planned batch portions.
+    let readyToEat: Array<{ batchId: number; label: string; availablePortions: number }> = [];
+    let serviceAvailable = true;
+    try {
+      const baseUrl = resolveDionysusServiceUrl();
+      const [batches, serviceRecipes] = await Promise.all([listBatches(baseUrl), listServiceRecipes(baseUrl)]);
+      const nameByRecipeId = new Map(serviceRecipes.map((recipe) => [recipe.id, recipe.name]));
+      const plannedByBatch = new Map<number, number>();
+      for (const entry of entries) {
+        if (entry.kind === "eat_batch" && entry.batchId !== null) {
+          plannedByBatch.set(entry.batchId, (plannedByBatch.get(entry.batchId) ?? 0) + entry.portions);
+        }
+      }
+      readyToEat = batches
+        .filter((batch) => batch.id !== null)
+        .map((batch) => ({
+          batchId: batch.id as number,
+          label: nameByRecipeId.get(batch.recipeId) ?? `Batch #${batch.id}`,
+          availablePortions:
+            Math.round((batch.remainingPortions - (plannedByBatch.get(batch.id as number) ?? 0)) * 100) / 100,
+        }))
+        .filter((batch) => batch.availablePortions > 0);
+    } catch {
+      serviceAvailable = false;
+    }
+
     return {
       weekStart,
       dates,
       entriesByDate,
       suggestions,
       shoppingList,
+      readyToEat,
+      serviceAvailable,
       recipeOptions: allRecipes.map((recipe) => ({ id: recipe.id, name: recipe.name, servings: recipe.servings })),
     };
   } finally {
@@ -114,7 +148,7 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
   }
 }
 
-export async function addPlanEntryRecord(input: { date: string; recipeId: number; portions: number }) {
+export async function addPlanEntryRecord(input: plannerRepo.PlanEntryInsert) {
   const db = createDb();
   try {
     return await plannerRepo.add(db, input);

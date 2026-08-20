@@ -5,9 +5,11 @@
  * ActionResult convention. Plans are planner-local; no service calls.
  */
 import { revalidatePath } from "next/cache";
+import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { addPlanEntryRecord, removePlanEntryRecord, type PlanEntryRecord } from "@/data/planner";
 import { getRecipeDetail } from "@/data/recipes";
 import { planEntrySchema } from "@/domain/validation/planEntry.schema";
+import { listBatches, listRecipes } from "@/services/dionysusService";
 
 export interface ActionError {
   code: string;
@@ -30,14 +32,53 @@ export async function addPlanEntry(input: unknown): Promise<ActionResult<PlanEnt
     };
   }
 
-  const recipe = await getRecipeDetail(parsed.data.recipeId);
-  if (!recipe) {
-    return { ok: false, error: { code: "NOT_FOUND", message: "Recipe not found." } };
+  const data = parsed.data;
+  if (data.kind === "cook") {
+    const recipe = await getRecipeDetail(data.recipeId);
+    if (!recipe) {
+      return { ok: false, error: { code: "NOT_FOUND", message: "Recipe not found." } };
+    }
+    const record = await addPlanEntryRecord({
+      date: data.date,
+      kind: "cook",
+      recipeId: data.recipeId,
+      batchId: null,
+      batchLabel: null,
+      portions: data.portions,
+    });
+    revalidatePath("/planner");
+    return { ok: true, data: record };
   }
 
-  const record = await addPlanEntryRecord(parsed.data);
-  revalidatePath("/planner");
-  return { ok: true, data: record };
+  // openspec: planner-ready-to-eat — batch entries validate against the
+  // service (which is where the batch came from) and snapshot the label.
+  try {
+    const baseUrl = resolveDionysusServiceUrl();
+    const [batches, recipes] = await Promise.all([listBatches(baseUrl), listRecipes(baseUrl)]);
+    const batch = batches.find((candidate) => candidate.id === data.batchId);
+    if (!batch) {
+      return { ok: false, error: { code: "NOT_FOUND", message: "Batch not found." } };
+    }
+    const label = recipes.find((candidate) => candidate.id === batch.recipeId)?.name ?? `Batch #${data.batchId}`;
+    const record = await addPlanEntryRecord({
+      date: data.date,
+      kind: "eat_batch",
+      recipeId: null,
+      batchId: data.batchId,
+      batchLabel: label,
+      portions: data.portions,
+    });
+    revalidatePath("/planner");
+    return { ok: true, data: record };
+  } catch (error) {
+    return {
+      ok: false,
+      error: {
+        code: "SERVICE_ERROR",
+        message: error instanceof Error ? error.message : "dionysus-service call failed.",
+      },
+    };
+  }
 }
 
 export async function removePlanEntry(id: number): Promise<ActionResult<null>> {

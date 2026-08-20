@@ -1,0 +1,4 @@
+- [x] 1.1 Migration 0010 (kind/batchId/batchLabel, recipeId nullable); repo row shape; addPlanEntry discriminated schema (cook default) + batch validation against the service
+- [x] 1.2 Domain: readyToEat availability (remaining minus week's batch plans) + unit tests; depletion/shopping filter to cook entries
+- [x] 1.3 UI: add form with batch+recipe options, day cells render batch entries, suggestions lead with Ready to eat; service-down degradation
+- [x] 1.4 Tests: integration (batch entry round-trip, filtered depletion, availability, service-down assembly); e2e in the service-gated job; full gate; train v2.19.0

@@ -7,7 +7,15 @@
 import Link from "next/link";
 import type { Suggestion } from "@/domain/planner";
 
-export function SuggestionList({ suggestions }: { suggestions: Suggestion[] }) {
+export function SuggestionList({
+  suggestions,
+  readyToEat,
+  serviceAvailable,
+}: {
+  suggestions: Suggestion[];
+  readyToEat: Array<{ batchId: number; label: string; availablePortions: number }>;
+  serviceAvailable: boolean;
+}) {
   const cookable = suggestions.filter((suggestion) => suggestion.tier === "cookable");
   const near = suggestions.filter((suggestion) => suggestion.tier === "near");
 
@@ -19,6 +27,30 @@ export function SuggestionList({ suggestions }: { suggestions: Suggestion[] }) {
           (pantry minus this week&apos;s plan)
         </span>
       </h2>
+      {/* openspec: planner-ready-to-eat — leftovers first; degrade quietly
+          when the meal service is unreachable. */}
+      <div className="flex flex-col gap-2">
+        <h3 className="text-sm font-semibold text-primary">Ready to eat</h3>
+        {!serviceAvailable ? (
+          <p data-testid="planner-service-down" className="text-sm text-muted-foreground">
+            Inventory service unreachable — cook planning still works.
+          </p>
+        ) : readyToEat.length === 0 ? (
+          <p data-testid="planner-ready-empty" className="text-sm text-muted-foreground">
+            No batches with portions left this week.
+          </p>
+        ) : (
+          <ul data-testid="planner-ready-to-eat" className="flex flex-col gap-1">
+            {readyToEat.map((batch) => (
+              <li key={batch.batchId} data-testid="planner-ready-batch" className="flex items-center gap-2 text-sm">
+                <span className="font-medium">{batch.label}</span>
+                <span className="text-xs text-muted-foreground">{batch.availablePortions} portions available</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {suggestions.length === 0 ? (
         <p data-testid="planner-suggestions-empty" className="text-sm text-muted-foreground">
           Nothing cookable with what would be left — restock or lighten the week.
