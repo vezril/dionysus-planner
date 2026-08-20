@@ -153,7 +153,7 @@ export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; por
               </p>
             ) : null}
             <Link href="/meal-log/batches" className="text-sm font-medium text-primary underline">
-              View in Meals › Batches
+              View in Inventory › Batches
             </Link>
           </div>
         ) : preview ? (

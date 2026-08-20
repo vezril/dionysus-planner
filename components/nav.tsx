@@ -19,10 +19,10 @@ import { usePathname } from "next/navigation";
 // the pantry feeds recipes, recipes become meals.
 const NAV_ITEMS = [
   { href: "/what-can-i-cook", label: "What Can I Cook" },
-  { href: "/ingredients", label: "Ingredients" },
+  { href: "/ingredients", label: "Products" },
   { href: "/pantry", label: "Pantry" },
   { href: "/recipes", label: "Recipes" },
-  { href: "/meal-log", label: "Meals" },
+  { href: "/meal-log", label: "Inventory" },
 ] as const;
 
 export function MainNav() {

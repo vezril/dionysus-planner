@@ -29,7 +29,7 @@ test.describe("Meal Log flow", () => {
 
   test("create an ingredient", async ({ page }) => {
     await page.goto("/meal-log/ingredients");
-    await expect(page.getByRole("heading", { level: 1, name: "Meals Ingredients" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Inventory Products" })).toBeVisible();
 
     await page.getByRole("textbox", { name: "Name" }).fill(INGREDIENT_NAME);
     await page.getByRole("spinbutton", { name: "Calories (kcal)" }).fill("100");
@@ -37,7 +37,7 @@ test.describe("Meal Log flow", () => {
     await page.getByRole("spinbutton", { name: "Carbs (g)" }).fill("10");
     await page.getByRole("spinbutton", { name: "Fat (g)" }).fill("2");
     await page.getByRole("spinbutton", { name: "Sodium (mg)" }).fill("50");
-    await page.getByRole("button", { name: "Add ingredient" }).click();
+    await page.getByRole("button", { name: "Add product" }).click();
 
     await expect(page.getByTestId("meal-log-ingredient-row").filter({ hasText: INGREDIENT_NAME })).toBeVisible();
   });

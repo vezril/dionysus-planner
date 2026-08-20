@@ -17,11 +17,11 @@ import { expect, test } from "@playwright/test";
  *
  * ============================ PINNED CONTRACT (demanded surface) ==========
  * Catalog CTA (`/ingredients`, S-301's existing page):
- *   - One `role="link"` with accessible name **"Add ingredient"**, `href`
+ *   - One `role="link"` with accessible name **"Add product"**, `href`
  *     exactly `/ingredients/new`.
  *
  * Create form (`/ingredients/new`, client component per ADR-002):
- *   - One `<h1>` with accessible name **"Add ingredient"**.
+ *   - One `<h1>` with accessible name **"Add product"**.
  *   - Fields, all reachable by accessible name (label/aria-label — works
  *     with a shadcn `<Select>` rendering `role="combobox"` for unit class,
  *     and `type="number"` inputs rendering `role="spinbutton"`):
@@ -70,13 +70,13 @@ test.describe("S-302 ingredient create & override forms", () => {
   }) => {
     await page.goto("/ingredients");
 
-    const addLink = page.getByRole("link", { name: "Add ingredient" });
+    const addLink = page.getByRole("link", { name: "Add product" });
     await expect(addLink).toBeVisible();
     await expect(addLink).toHaveAttribute("href", "/ingredients/new");
     await addLink.click();
 
     await expect(page).toHaveURL(/\/ingredients\/new$/);
-    await expect(page.getByRole("heading", { level: 1, name: "Add ingredient", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Add product", exact: true })).toBeVisible();
 
     // Submit with everything empty — required fields must block save.
     await page.getByRole("button", { name: "Save" }).click();

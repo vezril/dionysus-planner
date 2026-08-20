@@ -122,7 +122,7 @@ export function MealLogIngredientForm() {
       {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
 
       <div>
-        <Button type="submit">Add ingredient</Button>
+        <Button type="submit">Add product</Button>
       </div>
     </form>
   );

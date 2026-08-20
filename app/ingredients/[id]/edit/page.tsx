@@ -34,7 +34,7 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Edit ingredient</h1>
+      <h1 className="text-2xl font-semibold">Edit product</h1>
       <IngredientForm
         mode="edit"
         ingredientId={ingredient.id}

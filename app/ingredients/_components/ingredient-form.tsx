@@ -147,15 +147,15 @@ interface NumberFieldConfig {
 }
 
 const NUMBER_FIELDS: NumberFieldConfig[] = [
-  { name: "caloriesPerRef", label: "Calories" },
-  { name: "proteinPerRef", label: "Protein" },
-  { name: "carbsPerRef", label: "Carbs" },
-  { name: "fatPerRef", label: "Fat" },
-  { name: "fiberPerRef", label: "Fiber" },
-  { name: "sugarPerRef", label: "Sugar" },
-  { name: "sodiumMgPerRef", label: "Sodium" },
-  { name: "alcoholGPerRef", label: "Alcohol" },
-  { name: "densityGPerMl", label: "Density" },
+  { name: "caloriesPerRef", label: "Calories (kcal)" },
+  { name: "proteinPerRef", label: "Protein (g)" },
+  { name: "carbsPerRef", label: "Carbs (g)" },
+  { name: "fatPerRef", label: "Fat (g)" },
+  { name: "fiberPerRef", label: "Fiber (g)" },
+  { name: "sugarPerRef", label: "Sugar (g)" },
+  { name: "sodiumMgPerRef", label: "Sodium (mg)" },
+  { name: "alcoholGPerRef", label: "Alcohol (g)" },
+  { name: "densityGPerMl", label: "Density (g/mL)" },
 ];
 
 export function IngredientForm({

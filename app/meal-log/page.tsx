@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { MICRONUTRIENTS } from "@/domain/micronutrients";
+import { LogPortionButton } from "./batches/_components/LogPortionButton";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { formatInstantIn, resolveDionysusTimezone, todayIsoDateIn } from "@/app/lib/dionysusTimezone";
-import { getDayLog } from "@/services/dionysusService";
+import { getDayLog, listBatches, listRecipes } from "@/services/dionysusService";
 
 /**
  * openspec: meal-log-integration — the Meal Log day view. Reads exclusively
@@ -47,12 +48,20 @@ export default async function MealLogPage({
   const date = params.date && isValidIsoDate(params.date) ? params.date : todayIsoDateIn(timeZone);
 
   const baseUrl = resolveDionysusServiceUrl();
-  const dayLog = await getDayLog(baseUrl, date);
+  // openspec: qol-cta-labels-renames — the landing leads with what's ready
+  // to consume; the day log follows.
+  const [dayLog, batches, recipes] = await Promise.all([
+    getDayLog(baseUrl, date),
+    listBatches(baseUrl),
+    listRecipes(baseUrl),
+  ]);
+  const recipeNameById = new Map(recipes.map((recipe) => [recipe.id, recipe.name]));
+  const readyToConsume = batches.filter((batch) => batch.remainingPortions >= 1);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Meals</h1>
+        <h1 className="text-2xl font-semibold">Inventory</h1>
         <div className="flex gap-4 text-sm">
           <Link href="/meal-log/log" className="font-medium text-primary hover:underline">
             Log a meal
@@ -98,6 +107,34 @@ export default async function MealLogPage({
         </Link>
       </div>
 
+      <section className="flex flex-col gap-2">
+        <h2 className="text-lg font-medium">Ready to consume</h2>
+        {readyToConsume.length === 0 ? (
+          <p data-testid="ready-to-consume-empty" className="text-sm text-muted-foreground">
+            Nothing ready right now — cook a recipe to stock up.
+          </p>
+        ) : (
+          <ul data-testid="ready-to-consume" className="flex flex-col divide-y divide-border">
+            {readyToConsume.map((batch) => (
+              <li
+                key={batch.id}
+                data-testid="ready-to-consume-row"
+                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2"
+              >
+                <span className="text-sm font-medium">
+                  {recipeNameById.get(batch.recipeId) ?? `Recipe #${batch.recipeId}`}
+                </span>
+                <span className="text-sm text-muted-foreground">{batch.remainingPortions} portions</span>
+                {batch.id !== null ? <LogPortionButton batchId={batch.id} /> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <h2 className="text-lg font-medium">
+        {date === todayIsoDateIn(timeZone) ? "Today's intake" : `Intake for ${date}`}
+      </h2>
       <div data-testid="day-log-totals" className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-md border border-border p-4 sm:grid-cols-5">
         {NUTRIENT_LABELS.map(({ key, label, unit }) => (
           <div key={key} className="flex flex-col">
