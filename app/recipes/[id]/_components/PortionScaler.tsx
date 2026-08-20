@@ -79,9 +79,14 @@ export function PortionScaler({
               data-testid="recipe-line"
               className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3"
             >
-              <span className="font-medium text-foreground">{line.name}</span>
-              <span data-testid="recipe-line-quantity" className="font-mono text-sm tabular-nums text-muted-foreground">
-                {scaleDisplayQuantity(line.displayQuantity, factor)} {line.displayUnit}
+              {/* openspec: recipe-display-polish — quantity-first, the way a
+                  cook scans a list: "2 g, Garlic powder". */}
+              <span className="flex items-baseline">
+                <span data-testid="recipe-line-quantity" className="font-mono text-sm tabular-nums text-foreground">
+                  {scaleDisplayQuantity(line.displayQuantity, factor)} {line.displayUnit}
+                </span>
+                <span className="text-sm text-muted-foreground">,&nbsp;</span>
+                <span className="font-medium text-foreground">{line.name}</span>
               </span>
               {line.unresolved ? (
                 <span data-testid="recipe-line-unresolved" className="text-sm text-destructive">

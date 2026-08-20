@@ -123,3 +123,17 @@ describe("stripMentionIds", () => {
     expect(stripMentionIds("@Salt(3) to taste")).toBe("@Salt to taste");
   });
 });
+
+describe("humanizeMentions (openspec: recipe-display-polish)", () => {
+  it("renders mentions as bare names — no @, id, or quantity braces", async () => {
+    const { humanizeMentions } = await import("@/domain/cooklangParser");
+    expect(humanizeMentions("Mince @Garlic powder(3){2%g} and @Salt(4) to taste.")).toBe(
+      "Mince Garlic powder and Salt to taste.",
+    );
+  });
+
+  it("leaves non-mention text (including a bare @) untouched", async () => {
+    const { humanizeMentions } = await import("@/domain/cooklangParser");
+    expect(humanizeMentions("Email me @ home. No mentions here.")).toBe("Email me @ home. No mentions here.");
+  });
+});
