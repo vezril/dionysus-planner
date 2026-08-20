@@ -43,6 +43,7 @@ test.describe("qol-nav-scale-delete", () => {
     await page.goto("/pantry");
     const nav = page.getByRole("navigation", { name: "Main" });
     await expect(nav.getByRole("link")).toHaveText([
+      "Dionysus", // openspec: app-logo — the brand link precedes the sections
       "What Can I Cook",
       "Products",
       "Pantry",

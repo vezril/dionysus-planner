@@ -1,0 +1,3 @@
+- [x] 1.1 Assets in place (icon.png / apple-icon.png / logo.png)
+- [x] 1.2 Sidebar logo linking to /what-can-i-cook
+- [x] 1.3 Gate + train v2.15.0
