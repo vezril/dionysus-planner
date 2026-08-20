@@ -14,10 +14,14 @@ import { EditPantryItemDialog } from "@/app/pantry/_components/EditPantryItemDia
 import { RemovePantryItemDialog } from "@/app/pantry/_components/RemovePantryItemDialog";
 import { Button } from "@/components/ui/button";
 import type { PantryListRow } from "@/data/pantry";
+import { computeFreshness } from "@/domain/freshness";
 
 export function PantryRow({ item }: { item: PantryListRow }) {
   const [editOpen, setEditOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
+  // openspec: pantry-freshness — age + shelf-life hint; hidden for
+  // out-of-stock rows (nothing left to expire).
+  const freshness = item.displayQuantity > 0 ? computeFreshness(item.stockedAt, item.shelfLifeDays, new Date()) : null;
 
   return (
     <li
@@ -46,6 +50,29 @@ export function PantryRow({ item }: { item: PantryListRow }) {
           {item.displayQuantity} {item.displayUnit}
         </span>
       )}
+      {freshness !== null ? (
+        <span className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span data-testid="stocked-age">
+            stocked {freshness.daysSinceStocked === 0 ? "today" : `${freshness.daysSinceStocked}d ago`}
+          </span>
+          {freshness.status === "expiring" ? (
+            <span
+              data-testid="freshness-expiring"
+              className="rounded-sm border border-status-near/50 px-1.5 py-0.5 font-medium text-status-near"
+            >
+              ~{freshness.daysLeft}d left
+            </span>
+          ) : null}
+          {freshness.status === "expired" ? (
+            <span
+              data-testid="freshness-expired"
+              className="rounded-sm border border-destructive/50 px-1.5 py-0.5 font-medium text-destructive"
+            >
+              check it
+            </span>
+          ) : null}
+        </span>
+      ) : null}
       <div className="flex shrink-0 gap-2">
         <Button type="button" size="sm" variant="outline" onClick={() => setEditOpen(true)}>
           Edit

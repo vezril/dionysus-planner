@@ -57,6 +57,7 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
           transFatGPerRef: ingredient.transFatGPerRef,
           cholesterolMgPerRef: ingredient.cholesterolMgPerRef,
           category: ingredient.category,
+          shelfLifeDays: ingredient.shelfLifeDays,
           micronutrients,
           densityGPerMl: ingredient.densityGPerMl,
         }}

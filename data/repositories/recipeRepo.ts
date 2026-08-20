@@ -128,6 +128,7 @@ function toIngredientRecord(row: typeof ingredient.$inferSelect): IngredientReco
     transFatGPerRef: row.transFatGPerRef,
     cholesterolMgPerRef: row.cholesterolMgPerRef,
     category: row.category,
+    shelfLifeDays: row.shelfLifeDays,
     source: row.source,
     overridden: row.overridden,
     brand: row.brand,

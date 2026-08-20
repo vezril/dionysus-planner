@@ -29,6 +29,7 @@ export interface CustomPantryItemInput {
   transFatGPerRef: number | null;
   cholesterolMgPerRef: number | null;
   category: "FOOD" | "DRINK" | "SUPPLEMENT";
+  shelfLifeDays: number | null;
   brand: string | null;
   barcode: string | null;
   packageQuantity: number | null;
@@ -72,6 +73,7 @@ export async function createCustomPantryItemRecords(
           transFatGPerRef: input.transFatGPerRef,
           cholesterolMgPerRef: input.cholesterolMgPerRef,
           category: input.category,
+          shelfLifeDays: input.shelfLifeDays,
           source: "CUSTOM",
           overridden: false,
           brand: input.brand,
@@ -91,6 +93,7 @@ export async function createCustomPantryItemRecords(
           quantityCanonical: input.quantityCanonical,
           entryUnitClass: input.entryUnitClass,
           displayQuantity: input.displayQuantity,
+          stockedAt: timestamp,
           displayUnit: input.displayUnit,
           updatedAt: timestamp,
         })
@@ -116,6 +119,7 @@ export async function createCustomPantryItemRecords(
           transFatGPerRef: ingredientRow.transFatGPerRef,
           cholesterolMgPerRef: ingredientRow.cholesterolMgPerRef,
           category: ingredientRow.category,
+          shelfLifeDays: ingredientRow.shelfLifeDays,
           source: ingredientRow.source,
           overridden: ingredientRow.overridden,
           brand: ingredientRow.brand,
@@ -132,6 +136,7 @@ export async function createCustomPantryItemRecords(
           entryUnitClass: itemRow.entryUnitClass,
           displayQuantity: itemRow.displayQuantity,
           displayUnit: itemRow.displayUnit,
+          stockedAt: itemRow.stockedAt,
           updatedAt: itemRow.updatedAt,
         },
       };

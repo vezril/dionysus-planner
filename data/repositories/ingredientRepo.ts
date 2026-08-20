@@ -30,6 +30,7 @@ export interface IngredientRecord {
   cholesterolMgPerRef: number | null;
   source: "SEEDED" | "CUSTOM";
   category: "FOOD" | "DRINK" | "SUPPLEMENT";
+  shelfLifeDays: number | null;
   overridden: boolean;
   // openspec: custom-pantry-items — optional product identity (design.md D1).
   brand: string | null;
@@ -64,6 +65,7 @@ export type IngredientUpdatePatch = Partial<
     | "fiberPerRef"
     | "sugarPerRef"
     | "category"
+    | "shelfLifeDays"
     | "sodiumMgPerRef"
     | "alcoholGPerRef"
     | "saturatedFatGPerRef"
@@ -96,6 +98,7 @@ function toRecord(row: typeof ingredient.$inferSelect): IngredientRecord {
     transFatGPerRef: row.transFatGPerRef,
     cholesterolMgPerRef: row.cholesterolMgPerRef,
     category: row.category,
+    shelfLifeDays: row.shelfLifeDays,
     source: row.source,
     overridden: row.overridden,
     brand: row.brand,
@@ -132,6 +135,7 @@ export async function create(db: Db, input: IngredientCreateInput): Promise<Ingr
       transFatGPerRef: input.transFatGPerRef,
       cholesterolMgPerRef: input.cholesterolMgPerRef,
       category: input.category,
+      shelfLifeDays: input.shelfLifeDays,
       source: input.source,
       overridden: input.overridden ?? false,
       brand: input.brand ?? null,

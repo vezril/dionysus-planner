@@ -42,6 +42,7 @@ type FormValues = {
   transFatGPerRef: number | undefined;
   cholesterolMgPerRef: number | undefined;
   category: "FOOD" | "DRINK" | "SUPPLEMENT" | undefined;
+  shelfLifeDays: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   brand: string | undefined;
   barcode: string | undefined;
@@ -77,6 +78,7 @@ const DEFAULT_VALUES: FormValues = {
   transFatGPerRef: undefined,
   cholesterolMgPerRef: undefined,
   category: "FOOD",
+  shelfLifeDays: undefined,
   micronutrients: [],
   brand: undefined,
   barcode: undefined,
@@ -100,6 +102,7 @@ const NUTRITION_FIELDS: Array<{ name: keyof FormValues & string; label: string }
   { name: "saturatedFatGPerRef", label: "Saturated fat (g)" },
   { name: "transFatGPerRef", label: "Trans fat (g)" },
   { name: "cholesterolMgPerRef", label: "Cholesterol (mg)" },
+  { name: "shelfLifeDays", label: "Shelf life (days)" },
 ];
 
 export function CreateCustomItemDialog() {
