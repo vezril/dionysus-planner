@@ -32,6 +32,7 @@ const NUTRIENT_ROWS: Array<{
   { key: "fiber", testid: "fiber", label: "Fiber", kind: "g" },
   { key: "sugar", testid: "sugar", label: "Sugar", kind: "g" },
   { key: "sodiumMg", testid: "sodium", label: "Sodium", kind: "mg" },
+  { key: "alcoholG", testid: "alcohol", label: "Alcohol", kind: "g" },
 ];
 
 export default async function RecipeDetailPage({ params }: { params: Promise<{ id: string }> }) {

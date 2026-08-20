@@ -29,6 +29,13 @@
       "when": 1787193507244,
       "tag": "0003_normalize_package_unit",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1787232276990,
+      "tag": "0004_fancy_shape",
+      "breakpoints": true
     }
   ]
 }

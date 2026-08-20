@@ -27,6 +27,8 @@ export const ingredientSchema = z
     fiberPerRef: optionalNonNegative,
     sugarPerRef: optionalNonNegative,
     sodiumMgPerRef: optionalNonNegative,
+    // openspec: alcohol-tracking — same optional-nutrient semantics.
+    alcoholGPerRef: optionalNonNegative,
     densityGPerMl: z.number().gt(0).nullish(),
     // openspec: custom-pantry-items — optional product identity. Barcode is
     // free text (trimmed, non-empty when present): format normalization is

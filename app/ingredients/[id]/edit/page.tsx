@@ -50,6 +50,7 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
           fiberPerRef: ingredient.fiberPerRef,
           sugarPerRef: ingredient.sugarPerRef,
           sodiumMgPerRef: ingredient.sodiumMgPerRef,
+          alcoholGPerRef: ingredient.alcoholGPerRef,
           densityGPerMl: ingredient.densityGPerMl,
         }}
       />

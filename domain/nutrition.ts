@@ -43,6 +43,8 @@ export interface NutritionIngredient {
   fiberPerRef: number | null;
   sugarPerRef: number | null;
   sodiumMgPerRef: number | null;
+  /** openspec: alcohol-tracking — optional, grams per reference. */
+  alcoholGPerRef: number | null;
 }
 
 /** A recipe as consumed by computeRecipeNutrition(). */
@@ -70,6 +72,7 @@ export interface NutritionTotals {
   fiber: NutrientTotal;
   sugar: NutrientTotal;
   sodiumMg: NutrientTotal;
+  alcoholG: NutrientTotal;
 }
 
 export interface RecipeNutrition {
@@ -81,7 +84,7 @@ export interface RecipeNutrition {
 }
 
 const REQUIRED_KEYS = ["calories", "protein", "carbs", "fat"] as const;
-const OPTIONAL_KEYS = ["fiber", "sugar", "sodiumMg"] as const;
+const OPTIONAL_KEYS = ["fiber", "sugar", "sodiumMg", "alcoholG"] as const;
 
 const REQUIRED_FIELD_BY_KEY: Record<
   (typeof REQUIRED_KEYS)[number],
@@ -95,11 +98,12 @@ const REQUIRED_FIELD_BY_KEY: Record<
 
 const OPTIONAL_FIELD_BY_KEY: Record<
   (typeof OPTIONAL_KEYS)[number],
-  "fiberPerRef" | "sugarPerRef" | "sodiumMgPerRef"
+  "fiberPerRef" | "sugarPerRef" | "sodiumMgPerRef" | "alcoholGPerRef"
 > = {
   fiber: "fiberPerRef",
   sugar: "sugarPerRef",
   sodiumMg: "sodiumMgPerRef",
+  alcoholG: "alcoholGPerRef",
 };
 
 function nutrientTotal(value: number | null): NutrientTotal {
@@ -135,6 +139,7 @@ export function computeRecipeNutrition(
     fiber: 0,
     sugar: 0,
     sodiumMg: 0,
+    alcoholG: 0,
   };
   // Optional field is only a completed total if EVERY constituent
   // ingredient (across all lines) has it set (non-null).
@@ -142,6 +147,7 @@ export function computeRecipeNutrition(
     fiber: true,
     sugar: true,
     sodiumMg: true,
+    alcoholG: true,
   };
 
   const unresolvedLineIds: number[] = [];
@@ -192,6 +198,9 @@ export function computeRecipeNutrition(
     sodiumMg: nutrientTotal(
       optionalPresentForAll.sodiumMg ? optionalSums.sodiumMg : null,
     ),
+    alcoholG: nutrientTotal(
+      optionalPresentForAll.alcoholG ? optionalSums.alcoholG : null,
+    ),
   };
 
   const perServing: NutritionTotals = {
@@ -215,6 +224,9 @@ export function computeRecipeNutrition(
     ),
     sodiumMg: nutrientTotal(
       totals.sodiumMg.value === null ? null : totals.sodiumMg.value / recipe.servings,
+    ),
+    alcoholG: nutrientTotal(
+      totals.alcoholG.value === null ? null : totals.alcoholG.value / recipe.servings,
     ),
   };
 

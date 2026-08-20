@@ -53,6 +53,7 @@ type FormValues = {
   fiberPerRef: number | undefined;
   sugarPerRef: number | undefined;
   sodiumMgPerRef: number | undefined;
+  alcoholGPerRef: number | undefined;
   densityGPerMl: number | undefined;
 };
 
@@ -70,6 +71,7 @@ export interface IngredientFormInitialValues {
   fiberPerRef: number | null;
   sugarPerRef: number | null;
   sodiumMgPerRef: number | null;
+  alcoholGPerRef: number | null;
   densityGPerMl: number | null;
 }
 
@@ -91,6 +93,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       fiberPerRef: undefined,
       sugarPerRef: undefined,
       sodiumMgPerRef: undefined,
+      alcoholGPerRef: undefined,
       densityGPerMl: undefined,
     };
   }
@@ -112,6 +115,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     fiberPerRef: initial.fiberPerRef ?? undefined,
     sugarPerRef: initial.sugarPerRef ?? undefined,
     sodiumMgPerRef: initial.sodiumMgPerRef ?? undefined,
+    alcoholGPerRef: initial.alcoholGPerRef ?? undefined,
     densityGPerMl: initial.densityGPerMl ?? undefined,
   };
 }
@@ -131,6 +135,7 @@ interface NumberFieldConfig {
     | "fiberPerRef"
     | "sugarPerRef"
     | "sodiumMgPerRef"
+    | "alcoholGPerRef"
     | "densityGPerMl"
   );
   label: string;
@@ -144,6 +149,7 @@ const NUMBER_FIELDS: NumberFieldConfig[] = [
   { name: "fiberPerRef", label: "Fiber" },
   { name: "sugarPerRef", label: "Sugar" },
   { name: "sodiumMgPerRef", label: "Sodium" },
+  { name: "alcoholGPerRef", label: "Alcohol" },
   { name: "densityGPerMl", label: "Density" },
 ];
 

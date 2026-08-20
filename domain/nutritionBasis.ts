@@ -57,6 +57,7 @@ export interface NutritionFieldValues {
   fiberPerRef: number | null;
   sugarPerRef: number | null;
   sodiumMgPerRef: number | null;
+  alcoholGPerRef: number | null;
 }
 
 /** Rounded to 4 decimals — far below nutritional significance, keeps
@@ -77,5 +78,6 @@ export function scaleNutritionFields(
     fiberPerRef: fields.fiberPerRef == null ? null : scale(fields.fiberPerRef, factor),
     sugarPerRef: fields.sugarPerRef == null ? null : scale(fields.sugarPerRef, factor),
     sodiumMgPerRef: fields.sodiumMgPerRef == null ? null : scale(fields.sodiumMgPerRef, factor),
+    alcoholGPerRef: fields.alcoholGPerRef == null ? null : scale(fields.alcoholGPerRef, factor),
   };
 }

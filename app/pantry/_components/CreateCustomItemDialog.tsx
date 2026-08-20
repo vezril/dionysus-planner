@@ -36,6 +36,7 @@ type FormValues = {
   fiberPerRef: number | undefined;
   sugarPerRef: number | undefined;
   sodiumMgPerRef: number | undefined;
+  alcoholGPerRef: number | undefined;
   brand: string | undefined;
   barcode: string | undefined;
   packageQuantity: number | undefined;
@@ -65,6 +66,7 @@ const DEFAULT_VALUES: FormValues = {
   fiberPerRef: undefined,
   sugarPerRef: undefined,
   sodiumMgPerRef: undefined,
+  alcoholGPerRef: undefined,
   brand: undefined,
   barcode: undefined,
   packageQuantity: undefined,
@@ -83,6 +85,7 @@ const NUTRITION_FIELDS: Array<{ name: keyof FormValues & string; label: string }
   { name: "fiberPerRef", label: "Fiber" },
   { name: "sugarPerRef", label: "Sugar" },
   { name: "sodiumMgPerRef", label: "Sodium" },
+  { name: "alcoholGPerRef", label: "Alcohol" },
 ];
 
 export function CreateCustomItemDialog() {

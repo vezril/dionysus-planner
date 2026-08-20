@@ -48,6 +48,7 @@ describe("data/customPantryItems", () => {
       fiberPerRef: null,
       sugarPerRef: 7.5,
       sodiumMgPerRef: 882,
+      alcoholGPerRef: null,
       brand: "Ritz",
       barcode: "064100128866",
       packageQuantity: 200,

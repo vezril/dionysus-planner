@@ -78,6 +78,7 @@ export interface IngredientNutritionFields {
   fiberPerRef?: number | null;
   sugarPerRef?: number | null;
   sodiumMgPerRef?: number | null;
+  alcoholGPerRef?: number | null;
   densityGPerMl?: number | null;
   // openspec: custom-pantry-items — optional product identity.
   brand?: string | null;
@@ -110,6 +111,7 @@ export async function createIngredientRecord(input: IngredientNutritionFields): 
       fiberPerRef: input.fiberPerRef ?? null,
       sugarPerRef: input.sugarPerRef ?? null,
       sodiumMgPerRef: input.sodiumMgPerRef ?? null,
+      alcoholGPerRef: input.alcoholGPerRef ?? null,
       source: "CUSTOM",
       brand: input.brand ?? null,
       barcode: input.barcode ?? null,
@@ -137,6 +139,7 @@ export async function updateIngredientNutritionRecord(
       fiberPerRef: patch.fiberPerRef ?? null,
       sugarPerRef: patch.sugarPerRef ?? null,
       sodiumMgPerRef: patch.sodiumMgPerRef ?? null,
+      alcoholGPerRef: patch.alcoholGPerRef ?? null,
       overridden: patch.overridden,
       brand: patch.brand ?? null,
       barcode: patch.barcode ?? null,
