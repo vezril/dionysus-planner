@@ -1,5 +1,6 @@
 import { getPantryList } from "@/data/pantry";
 import { EmptyState } from "@/components/empty-state";
+import { CreateCustomItemDialog } from "@/app/pantry/_components/CreateCustomItemDialog";
 import { PantryItemForm } from "@/app/pantry/_components/PantryItemForm";
 import { PantryRow } from "@/app/pantry/_components/PantryRow";
 
@@ -26,13 +27,17 @@ export default async function PantryPage() {
           <h1 className="text-2xl font-semibold">Pantry</h1>
           <EmptyState description="Your pantry is empty — add items to start tracking what you have on hand.">
             <PantryItemForm triggerLabel="Add your first pantry item" />
+            <CreateCustomItemDialog />
           </EmptyState>
         </>
       ) : (
         <>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <h1 className="text-2xl font-semibold">Pantry</h1>
-            <PantryItemForm triggerLabel="Add pantry item" />
+            <div className="flex flex-wrap gap-2">
+              <CreateCustomItemDialog />
+              <PantryItemForm triggerLabel="Add pantry item" />
+            </div>
           </div>
           <ul className="flex flex-col divide-y divide-border">
             {items.map((item) => (

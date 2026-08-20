@@ -1,21 +1,19 @@
 /**
- * Ingredient Zod schema (architecture.md §3 ADR-005 — one schema shared
- * verbatim by the client form (`react-hook-form` + `@hookform/resolvers/zod`)
- * and the Server Action's independent re-parse, per docs/stories/S-302).
- * Pure, framework-free.
- *
- * Field semantics per architecture.md §4 Ingredient: name/unitClass and the
- * four macro fields (calories/protein/carbs/fat) are required and
- * non-negative; fiber/sugar/sodium are optional/nullable and non-negative
- * when present (A-1); density is optional/nullable and strictly positive
- * when present (FR-12).
+ * Custom pantry item schema (openspec: custom-pantry-items) — the one-step
+ * "branded product into the pantry" form: the ingredient's fields
+ * (nutrition + optional product identity, same rules as ingredientSchema)
+ * plus an initial on-hand quantity, ZERO ALLOWED (an out-of-stock product
+ * is still your product). Pure, framework-free; shared by the client form
+ * and the Server Action's re-parse (ADR-005).
  */
 import { z } from "zod";
+import { UNITS } from "@/domain/units";
 
+const unitKeys = Object.keys(UNITS) as [string, ...string[]];
 const nonNegativeNumber = z.number().min(0);
 const optionalNonNegative = z.number().min(0).nullish();
 
-export const ingredientSchema = z
+export const customPantryItemSchema = z
   .object({
     name: z.string().trim().min(1),
     unitClass: z.enum(["MASS", "VOLUME", "COUNT"]),
@@ -27,17 +25,18 @@ export const ingredientSchema = z
     sugarPerRef: optionalNonNegative,
     sodiumMgPerRef: optionalNonNegative,
     densityGPerMl: z.number().gt(0).nullish(),
-    // openspec: custom-pantry-items — optional product identity. Barcode is
-    // free text (trimmed, non-empty when present): format normalization is
-    // the future scanner app's concern (design.md risk note).
     brand: z.string().trim().min(1).nullish(),
     barcode: z.string().trim().min(1).nullish(),
     packageQuantity: z.number().gt(0).nullish(),
     packageUnit: z.string().trim().min(1).nullish(),
+    initialQuantity: z
+      .number({ error: "Quantity is required (0 is fine)." })
+      .min(0, { message: "Quantity cannot be negative." }),
+    unit: z.enum(unitKeys, { error: "Select a unit." }),
   })
   .refine((value) => value.packageQuantity == null || value.packageUnit != null, {
     message: "A package size needs a unit.",
     path: ["packageUnit"],
   });
 
-export type IngredientSchemaInput = z.infer<typeof ingredientSchema>;
+export type CustomPantryItemSchemaInput = z.infer<typeof customPantryItemSchema>;

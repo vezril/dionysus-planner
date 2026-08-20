@@ -39,6 +39,10 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
         initialValues={{
           name: ingredient.name,
           unitClass: ingredient.unitClass,
+          brand: ingredient.brand,
+          barcode: ingredient.barcode,
+          packageQuantity: ingredient.packageQuantity,
+          packageUnit: ingredient.packageUnit,
           caloriesPerRef: ingredient.caloriesPerRef,
           proteinPerRef: ingredient.proteinPerRef,
           carbsPerRef: ingredient.carbsPerRef,

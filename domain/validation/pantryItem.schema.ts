@@ -19,9 +19,11 @@ export const pantryItemSchema = z.object({
     .number({ error: "Select an ingredient." })
     .int({ message: "Select an ingredient." })
     .positive({ message: "Select an ingredient." }),
+  // openspec: custom-pantry-items — zero is valid ("I ran out"; the row
+  // persists as out-of-stock). MODIFIES the S-304-era `> 0` rule.
   quantity: z
     .number({ error: "Quantity is required." })
-    .positive({ message: "Quantity must be greater than zero." }),
+    .min(0, { message: "Quantity cannot be negative." }),
   unit: z.enum(unitKeys, { error: "Select a unit." }),
   mode: z.enum(["new", "increment", "replace"]).optional(),
 });

@@ -186,8 +186,6 @@ test.describe("S-304 pantry add + upsert", () => {
   }) => {
     await page.goto("/pantry");
 
-    const rowsBefore = await page.getByTestId("pantry-row").count();
-
     const dialog = await openAddDialog(page);
     await pickIngredient(page, "Broccoli, raw");
     await fillQuantity(dialog, "1");
@@ -206,11 +204,11 @@ test.describe("S-304 pantry add + upsert", () => {
     await incrementButton.click();
     await expect(dialog).not.toBeVisible();
 
-    // Still exactly one row for this ingredient, and the total row count
-    // grew by exactly one across this whole test (from the fresh add in
-    // the previous test), never two for the same ingredient.
-    const rowsAfter = await page.getByTestId("pantry-row").count();
-    expect(rowsAfter).toBe(rowsBefore);
+    // Still exactly one row for THIS ingredient — the real AC3 invariant.
+    // (A global before/after row-count comparison used to live here; it
+    // races against other suites adding their own pantry rows in parallel
+    // workers on the shared DB — e.g. pantry-detail / custom-pantry-item —
+    // so it was removed deliberately. openspec: custom-pantry-items.)
     await expect(pantryRowFor(page, "Broccoli, raw")).toHaveCount(1);
   });
 
@@ -280,18 +278,20 @@ test.describe("S-304 pantry add + upsert", () => {
     await expect(pantryRowFor(page, "Spinach, raw")).toContainText(/1\s*cup/i);
   });
 
-  test("AC8: invalid input (no ingredient selected, non-positive quantity) blocks save client-side", async ({
+  test("AC8: invalid input (no ingredient selected, negative quantity) blocks save client-side", async ({
     page,
   }) => {
+    // openspec: custom-pantry-items — zero is now VALID (out-of-stock rows
+    // persist); negative remains rejected, and this test now pins that.
     await page.goto("/pantry");
 
     const dialog = await openAddDialog(page);
-    await fillQuantity(dialog, "0");
+    await fillQuantity(dialog, "-1");
     await dialog.getByRole("button", { name: "Save" }).click();
 
     // Still open — inline validation blocked the save.
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText(/required|select an ingredient|positive/i)).toBeVisible();
+    await expect(dialog.getByText(/required|select an ingredient|negative/i).first()).toBeVisible();
 
     await page.keyboard.press("Escape");
     await expect(dialog).not.toBeVisible();

@@ -26,12 +26,25 @@ export interface IngredientRecord {
   sodiumMgPerRef: number | null;
   source: "SEEDED" | "CUSTOM";
   overridden: boolean;
+  // openspec: custom-pantry-items — optional product identity (design.md D1).
+  brand: string | null;
+  barcode: string | null;
+  packageQuantity: number | null;
+  packageUnit: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export type IngredientCreateInput = Omit<IngredientRecord, "id" | "createdAt" | "updatedAt" | "overridden"> & {
+export type IngredientCreateInput = Omit<
+  IngredientRecord,
+  "id" | "createdAt" | "updatedAt" | "overridden" | "brand" | "barcode" | "packageQuantity" | "packageUnit"
+> & {
   overridden?: boolean;
+  // Optional so pre-existing callers (seed, ingredient actions) are untouched.
+  brand?: string | null;
+  barcode?: string | null;
+  packageQuantity?: number | null;
+  packageUnit?: string | null;
 };
 
 export type IngredientUpdatePatch = Partial<
@@ -47,6 +60,10 @@ export type IngredientUpdatePatch = Partial<
     | "sugarPerRef"
     | "sodiumMgPerRef"
     | "overridden"
+    | "brand"
+    | "barcode"
+    | "packageQuantity"
+    | "packageUnit"
   >
 >;
 
@@ -66,6 +83,10 @@ function toRecord(row: typeof ingredient.$inferSelect): IngredientRecord {
     sodiumMgPerRef: row.sodiumMgPerRef,
     source: row.source,
     overridden: row.overridden,
+    brand: row.brand,
+    barcode: row.barcode,
+    packageQuantity: row.packageQuantity,
+    packageUnit: row.packageUnit,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -93,6 +114,10 @@ export async function create(db: Db, input: IngredientCreateInput): Promise<Ingr
       sodiumMgPerRef: input.sodiumMgPerRef,
       source: input.source,
       overridden: input.overridden ?? false,
+      brand: input.brand ?? null,
+      barcode: input.barcode ?? null,
+      packageQuantity: input.packageQuantity ?? null,
+      packageUnit: input.packageUnit ?? null,
       createdAt: timestamp,
       updatedAt: timestamp,
     })
@@ -113,6 +138,13 @@ export async function listAll(db: Db): Promise<IngredientRecord[]> {
 export async function searchByName(db: Db, query: string): Promise<IngredientRecord[]> {
   const rows = await db.select().from(ingredient).where(like(ingredient.name, `%${query}%`));
   return rows.map(toRecord);
+}
+
+/** openspec: custom-pantry-items — exact-match barcode lookup: the duplicate
+ * pre-check today, the scanner app's resolution path later. */
+export async function getByBarcode(db: Db, barcode: string): Promise<IngredientRecord | null> {
+  const [row] = await db.select().from(ingredient).where(eq(ingredient.barcode, barcode));
+  return row ? toRecord(row) : null;
 }
 
 export async function update(db: Db, id: number, patch: IngredientUpdatePatch): Promise<IngredientRecord> {

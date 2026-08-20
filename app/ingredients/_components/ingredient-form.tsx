@@ -38,6 +38,10 @@ const UNIT_CLASS_OPTIONS: Array<{ value: IngredientSchemaInput["unitClass"]; lab
 type FormValues = {
   name: string;
   unitClass: IngredientSchemaInput["unitClass"] | undefined;
+  brand: string | undefined;
+  barcode: string | undefined;
+  packageQuantity: number | undefined;
+  packageUnit: string | undefined;
   caloriesPerRef: number | undefined;
   proteinPerRef: number | undefined;
   carbsPerRef: number | undefined;
@@ -51,6 +55,10 @@ type FormValues = {
 export interface IngredientFormInitialValues {
   name: string;
   unitClass: IngredientSchemaInput["unitClass"];
+  brand: string | null;
+  barcode: string | null;
+  packageQuantity: number | null;
+  packageUnit: string | null;
   caloriesPerRef: number;
   proteinPerRef: number;
   carbsPerRef: number;
@@ -66,6 +74,10 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     return {
       name: "",
       unitClass: undefined,
+      brand: undefined,
+      barcode: undefined,
+      packageQuantity: undefined,
+      packageUnit: undefined,
       caloriesPerRef: undefined,
       proteinPerRef: undefined,
       carbsPerRef: undefined,
@@ -79,6 +91,10 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
   return {
     name: initial.name,
     unitClass: initial.unitClass,
+    brand: initial.brand ?? undefined,
+    barcode: initial.barcode ?? undefined,
+    packageQuantity: initial.packageQuantity ?? undefined,
+    packageUnit: initial.packageUnit ?? undefined,
     caloriesPerRef: initial.caloriesPerRef,
     proteinPerRef: initial.proteinPerRef,
     carbsPerRef: initial.carbsPerRef,
@@ -91,6 +107,10 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
 }
 
 const toOptionalNumber = (raw: string): number | undefined => (raw === "" ? undefined : Number(raw));
+// openspec: custom-pantry-items — empty text inputs are "" on the DOM; the
+// schema's optional strings are absent-or-non-empty, so normalize before
+// the zodResolver runs.
+const emptyToUndefined = (raw: string): string | undefined => (raw.trim() === "" ? undefined : raw);
 
 interface NumberFieldConfig {
   name: keyof FormValues & (
@@ -207,6 +227,50 @@ export function IngredientForm({
             {errors.unitClass.message}
           </p>
         ) : null}
+      </div>
+
+      {/* openspec: custom-pantry-items — optional product identity, for
+          branded items (barcode = the future scanner app's lookup key). */}
+      <div className="flex flex-col gap-1">
+        <label htmlFor="ingredient-brand" className="text-sm font-medium text-foreground">
+          Brand (optional)
+        </label>
+        <Input id="ingredient-brand" type="text" className="max-w-sm" {...register("brand", { setValueAs: emptyToUndefined })} />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="ingredient-barcode" className="text-sm font-medium text-foreground">
+          Barcode (optional)
+        </label>
+        <Input id="ingredient-barcode" type="text" inputMode="numeric" className="max-w-sm" {...register("barcode", { setValueAs: emptyToUndefined })} />
+        {errors.barcode ? (
+          <p data-testid="field-error-barcode" className="text-sm text-destructive">
+            {errors.barcode.message}
+          </p>
+        ) : null}
+      </div>
+      <div className="flex max-w-sm flex-wrap gap-3">
+        <div className="flex min-w-32 flex-1 flex-col gap-1">
+          <label htmlFor="ingredient-packageQuantity" className="text-sm font-medium text-foreground">
+            Package size (optional)
+          </label>
+          <Input
+            id="ingredient-packageQuantity"
+            type="number"
+            step="any"
+            {...register("packageQuantity", { setValueAs: toOptionalNumber })}
+          />
+        </div>
+        <div className="flex min-w-24 flex-col gap-1">
+          <label htmlFor="ingredient-packageUnit" className="text-sm font-medium text-foreground">
+            Package unit
+          </label>
+          <Input id="ingredient-packageUnit" type="text" {...register("packageUnit", { setValueAs: emptyToUndefined })} />
+          {errors.packageUnit ? (
+            <p data-testid="field-error-packageUnit" className="text-sm text-destructive">
+              {errors.packageUnit.message}
+            </p>
+          ) : null}
+        </div>
       </div>
 
       {NUMBER_FIELDS.map(({ name, label }) => (

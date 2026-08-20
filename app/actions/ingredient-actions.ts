@@ -66,6 +66,10 @@ export async function createIngredient(input: unknown): Promise<ActionResult<Ing
     sugarPerRef: data.sugarPerRef ?? null,
     sodiumMgPerRef: data.sodiumMgPerRef ?? null,
     densityGPerMl: data.densityGPerMl ?? null,
+    brand: data.brand ?? null,
+    barcode: data.barcode ?? null,
+    packageQuantity: data.packageQuantity ?? null,
+    packageUnit: data.packageQuantity != null ? (data.packageUnit ?? null) : null,
   });
 
   revalidatePath("/ingredients");
@@ -112,6 +116,10 @@ export async function overrideIngredientNutrition(
     sugarPerRef: data.sugarPerRef ?? null,
     sodiumMgPerRef: data.sodiumMgPerRef ?? null,
     densityGPerMl: data.densityGPerMl ?? null,
+    brand: data.brand ?? null,
+    barcode: data.barcode ?? null,
+    packageQuantity: data.packageQuantity ?? null,
+    packageUnit: data.packageQuantity != null ? (data.packageUnit ?? null) : null,
     overridden,
   });
 

@@ -90,13 +90,10 @@ describe("domain/validation/pantryItemSchema (S-304)", () => {
     });
   });
 
-  describe("quantity — positive number", () => {
-    it("rejects a zero quantity", () => {
+  describe("quantity — non-negative number (openspec: custom-pantry-items relaxed the S-304 `> 0` rule)", () => {
+    it("accepts a zero quantity (out-of-stock rows persist)", () => {
       const result = pantryItemSchema.safeParse({ ...validBase, quantity: 0 });
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.flatten().fieldErrors.quantity?.length).toBeGreaterThan(0);
-      }
+      expect(result.success).toBe(true);
     });
 
     it("rejects a negative quantity", () => {

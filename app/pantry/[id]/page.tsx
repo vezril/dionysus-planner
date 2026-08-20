@@ -60,6 +60,36 @@ export default async function PantryItemDetailPage({
         </span>
       </div>
 
+      {/* openspec: custom-pantry-items — product identity, only when at
+          least one field is present; generic ingredients render as before. */}
+      {ingredient.brand != null || ingredient.barcode != null || ingredient.packageQuantity != null ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">Product</h2>
+          <dl data-testid="product-panel" className="grid grid-cols-2 gap-x-6 gap-y-1 rounded-md border border-border p-4 sm:grid-cols-3">
+            {ingredient.brand != null ? (
+              <div className="flex flex-col">
+                <dt className="text-xs text-muted-foreground">Brand</dt>
+                <dd data-testid="product-brand" className="text-sm font-medium">{ingredient.brand}</dd>
+              </div>
+            ) : null}
+            {ingredient.barcode != null ? (
+              <div className="flex flex-col">
+                <dt className="text-xs text-muted-foreground">Barcode</dt>
+                <dd data-testid="product-barcode" className="font-mono text-sm tabular-nums">{ingredient.barcode}</dd>
+              </div>
+            ) : null}
+            {ingredient.packageQuantity != null ? (
+              <div className="flex flex-col">
+                <dt className="text-xs text-muted-foreground">Package</dt>
+                <dd data-testid="product-package" className="text-sm font-medium">
+                  {ingredient.packageQuantity} {ingredient.packageUnit ?? ""}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        </section>
+      ) : null}
+
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">
           Nutrition facts{" "}

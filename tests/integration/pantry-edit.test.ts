@@ -152,7 +152,7 @@ describe("app/actions/pantry-actions: updatePantryItem (S-305)", () => {
   });
 
   describe("invalid edits (AC4, ADR-005 independent re-validation)", () => {
-    it("rejects a non-positive quantity with fieldErrors and leaves the existing row untouched", async () => {
+    it("rejects a NEGATIVE quantity with fieldErrors and leaves the existing row untouched (zero is now valid — openspec: custom-pantry-items)", async () => {
       const sqlite = openRawDb();
       const ingredientId = insertRawIngredient(sqlite, { name: "Almonds, raw", unitClass: "MASS" });
       const pantryItemId = insertRawPantryItem(sqlite, ingredientId, {
@@ -164,7 +164,7 @@ describe("app/actions/pantry-actions: updatePantryItem (S-305)", () => {
       sqlite.close();
 
       const { updatePantryItem } = await import("@/app/actions/pantry-actions");
-      const result = await updatePantryItem(pantryItemId, { quantity: 0, unit: "g" });
+      const result = await updatePantryItem(pantryItemId, { quantity: -5, unit: "g" });
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
@@ -179,6 +179,30 @@ describe("app/actions/pantry-actions: updatePantryItem (S-305)", () => {
       expect(row.quantityCanonical).toBe(100);
       expect(row.displayQuantity).toBe(100);
       expect(row.displayUnit).toBe("g");
+      readBack.close();
+    });
+
+    it("accepts an edit down to ZERO — the row persists as out-of-stock (openspec: custom-pantry-items)", async () => {
+      const sqlite = openRawDb();
+      const ingredientId = insertRawIngredient(sqlite, { name: "Almonds, raw", unitClass: "MASS" });
+      const pantryItemId = insertRawPantryItem(sqlite, ingredientId, {
+        quantityCanonical: 100,
+        entryUnitClass: "MASS",
+        displayQuantity: 100,
+        displayUnit: "g",
+      });
+      sqlite.close();
+
+      const { updatePantryItem } = await import("@/app/actions/pantry-actions");
+      const result = await updatePantryItem(pantryItemId, { quantity: 0, unit: "g" });
+
+      expect(result.ok).toBe(true);
+      const readBack = openRawDb();
+      const row = readBack
+        .prepare("SELECT quantityCanonical, displayQuantity FROM pantry_item WHERE id = ?")
+        .get(pantryItemId) as { quantityCanonical: number; displayQuantity: number };
+      expect(row.quantityCanonical).toBe(0);
+      expect(row.displayQuantity).toBe(0);
       readBack.close();
     });
 
