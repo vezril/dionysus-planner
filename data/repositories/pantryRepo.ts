@@ -130,6 +130,14 @@ export async function getAllWithIngredientNames(db: Db): Promise<PantryListRow[]
   return rows;
 }
 
+/** All pantry rows as full records (openspec: cook-recipe-into-meals —
+ * the cook planner needs canonical quantity + basis + row id per
+ * ingredient). */
+export async function getAll(db: Db): Promise<PantryItemRecord[]> {
+  const rows = await db.select().from(pantryItem);
+  return rows.map(toRecord);
+}
+
 export async function getAllAsIndex(db: Db): Promise<Map<number, PantryIndexEntry>> {
   const rows = await db
     .select({
@@ -144,4 +152,53 @@ export async function getAllAsIndex(db: Db): Promise<Map<number, PantryIndexEntr
     index.set(row.ingredientId, { qtyCanonical: row.quantityCanonical, class: row.entryUnitClass });
   }
   return index;
+}
+
+/** One planned decrement against a pantry row (openspec:
+ * cook-recipe-into-meals design D3) — `amount` is in the ROW's own
+ * canonical basis, already resolved by the caller. */
+export interface PantryDecrement {
+  pantryItemId: number;
+  amountInRowBasis: number;
+}
+
+export interface AppliedDecrement {
+  pantryItemId: number;
+  consumed: number;
+  /** Requirement beyond available stock — consumed-to-zero flag (> 0). */
+  shortfall: number;
+}
+
+/**
+ * Applies every decrement in ONE synchronous better-sqlite3 transaction
+ * (same posture as recipeRepo's multi-row writes). Floors at zero — a
+ * shortfall consumes what's there and reports the gap; a missing row id
+ * throws, rolling the whole transaction back.
+ */
+export function consume(db: Db, decrements: PantryDecrement[], displayFactorFor: (displayUnit: string) => number): AppliedDecrement[] {
+  return db.transaction((tx) => {
+    const applied: AppliedDecrement[] = [];
+    for (const decrement of decrements) {
+      const [row] = tx.select().from(pantryItem).where(eq(pantryItem.id, decrement.pantryItemId)).all();
+      if (!row) {
+        throw new Error(`pantry item ${decrement.pantryItemId} does not exist`);
+      }
+      const consumed = Math.min(row.quantityCanonical, decrement.amountInRowBasis);
+      const newCanonical = row.quantityCanonical - consumed;
+      tx.update(pantryItem)
+        .set({
+          quantityCanonical: newCanonical,
+          displayQuantity: newCanonical / displayFactorFor(row.displayUnit),
+          updatedAt: nowIso(),
+        })
+        .where(eq(pantryItem.id, decrement.pantryItemId))
+        .run();
+      applied.push({
+        pantryItemId: decrement.pantryItemId,
+        consumed,
+        shortfall: decrement.amountInRowBasis - consumed,
+      });
+    }
+    return applied;
+  });
 }
