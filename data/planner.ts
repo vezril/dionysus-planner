@@ -15,6 +15,7 @@ import {
   type PlannedConsumption,
   type Suggestion,
 } from "@/domain/planner";
+import { buildShoppingList, type ShoppingList } from "@/domain/shoppingList";
 
 export type { PlanEntryRecord, PlanEntryRow } from "@/data/repositories/plannerRepo";
 
@@ -23,6 +24,7 @@ export interface PlannerWeek {
   dates: string[];
   entriesByDate: Record<string, plannerRepo.PlanEntryRow[]>;
   suggestions: Suggestion[];
+  shoppingList: ShoppingList;
   recipeOptions: Array<{ id: number; name: string; servings: number }>;
 }
 
@@ -87,11 +89,24 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
       entriesByDate[entry.date]?.push(entry);
     }
 
+    // openspec: shopping-list — same planned array, collected instead of
+    // discarded (buildShoppingList copies rows; order matches entry order).
+    const shoppingList = buildShoppingList(
+      pantryRows.map((row) => ({
+        id: row.id,
+        ingredientId: row.ingredientId,
+        quantityCanonical: row.quantityCanonical,
+        entryUnitClass: row.entryUnitClass,
+      })),
+      planned,
+    );
+
     return {
       weekStart,
       dates,
       entriesByDate,
       suggestions,
+      shoppingList,
       recipeOptions: allRecipes.map((recipe) => ({ id: recipe.id, name: recipe.name, servings: recipe.servings })),
     };
   } finally {

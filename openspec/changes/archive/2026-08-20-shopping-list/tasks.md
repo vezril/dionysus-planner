@@ -1,0 +1,4 @@
+- [x] 1.1 `domain/shoppingList.ts` (sequential shortfall aggregation, missing-in-canonical, unresolved names) + unit tests
+- [x] 1.2 Facade: PlannerWeek += shoppingList; integration test via getPlannerWeek
+- [x] 1.3 ShoppingList component (items, nothing-to-buy state, Copy list) on /planner
+- [x] 1.4 e2e (200 mL juice case + copy button); full gate; walkthrough; train v2.18.0
