@@ -35,6 +35,8 @@ export const customPantryItemSchema = z
     // openspec: generic-products — structural only; existence/level/class
     // checks live in the action.
     genericOfId: z.number().int().positive().nullish(),
+    // openspec: pantry-quick-eat
+    readyToEat: z.boolean().default(false),
     // openspec: batch-nutrition-and-abv-entry — % ABV entry for VOLUME
     // drinks; converted to alcoholGPerRef in the action, basis-exempt.
     alcoholAbvPercent: z.number().min(0).max(100).nullish(),

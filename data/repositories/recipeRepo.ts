@@ -130,6 +130,7 @@ function toIngredientRecord(row: typeof ingredient.$inferSelect): IngredientReco
     category: row.category,
     shelfLifeDays: row.shelfLifeDays,
     genericOfId: row.genericOfId,
+    readyToEat: row.readyToEat,
     source: row.source,
     overridden: row.overridden,
     brand: row.brand,

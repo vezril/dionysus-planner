@@ -48,7 +48,14 @@ export function PlanDayColumn({
         <ul className="flex flex-col gap-2" onClick={(event) => event.stopPropagation()}>
           {entries.map((entry) => (
             <li key={entry.id} data-testid="plan-entry" className="flex flex-col gap-1 rounded-sm border border-border/60 p-2">
-              {entry.kind === "eat_batch" ? (
+              {entry.kind === "eat_item" ? (
+                <span className="text-sm font-medium">
+                  {entry.batchLabel}{" "}
+                  <span data-testid="plan-entry-eaten" className="text-xs font-normal text-status-cookable">
+                    (eaten)
+                  </span>
+                </span>
+              ) : entry.kind === "eat_batch" ? (
                 <Link href="/meal-log/batches" className="text-sm font-medium hover:text-primary hover:underline">
                   {entry.batchLabel}{" "}
                   <span data-testid="plan-entry-batch" className="text-xs font-normal text-status-cookable">
@@ -62,7 +69,7 @@ export function PlanDayColumn({
               )}
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-muted-foreground">
-                  {entry.portions} portions
+                  {entry.kind === "eat_item" ? "logged" : `${entry.portions} portions`}
                   {entry.caloriesKcal !== null ? (
                     <span data-testid="plan-entry-calories"> · {entry.caloriesKcal} kcal</span>
                   ) : null}

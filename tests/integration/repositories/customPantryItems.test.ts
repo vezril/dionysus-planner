@@ -43,6 +43,7 @@ describe("data/customPantryItems", () => {
       category: "FOOD" as const,
       shelfLifeDays: null,
       genericOfId: null,
+      readyToEat: false,
       densityGPerMl: null,
       caloriesPerRef: 492,
       proteinPerRef: 7,

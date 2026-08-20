@@ -14,6 +14,7 @@ import { EditPantryItemDialog } from "@/app/pantry/_components/EditPantryItemDia
 import { RemovePantryItemDialog } from "@/app/pantry/_components/RemovePantryItemDialog";
 import { Button } from "@/components/ui/button";
 import type { PantryListRow } from "@/data/pantry";
+import { EatItemButton } from "./EatItemButton";
 import { computeFreshness } from "@/domain/freshness";
 
 export function PantryRow({ item }: { item: PantryListRow }) {
@@ -74,6 +75,8 @@ export function PantryRow({ item }: { item: PantryListRow }) {
         </span>
       ) : null}
       <div className="flex shrink-0 gap-2">
+        {/* openspec: pantry-quick-eat */}
+        {item.readyToEat && item.displayQuantity > 0 ? <EatItemButton item={item} /> : null}
         <Button type="button" size="sm" variant="outline" onClick={() => setEditOpen(true)}>
           Edit
         </Button>

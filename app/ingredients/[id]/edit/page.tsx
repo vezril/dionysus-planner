@@ -60,6 +60,7 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
           category: ingredient.category,
           shelfLifeDays: ingredient.shelfLifeDays,
           genericOfId: ingredient.genericOfId,
+          readyToEat: ingredient.readyToEat,
           micronutrients,
           densityGPerMl: ingredient.densityGPerMl,
         }}

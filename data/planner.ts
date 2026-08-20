@@ -147,15 +147,27 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
           plannedByBatch.set(entry.batchId, (plannedByBatch.get(entry.batchId) ?? 0) + entry.portions);
         }
       }
-      readyToEat = batches
-        .filter((batch) => batch.id !== null)
-        .map((batch) => ({
-          batchId: batch.id as number,
-          label: nameByRecipeId.get(batch.recipeId) ?? `Batch #${batch.id}`,
-          availablePortions:
-            Math.round((batch.remainingPortions - (plannedByBatch.get(batch.id as number) ?? 0)) * 100) / 100,
-        }))
-        .filter((batch) => batch.availablePortions > 0);
+      // openspec: pantry-quick-eat — one row per recipe, portions summed
+      // across batches; the row carries the OLDEST batch with portions
+      // left so logging drains batches first-in-first-out.
+      const groupedByRecipe = new Map<number, { batchId: number; label: string; availablePortions: number }>();
+      for (const batch of [...batches].sort((a, b) => (a.id as number) - (b.id as number))) {
+        if (batch.id === null) continue;
+        const available =
+          Math.round((batch.remainingPortions - (plannedByBatch.get(batch.id) ?? 0)) * 100) / 100;
+        if (available <= 0) continue;
+        const existing = groupedByRecipe.get(batch.recipeId);
+        if (existing) {
+          existing.availablePortions = Math.round((existing.availablePortions + available) * 100) / 100;
+        } else {
+          groupedByRecipe.set(batch.recipeId, {
+            batchId: batch.id,
+            label: nameByRecipeId.get(batch.recipeId) ?? `Batch #${batch.id}`,
+            availablePortions: available,
+          });
+        }
+      }
+      readyToEat = [...groupedByRecipe.values()];
     } catch {
       serviceAvailable = false;
     }

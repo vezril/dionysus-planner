@@ -37,6 +37,8 @@ export const ingredient = sqliteTable(
     shelfLifeDays: real("shelfLifeDays"),
     // openspec: generic-products — a branded product's generic ("Butter").
     genericOfId: integer("genericOfId"),
+    // openspec: pantry-quick-eat — eatable straight from the pantry.
+    readyToEat: integer("readyToEat", { mode: "boolean" }).notNull().default(false),
     overridden: integer("overridden", { mode: "boolean" }).notNull().default(false),
     // openspec: custom-pantry-items — product identity for branded items
     // (design.md Decision 1: a branded product IS a custom ingredient, no
@@ -154,7 +156,7 @@ export const planEntry = sqliteTable("plan_entry", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   date: text("date").notNull(),
   // openspec: planner-ready-to-eat — cook a recipe OR eat a service batch.
-  kind: text("kind", { enum: ["cook", "eat_batch"] }).notNull().default("cook"),
+  kind: text("kind", { enum: ["cook", "eat_batch", "eat_item"] }).notNull().default("cook"),
   recipeId: integer("recipeId").references(() => recipe.id, { onDelete: "cascade" }),
   // Service-side batch id (cross-system — no FK) + label snapshotted at
   // plan time so rendering never depends on the service being up.

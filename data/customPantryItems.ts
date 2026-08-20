@@ -31,6 +31,7 @@ export interface CustomPantryItemInput {
   category: "FOOD" | "DRINK" | "SUPPLEMENT";
   shelfLifeDays: number | null;
   genericOfId: number | null;
+  readyToEat: boolean;
   brand: string | null;
   barcode: string | null;
   packageQuantity: number | null;
@@ -76,6 +77,7 @@ export async function createCustomPantryItemRecords(
           category: input.category,
           shelfLifeDays: input.shelfLifeDays,
           genericOfId: input.genericOfId,
+          readyToEat: input.readyToEat,
           source: "CUSTOM",
           overridden: false,
           brand: input.brand,
@@ -123,6 +125,7 @@ export async function createCustomPantryItemRecords(
           category: ingredientRow.category,
           shelfLifeDays: ingredientRow.shelfLifeDays,
           genericOfId: ingredientRow.genericOfId,
+          readyToEat: ingredientRow.readyToEat,
           source: ingredientRow.source,
           overridden: ingredientRow.overridden,
           brand: ingredientRow.brand,

@@ -62,6 +62,7 @@ type FormValues = {
   category: "FOOD" | "DRINK" | "SUPPLEMENT" | undefined;
   shelfLifeDays: number | undefined;
   genericOfId: number | undefined;
+  readyToEat: boolean;
   alcoholAbvPercent: number | undefined;
   micronutrients: Array<{ key: string; amountPerRef: number | undefined }>;
   densityGPerMl: number | undefined;
@@ -88,6 +89,7 @@ export interface IngredientFormInitialValues {
   category: "FOOD" | "DRINK" | "SUPPLEMENT";
   shelfLifeDays: number | null;
   genericOfId: number | null;
+  readyToEat: boolean;
   micronutrients?: Array<{ key: string; amountPerRef: number }>;
   densityGPerMl: number | null;
 }
@@ -117,6 +119,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       category: "FOOD",
       shelfLifeDays: undefined,
       genericOfId: undefined,
+      readyToEat: false,
       alcoholAbvPercent: undefined,
       micronutrients: [],
       densityGPerMl: undefined,
@@ -147,6 +150,7 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     category: initial.category,
     shelfLifeDays: initial.shelfLifeDays ?? undefined,
     genericOfId: initial.genericOfId ?? undefined,
+    readyToEat: initial.readyToEat,
     // openspec: batch-nutrition-and-abv-entry — VOLUME drinks edit in ABV.
     alcoholAbvPercent:
       initial.unitClass === "VOLUME" && initial.category === "DRINK" && initial.alcoholGPerRef != null
@@ -344,6 +348,13 @@ export function IngredientForm({
           )}
         />
       </div>
+
+      {/* openspec: pantry-quick-eat — eatable straight from the pantry;
+          still fully usable inside recipes. */}
+      <label className="flex max-w-sm items-center gap-2 text-sm font-medium text-foreground">
+        <input type="checkbox" {...register("readyToEat")} />
+        Ready to eat (can be consumed directly from the pantry)
+      </label>
 
       {/* openspec: generic-products — link a branded product to its
           generic ("Butter"); same-class generics only, none until a class

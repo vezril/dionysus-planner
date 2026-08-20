@@ -1,0 +1,1 @@
+ALTER TABLE `ingredient` ADD `readyToEat` integer DEFAULT false NOT NULL;

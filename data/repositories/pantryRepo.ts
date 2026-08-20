@@ -114,6 +114,10 @@ export interface PantryListRow {
   displayUnit: string;
   stockedAt: string | null;
   shelfLifeDays: number | null;
+  readyToEat: boolean;
+  unitClass: "MASS" | "VOLUME" | "COUNT";
+  packageQuantity: number | null;
+  packageUnit: string | null;
 }
 
 /**
@@ -131,6 +135,10 @@ export async function getAllWithIngredientNames(db: Db): Promise<PantryListRow[]
       displayUnit: pantryItem.displayUnit,
       stockedAt: pantryItem.stockedAt,
       shelfLifeDays: ingredient.shelfLifeDays,
+      readyToEat: ingredient.readyToEat,
+      unitClass: ingredient.unitClass,
+      packageQuantity: ingredient.packageQuantity,
+      packageUnit: ingredient.packageUnit,
     })
     .from(pantryItem)
     .innerJoin(ingredient, eq(ingredient.id, pantryItem.ingredientId))

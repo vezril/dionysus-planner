@@ -97,6 +97,7 @@ describe("data/repositories/ingredientRepo", () => {
     category: "FOOD" as const,
     shelfLifeDays: null,
     genericOfId: null,
+    readyToEat: false,
   };
 
   describe("create() + getById() round-trip", () => {
@@ -142,6 +143,7 @@ describe("data/repositories/ingredientRepo", () => {
           "shelfLifeDays",
           // openspec: generic-products
           "genericOfId",
+          "readyToEat",
           "source",
           "overridden",
           // openspec: custom-pantry-items — optional product identity.

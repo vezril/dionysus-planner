@@ -65,7 +65,7 @@ export function PortionScaler({
           aria-label="Portions"
           value={[portions]}
           min={1}
-          max={servings * 4}
+          max={Math.max(servings * 4, 24)} // openspec: pantry-quick-eat
           step={1}
           onValueChange={(values: number[]) => setPortions(values[0])}
         />

@@ -169,6 +169,36 @@ describe("weekly planner", () => {
     expect(week.readyToEat).toEqual([]);
   });
 
+  // openspec: pantry-quick-eat — batches of the same recipe merge into one
+  // row; the row carries the oldest batch id so logging drains FIFO.
+  it("two batches of one recipe merge into a single summed row targeting the oldest", async () => {
+    serviceMock.batches.push({
+      id: 8,
+      recipeId: 1,
+      cookedAt: "2026-08-20T12:00:00Z",
+      servingsMade: 4,
+      remainingPortions: 4,
+    });
+    const { getPlannerWeek } = await import("@/data/planner");
+    const week = await getPlannerWeek("2026-08-17", 3);
+    expect(week.readyToEat).toEqual([{ batchId: 7, label: "Chili", availablePortions: 8 }]);
+  });
+
+  it("a drained oldest batch hands the merged row to the next batch", async () => {
+    serviceMock.batches.push({
+      id: 8,
+      recipeId: 1,
+      cookedAt: "2026-08-20T12:00:00Z",
+      servingsMade: 4,
+      remainingPortions: 4,
+    });
+    const { addPlanEntry } = await import("@/app/actions/planner-actions");
+    const { getPlannerWeek } = await import("@/data/planner");
+    await addPlanEntry({ kind: "eat_batch", date: "2026-08-19", batchId: 7, portions: 4 });
+    const week = await getPlannerWeek("2026-08-17", 3);
+    expect(week.readyToEat).toEqual([{ batchId: 8, label: "Chili", availablePortions: 4 }]);
+  });
+
   it("an unknown batch is rejected", async () => {
     const { addPlanEntry } = await import("@/app/actions/planner-actions");
     const result = await addPlanEntry({ kind: "eat_batch", date: "2026-08-19", batchId: 999, portions: 1 });
