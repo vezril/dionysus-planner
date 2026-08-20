@@ -115,6 +115,7 @@ const CHICKEN_BREAST = {
   fiberPerRef: null,
   sugarPerRef: null,
   sodiumMgPerRef: null,
+  alcoholGPerRef: null,
 };
 
 /** COUNT-primary, per-each basis. No optional fields. */
@@ -129,6 +130,7 @@ const EGG = {
   fiberPerRef: null,
   sugarPerRef: null,
   sodiumMgPerRef: null,
+  alcoholGPerRef: null,
 };
 
 /** MASS-primary, per-100g basis, has fiber/sugar/sodium set (including a legitimate 0 for sugar). */
@@ -143,6 +145,7 @@ const RICE = {
   fiberPerRef: 1.8,
   sugarPerRef: 0,
   sodiumMgPerRef: 5,
+  alcoholGPerRef: null,
 };
 
 /** MASS-primary, per-100g basis, density set (FR-12 density conversion path). */
@@ -157,6 +160,7 @@ const FLOUR = {
   fiberPerRef: null,
   sugarPerRef: null,
   sodiumMgPerRef: null,
+  alcoholGPerRef: null,
 };
 
 /** Zero-calorie ingredient (e.g. water) — used to prove "legitimate zero" != "incomplete". */
@@ -171,6 +175,7 @@ const WATER = {
   fiberPerRef: 0,
   sugarPerRef: 0,
   sodiumMgPerRef: 0,
+  alcoholGPerRef: null,
 };
 
 describe("computeRecipeNutrition — hand-calculated totals (AC1, FR-17)", () => {

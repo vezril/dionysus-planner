@@ -24,6 +24,7 @@ export interface CustomPantryItemInput {
   fiberPerRef: number | null;
   sugarPerRef: number | null;
   sodiumMgPerRef: number | null;
+  alcoholGPerRef: number | null;
   brand: string | null;
   barcode: string | null;
   packageQuantity: number | null;
@@ -62,6 +63,7 @@ export async function createCustomPantryItemRecords(
           fiberPerRef: input.fiberPerRef,
           sugarPerRef: input.sugarPerRef,
           sodiumMgPerRef: input.sodiumMgPerRef,
+          alcoholGPerRef: input.alcoholGPerRef,
           source: "CUSTOM",
           overridden: false,
           brand: input.brand,
@@ -101,6 +103,7 @@ export async function createCustomPantryItemRecords(
           fiberPerRef: ingredientRow.fiberPerRef,
           sugarPerRef: ingredientRow.sugarPerRef,
           sodiumMgPerRef: ingredientRow.sodiumMgPerRef,
+          alcoholGPerRef: ingredientRow.alcoholGPerRef,
           source: ingredientRow.source,
           overridden: ingredientRow.overridden,
           brand: ingredientRow.brand,

@@ -70,6 +70,7 @@ export async function createCustomPantryItem(
     fiberPerRef: data.fiberPerRef ?? null,
     sugarPerRef: data.sugarPerRef ?? null,
     sodiumMgPerRef: data.sodiumMgPerRef ?? null,
+    alcoholGPerRef: data.alcoholGPerRef ?? null,
   };
   if (data.nutritionBasisQuantity != null && data.nutritionBasisUnit != null) {
     const factor = nutritionScaleFactor(data.nutritionBasisQuantity, data.nutritionBasisUnit, data.unitClass);

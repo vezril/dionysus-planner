@@ -24,6 +24,7 @@ export interface IngredientRecord {
   fiberPerRef: number | null;
   sugarPerRef: number | null;
   sodiumMgPerRef: number | null;
+  alcoholGPerRef: number | null;
   source: "SEEDED" | "CUSTOM";
   overridden: boolean;
   // openspec: custom-pantry-items — optional product identity (design.md D1).
@@ -59,6 +60,7 @@ export type IngredientUpdatePatch = Partial<
     | "fiberPerRef"
     | "sugarPerRef"
     | "sodiumMgPerRef"
+    | "alcoholGPerRef"
     | "overridden"
     | "brand"
     | "barcode"
@@ -81,6 +83,7 @@ function toRecord(row: typeof ingredient.$inferSelect): IngredientRecord {
     fiberPerRef: row.fiberPerRef,
     sugarPerRef: row.sugarPerRef,
     sodiumMgPerRef: row.sodiumMgPerRef,
+    alcoholGPerRef: row.alcoholGPerRef,
     source: row.source,
     overridden: row.overridden,
     brand: row.brand,
@@ -112,6 +115,7 @@ export async function create(db: Db, input: IngredientCreateInput): Promise<Ingr
       fiberPerRef: input.fiberPerRef,
       sugarPerRef: input.sugarPerRef,
       sodiumMgPerRef: input.sodiumMgPerRef,
+      alcoholGPerRef: input.alcoholGPerRef,
       source: input.source,
       overridden: input.overridden ?? false,
       brand: input.brand ?? null,

@@ -20,6 +20,7 @@ export interface RawIngredientOverrides {
   fiberPerRef?: number | null;
   sugarPerRef?: number | null;
   sodiumMgPerRef?: number | null;
+  alcoholGPerRef?: number | null;
   source?: "SEEDED" | "CUSTOM";
   overridden?: boolean;
   packageQuantity?: number | null;
@@ -34,9 +35,9 @@ export function insertRawIngredient(sqlite: Database.Database, overrides: RawIng
   const stmt = sqlite.prepare(`
     INSERT INTO ingredient
       (seedKey, name, unitClass, densityGPerMl, caloriesPerRef, proteinPerRef, carbsPerRef, fatPerRef,
-       fiberPerRef, sugarPerRef, sodiumMgPerRef, source, overridden, packageQuantity, packageUnit,
+       fiberPerRef, sugarPerRef, sodiumMgPerRef, alcoholGPerRef, source, overridden, packageQuantity, packageUnit,
        createdAt, updatedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const info = stmt.run(
     overrides.seedKey ?? null,
@@ -50,6 +51,7 @@ export function insertRawIngredient(sqlite: Database.Database, overrides: RawIng
     overrides.fiberPerRef ?? null,
     overrides.sugarPerRef ?? null,
     overrides.sodiumMgPerRef ?? null,
+    overrides.alcoholGPerRef ?? null,
     overrides.source ?? "CUSTOM",
     overrides.overridden ? 1 : 0,
     overrides.packageQuantity ?? null,

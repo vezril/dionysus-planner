@@ -123,6 +123,7 @@ function toIngredientRecord(row: typeof ingredient.$inferSelect): IngredientReco
     fiberPerRef: row.fiberPerRef,
     sugarPerRef: row.sugarPerRef,
     sodiumMgPerRef: row.sodiumMgPerRef,
+    alcoholGPerRef: row.alcoholGPerRef,
     source: row.source,
     overridden: row.overridden,
     brand: row.brand,

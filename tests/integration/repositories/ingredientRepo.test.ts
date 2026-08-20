@@ -89,6 +89,7 @@ describe("data/repositories/ingredientRepo", () => {
     fiberPerRef: 1.7,
     sugarPerRef: 4.2,
     sodiumMgPerRef: 4,
+    alcoholGPerRef: null,
     source: "CUSTOM" as const,
   };
 
@@ -123,6 +124,8 @@ describe("data/repositories/ingredientRepo", () => {
           "fiberPerRef",
           "sugarPerRef",
           "sodiumMgPerRef",
+          // openspec: alcohol-tracking — optional nutrient.
+          "alcoholGPerRef",
           "source",
           "overridden",
           // openspec: custom-pantry-items — optional product identity.

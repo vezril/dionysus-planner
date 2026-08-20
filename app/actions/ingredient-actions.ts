@@ -50,6 +50,7 @@ function resolveNutrition(data: {
   fiberPerRef?: number | null;
   sugarPerRef?: number | null;
   sodiumMgPerRef?: number | null;
+  alcoholGPerRef?: number | null;
   nutritionBasisQuantity?: number | null;
   nutritionBasisUnit?: string | null;
 }): { ok: true; values: NutritionFieldValues } | { ok: false; error: ActionError } {
@@ -61,6 +62,7 @@ function resolveNutrition(data: {
     fiberPerRef: data.fiberPerRef ?? null,
     sugarPerRef: data.sugarPerRef ?? null,
     sodiumMgPerRef: data.sodiumMgPerRef ?? null,
+    alcoholGPerRef: data.alcoholGPerRef ?? null,
   };
   if (data.nutritionBasisQuantity == null || data.nutritionBasisUnit == null) {
     return { ok: true, values };

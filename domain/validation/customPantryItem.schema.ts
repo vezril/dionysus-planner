@@ -24,6 +24,7 @@ export const customPantryItemSchema = z
     fiberPerRef: optionalNonNegative,
     sugarPerRef: optionalNonNegative,
     sodiumMgPerRef: optionalNonNegative,
+    alcoholGPerRef: optionalNonNegative,
     densityGPerMl: z.number().gt(0).nullish(),
     brand: z.string().trim().min(1).nullish(),
     barcode: z.string().trim().min(1).nullish(),

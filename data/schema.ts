@@ -24,6 +24,8 @@ export const ingredient = sqliteTable(
     fiberPerRef: real("fiberPerRef"),
     sugarPerRef: real("sugarPerRef"),
     sodiumMgPerRef: real("sodiumMgPerRef"),
+    // openspec: alcohol-tracking — optional, grams per reference (null = not recorded).
+    alcoholGPerRef: real("alcoholGPerRef"),
     source: text("source", { enum: ["SEEDED", "CUSTOM"] }).notNull(),
     overridden: integer("overridden", { mode: "boolean" }).notNull().default(false),
     // openspec: custom-pantry-items — product identity for branded items
