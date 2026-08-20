@@ -20,6 +20,7 @@ export interface CookLineIngredient {
   carbsPerRef: number;
   fatPerRef: number;
   sodiumMgPerRef: number | null;
+  alcoholGPerRef?: number | null;
   saturatedFatGPerRef?: number | null;
   transFatGPerRef?: number | null;
   cholesterolMgPerRef?: number | null;
@@ -153,6 +154,9 @@ export function mirrorNutritionPerCanonicalUnit(
       ...(ingredient.cholesterolMgPerRef != null
         ? { cholesterolMg: ingredient.cholesterolMgPerRef / ref }
         : {}),
+      // openspec: consumption-dashboard — alcohol reaches day logs so the
+      // dashboard can count CRDM units.
+      ...(ingredient.alcoholGPerRef != null ? { alcoholG: ingredient.alcoholGPerRef / ref } : {}),
     },
   };
 }

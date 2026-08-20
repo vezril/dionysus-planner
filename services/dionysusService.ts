@@ -154,6 +154,22 @@ export function createMeal(
 }
 
 /** `date` is `YYYY-MM-DD`. */
+export interface RangeDayJson {
+  date: string;
+  totalNutrition: NutritionJson;
+  mealCount: number;
+}
+
+export interface RangeLogJson {
+  days: RangeDayJson[];
+}
+
+/** openspec: consumption-dashboard — per-day rollups for an inclusive
+ * range in one call (service change log-range). */
+export function getLogRange(baseUrl: string, from: string, to: string): Promise<RangeLogJson> {
+  return request(baseUrl, `/api/log/range?from=${from}&to=${to}`);
+}
+
 export function getDayLog(baseUrl: string, date: string): Promise<DayLogJson> {
   return request(baseUrl, `/api/log/${date}`);
 }
