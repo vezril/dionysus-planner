@@ -11,6 +11,7 @@
 import { revalidatePath } from "next/cache";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { consumeFromPantry, getAllPantryRows, getIngredientRecordById, getPantryList } from "@/data/pantry";
+import { getIngredientMicronutrients } from "@/data/ingredients";
 import { getRecipeDetail } from "@/data/recipes";
 import {
   canonicalUnitForClass,
@@ -243,9 +244,11 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
     for (const plan of mirrorable) {
       const ingredient = linesById.get(plan.lineId)!.ingredient;
       if (!serviceIngredientIdByName.has(ingredient.name)) {
+        // openspec: meal-micronutrients — only a NEW mirror pays the fetch.
+        const micronutrients = await getIngredientMicronutrients(ingredient.id);
         const created = await serviceCreateIngredient(baseUrl, {
           name: ingredient.name,
-          ...mirrorNutritionPerCanonicalUnit(ingredient),
+          ...mirrorNutritionPerCanonicalUnit(ingredient, micronutrients),
           abvPercent: null,
           directlyLoggable: false,
         });

@@ -109,6 +109,10 @@ describe("cookRecipe", () => {
       displayUnit: "g",
     });
     // Pantry: 400 mL soda; NO flour row (missing).
+    // openspec: meal-micronutrients — a sparse row the mirror must carry.
+    sqlite
+      .prepare("INSERT INTO ingredient_micronutrient (ingredientId, nutrientKey, amountPerRef) VALUES (?, ?, ?)")
+      .run(sodaId, "vitaminC", 16.9014);
     sodaRowId = insertRawPantryItem(sqlite, sodaId, {
       quantityCanonical: 400,
       entryUnitClass: "VOLUME",
@@ -174,6 +178,8 @@ describe("cookRecipe", () => {
     ]);
     const soda = serviceMock.ingredients.find((item) => item.name === "Cook Test Soda")!;
     expect(soda).toMatchObject({ caloriesKcal: 0.42, sodiumMg: 0, directlyLoggable: false });
+    // openspec: meal-micronutrients — mirrored ÷100 (VOLUME reference).
+    expect((soda.micronutrients as Record<string, number>).vitaminC).toBeCloseTo(0.169014, 10);
   });
 
   it("a second cook reuses the mirrors — only a new batch is created", async () => {
