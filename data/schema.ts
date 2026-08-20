@@ -144,3 +144,16 @@ export const ingredientMicronutrient = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.ingredientId, table.nutrientKey] })],
 );
+
+/** openspec: weekly-planner — a planned meal: recipe at a portion count on
+ * a calendar day (date = YYYY-MM-DD). Plans are intentions, planner-local;
+ * deleting a recipe takes its plan entries with it. */
+export const planEntry = sqliteTable("plan_entry", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  date: text("date").notNull(),
+  recipeId: integer("recipeId")
+    .notNull()
+    .references(() => recipe.id, { onDelete: "cascade" }),
+  portions: real("portions").notNull(),
+  createdAt: text("createdAt").notNull(),
+});

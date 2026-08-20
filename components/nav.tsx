@@ -23,6 +23,8 @@ const NAV_ITEMS = [
   { href: "/ingredients", label: "Products" },
   { href: "/pantry", label: "Pantry" },
   { href: "/recipes", label: "Recipes" },
+  // openspec: weekly-planner
+  { href: "/planner", label: "Planner" },
   { href: "/meal-log", label: "Inventory" },
 ] as const;
 

@@ -48,6 +48,7 @@ test.describe("qol-nav-scale-delete", () => {
       "Products",
       "Pantry",
       "Recipes",
+      "Planner", // openspec: weekly-planner
       "Inventory",
     ]);
     await expect(nav.getByRole("link", { name: "Inventory" })).toHaveAttribute("href", "/meal-log");

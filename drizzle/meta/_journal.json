@@ -64,6 +64,13 @@
       "when": 1787245085314,
       "tag": "0008_pantry_freshness",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1787246265162,
+      "tag": "0009_plan_entry",
+      "breakpoints": true
     }
   ]
 }
