@@ -151,9 +151,13 @@ export const ingredientMicronutrient = sqliteTable(
 export const planEntry = sqliteTable("plan_entry", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   date: text("date").notNull(),
-  recipeId: integer("recipeId")
-    .notNull()
-    .references(() => recipe.id, { onDelete: "cascade" }),
+  // openspec: planner-ready-to-eat — cook a recipe OR eat a service batch.
+  kind: text("kind", { enum: ["cook", "eat_batch"] }).notNull().default("cook"),
+  recipeId: integer("recipeId").references(() => recipe.id, { onDelete: "cascade" }),
+  // Service-side batch id (cross-system — no FK) + label snapshotted at
+  // plan time so rendering never depends on the service being up.
+  batchId: integer("batchId"),
+  batchLabel: text("batchLabel"),
   portions: real("portions").notNull(),
   createdAt: text("createdAt").notNull(),
 });

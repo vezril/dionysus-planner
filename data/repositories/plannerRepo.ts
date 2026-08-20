@@ -2,7 +2,7 @@
  * Weekly-plan repository (openspec: weekly-planner). Dumb persistence —
  * week math and suggestion logic live in domain/planner.ts.
  */
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { planEntry, recipe } from "@/data/schema";
 import * as schema from "@/data/schema";
@@ -12,13 +12,17 @@ type Db = BetterSQLite3Database<typeof schema>;
 export interface PlanEntryRecord {
   id: number;
   date: string;
-  recipeId: number;
+  kind: "cook" | "eat_batch";
+  recipeId: number | null;
+  batchId: number | null;
+  batchLabel: string | null;
   portions: number;
 }
 
 export interface PlanEntryRow extends PlanEntryRecord {
-  recipeName: string;
-  recipeServings: number;
+  /** Null for eat_batch entries (they carry batchLabel instead). */
+  recipeName: string | null;
+  recipeServings: number | null;
 }
 
 export async function listForDates(db: Db, dates: string[]): Promise<PlanEntryRow[]> {
@@ -26,24 +30,44 @@ export async function listForDates(db: Db, dates: string[]): Promise<PlanEntryRo
     .select({
       id: planEntry.id,
       date: planEntry.date,
+      kind: planEntry.kind,
       recipeId: planEntry.recipeId,
+      batchId: planEntry.batchId,
+      batchLabel: planEntry.batchLabel,
       portions: planEntry.portions,
       recipeName: recipe.name,
       recipeServings: recipe.servings,
     })
     .from(planEntry)
-    .innerJoin(recipe, eq(recipe.id, planEntry.recipeId))
+    .leftJoin(recipe, eq(recipe.id, planEntry.recipeId))
     .where(inArray(planEntry.date, dates))
     .orderBy(asc(planEntry.date), asc(planEntry.id));
   return rows;
 }
 
-export async function add(db: Db, input: { date: string; recipeId: number; portions: number }): Promise<PlanEntryRecord> {
+export interface PlanEntryInsert {
+  date: string;
+  kind: "cook" | "eat_batch";
+  recipeId: number | null;
+  batchId: number | null;
+  batchLabel: string | null;
+  portions: number;
+}
+
+export async function add(db: Db, input: PlanEntryInsert): Promise<PlanEntryRecord> {
   const [row] = await db
     .insert(planEntry)
     .values({ ...input, createdAt: new Date().toISOString() })
     .returning();
-  return { id: row.id, date: row.date, recipeId: row.recipeId, portions: row.portions };
+  return {
+    id: row.id,
+    date: row.date,
+    kind: row.kind,
+    recipeId: row.recipeId,
+    batchId: row.batchId,
+    batchLabel: row.batchLabel,
+    portions: row.portions,
+  };
 }
 
 export async function remove(db: Db, id: number): Promise<boolean> {
@@ -52,9 +76,16 @@ export async function remove(db: Db, id: number): Promise<boolean> {
 }
 
 export async function getById(db: Db, id: number): Promise<PlanEntryRecord | null> {
-  const [row] = await db
-    .select()
-    .from(planEntry)
-    .where(and(eq(planEntry.id, id), eq(planEntry.id, id)));
-  return row ? { id: row.id, date: row.date, recipeId: row.recipeId, portions: row.portions } : null;
+  const [row] = await db.select().from(planEntry).where(eq(planEntry.id, id));
+  return row
+    ? {
+        id: row.id,
+        date: row.date,
+        kind: row.kind,
+        recipeId: row.recipeId,
+        batchId: row.batchId,
+        batchLabel: row.batchLabel,
+        portions: row.portions,
+      }
+    : null;
 }

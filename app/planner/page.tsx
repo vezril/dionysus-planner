@@ -56,7 +56,7 @@ export default async function PlannerPage({
         </div>
       </div>
 
-      <AddPlanEntryForm dates={week.dates} dayLabels={DAY_LABELS} recipeOptions={week.recipeOptions} />
+      <AddPlanEntryForm dates={week.dates} dayLabels={DAY_LABELS} recipeOptions={week.recipeOptions} batchOptions={week.readyToEat} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7">
         {week.dates.map((date, index) => (
@@ -72,7 +72,7 @@ export default async function PlannerPage({
 
       <ShoppingListPanel list={week.shoppingList} />
 
-      <SuggestionList suggestions={week.suggestions} />
+      <SuggestionList suggestions={week.suggestions} readyToEat={week.readyToEat} serviceAvailable={week.serviceAvailable} />
     </div>
   );
 }

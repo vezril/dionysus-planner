@@ -14,6 +14,24 @@ import {
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
+// openspec: planner-ready-to-eat — a tiny in-memory service.
+const serviceMock = {
+  batches: [] as Array<{ id: number; recipeId: number; cookedAt: string; servingsMade: number; remainingPortions: number }>,
+  recipes: [] as Array<{ id: number; name: string }>,
+  fail: false,
+};
+vi.mock("@/services/dionysusService", () => ({
+  DionysusServiceError: class DionysusServiceError extends Error {},
+  listBatches: vi.fn(async () => {
+    if (serviceMock.fail) throw new Error("service unreachable");
+    return serviceMock.batches;
+  }),
+  listRecipes: vi.fn(async () => {
+    if (serviceMock.fail) throw new Error("service unreachable");
+    return serviceMock.recipes;
+  }),
+}));
+
 /**
  * openspec: weekly-planner — persistence + assembly: entries round-trip,
  * recipe deletion cascades plan entries, and the week's suggestions
@@ -31,7 +49,11 @@ describe("weekly planner", () => {
     tmpDir = mkdtempSync(join(tmpdir(), `dionysus-planner-test-${randomUUID()}-`));
     dbPath = join(tmpDir, "dionysus.db");
     process.env.DB_PATH = dbPath;
+    process.env.DIONYSUS_SERVICE_URL = "http://service.test";
     vi.resetModules();
+    serviceMock.batches = [{ id: 7, recipeId: 1, cookedAt: "2026-08-19T12:00:00Z", servingsMade: 4, remainingPortions: 4 }];
+    serviceMock.recipes = [{ id: 1, name: "Chili" }];
+    serviceMock.fail = false;
 
     const sqlite = new Database(dbPath);
     runMigrations(sqlite);
@@ -117,6 +139,43 @@ describe("weekly planner", () => {
     const count = (sqlite.prepare("SELECT COUNT(*) AS n FROM plan_entry").get() as { n: number }).n;
     sqlite.close();
     expect(count).toBe(0);
+  });
+
+  it("batch entries round-trip, adjust availability, and never touch the shopping list", async () => {
+    const { addPlanEntry } = await import("@/app/actions/planner-actions");
+    const { getPlannerWeek } = await import("@/data/planner");
+
+    const added = await addPlanEntry({ kind: "eat_batch", date: "2026-08-19", batchId: 7, portions: 3 });
+    expect(added.ok).toBe(true);
+
+    const week = await getPlannerWeek("2026-08-17", 3);
+    expect(week.entriesByDate["2026-08-19"][0]).toMatchObject({ kind: "eat_batch", batchLabel: "Chili", portions: 3 });
+    expect(week.readyToEat).toEqual([{ batchId: 7, label: "Chili", availablePortions: 1 }]);
+    expect(week.shoppingList.items).toEqual([]); // batches consume no pantry
+    expect(week.suggestions.find((suggestion) => suggestion.name === "Bread")!.tier).toBe("cookable");
+  });
+
+  it("a fully planned batch drops out of ready-to-eat", async () => {
+    const { addPlanEntry } = await import("@/app/actions/planner-actions");
+    const { getPlannerWeek } = await import("@/data/planner");
+    await addPlanEntry({ kind: "eat_batch", date: "2026-08-19", batchId: 7, portions: 4 });
+    const week = await getPlannerWeek("2026-08-17", 3);
+    expect(week.readyToEat).toEqual([]);
+  });
+
+  it("an unknown batch is rejected", async () => {
+    const { addPlanEntry } = await import("@/app/actions/planner-actions");
+    const result = await addPlanEntry({ kind: "eat_batch", date: "2026-08-19", batchId: 999, portions: 1 });
+    expect(result.ok).toBe(false);
+  });
+
+  it("a downed service degrades: cook planning intact, empty ready-to-eat", async () => {
+    serviceMock.fail = true;
+    const { getPlannerWeek } = await import("@/data/planner");
+    const week = await getPlannerWeek("2026-08-17", 3);
+    expect(week.serviceAvailable).toBe(false);
+    expect(week.readyToEat).toEqual([]);
+    expect(week.suggestions.length).toBeGreaterThan(0);
   });
 
   it("an invalid date is rejected", async () => {

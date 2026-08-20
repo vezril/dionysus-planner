@@ -36,9 +36,18 @@ export function PlanDayColumn({
         <ul className="flex flex-col gap-2">
           {entries.map((entry) => (
             <li key={entry.id} data-testid="plan-entry" className="flex flex-col gap-1 rounded-sm border border-border/60 p-2">
-              <Link href={`/recipes/${entry.recipeId}`} className="text-sm font-medium hover:text-primary hover:underline">
-                {entry.recipeName}
-              </Link>
+              {entry.kind === "eat_batch" ? (
+                <Link href="/meal-log/batches" className="text-sm font-medium hover:text-primary hover:underline">
+                  {entry.batchLabel}{" "}
+                  <span data-testid="plan-entry-batch" className="text-xs font-normal text-status-cookable">
+                    (batch)
+                  </span>
+                </Link>
+              ) : (
+                <Link href={`/recipes/${entry.recipeId}`} className="text-sm font-medium hover:text-primary hover:underline">
+                  {entry.recipeName}
+                </Link>
+              )}
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-muted-foreground">{entry.portions} portions</span>
                 <Button
@@ -47,7 +56,7 @@ export function PlanDayColumn({
                   size="sm"
                   className="h-6 px-2 text-xs"
                   disabled={pending}
-                  aria-label={`Remove ${entry.recipeName}`}
+                  aria-label={`Remove ${entry.recipeName ?? entry.batchLabel}`}
                   onClick={() => startTransition(async () => void (await removePlanEntry(entry.id)))}
                 >
                   ✕
