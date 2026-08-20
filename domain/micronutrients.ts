@@ -51,6 +51,7 @@ export function scaleMicronutrients(entries: MicronutrientEntry[], factor: numbe
  * display on the Inventory day view.
  */
 export const MIRROR_EXTRA_LABELS: Record<string, { label: string; unit: string }> = {
+  alcoholG: { label: "Alcohol", unit: "g" },
   saturatedFatG: { label: "Saturated fat", unit: "g" },
   transFatG: { label: "Trans fat", unit: "g" },
   cholesterolMg: { label: "Cholesterol", unit: "mg" },

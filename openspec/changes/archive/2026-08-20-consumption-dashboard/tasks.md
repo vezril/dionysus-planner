@@ -1,0 +1,4 @@
+- [x] 1.1 Mirror alcoholG through the micronutrient map + day-view label; alcohol-units domain fn + unit tests (355×5% → 1.04)
+- [x] 1.2 Service client getLogRange; period math (day/week/month/year from/to + shift) + tests
+- [x] 1.3 /dashboard page (tabs, prev/next, totals, breakdown, service-down state) + nav entry + pinned nav specs
+- [x] 1.4 e2e (service-gated: eaten drink shows units on day view); full gate; walkthrough; train v2.23.0

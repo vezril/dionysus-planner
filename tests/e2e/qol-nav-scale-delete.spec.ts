@@ -45,6 +45,7 @@ test.describe("qol-nav-scale-delete", () => {
     await expect(nav.getByRole("link")).toHaveText([
       "Dionysus", // openspec: app-logo — the brand link precedes the sections
       "What Can I Cook",
+      "Dashboard", // openspec: consumption-dashboard
       "Products",
       "Pantry",
       "Recipes",

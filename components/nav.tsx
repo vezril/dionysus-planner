@@ -20,6 +20,8 @@ import { usePathname } from "next/navigation";
 // the pantry feeds recipes, recipes become meals.
 const NAV_ITEMS = [
   { href: "/what-can-i-cook", label: "What Can I Cook" },
+  // openspec: consumption-dashboard
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/ingredients", label: "Products" },
   { href: "/pantry", label: "Pantry" },
   { href: "/recipes", label: "Recipes" },

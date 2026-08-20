@@ -87,3 +87,11 @@ export function abvPercentToGramsPer100Ml(abvPercent: number): number {
 export function gramsPer100MlToAbvPercent(gramsPer100Ml: number): number {
   return Math.round((gramsPer100Ml / ETHANOL_DENSITY_G_PER_ML) * 10) / 10;
 }
+
+/** openspec: consumption-dashboard — CRDM standard drink: 17 mL of
+ * ethanol. units = mL ethanol / 17 = grams / density / 17. */
+export const CRDM_UNIT_ETHANOL_ML = 17;
+
+export function alcoholUnitsFromGrams(grams: number): number {
+  return Math.round((grams / ETHANOL_DENSITY_G_PER_ML / CRDM_UNIT_ETHANOL_ML) * 100) / 100;
+}
