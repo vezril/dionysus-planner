@@ -4,6 +4,8 @@ import { resolveDionysusTimezone, todayIsoDateIn } from "@/app/lib/dionysusTimez
 import { alcoholUnitsFromGrams } from "@/domain/abv";
 import { periodRange, shiftAnchor, type Period } from "@/domain/periods";
 import { getLogRange, type RangeDayJson } from "@/services/dionysusService";
+import { getResolvedTargets } from "@/data/nutritionTargets";
+import { fitStatus, type FitStatus, type TargetKind } from "@/domain/nutritionTargets";
 
 /**
  * openspec: consumption-dashboard — day/week/month/year consumption from
@@ -34,6 +36,7 @@ export default async function DashboardPage({
   const anchor = params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : today;
   const range = periodRange(period, anchor);
 
+  const targets = await getResolvedTargets();
   let days: RangeDayJson[] = [];
   let serviceAvailable = true;
   try {
@@ -44,14 +47,39 @@ export default async function DashboardPage({
   }
 
   const totalAlcoholG = sum(days, alcoholGramsOf);
+  // openspec: nutrition-targets-guide — day/week judge exactly (×1/×7);
+  // longer periods judge the per-logged-day average. Alcohol judges the
+  // weekly cap (exact on week, per-week average beyond).
+  const loggedDays = Math.max(1, days.length);
+  const judge = (
+    total: number,
+    targetKey: string,
+    kind: TargetKind,
+  ): FitStatus | null => {
+    if (days.length === 0) return null;
+    const daily = targets.values[targetKey];
+    if (period === "day") return fitStatus(total, daily, kind);
+    if (period === "week") return fitStatus(total, daily * 7, kind);
+    return fitStatus(total / loggedDays, daily, kind);
+  };
+  const alcoholUnits = alcoholUnitsFromGrams(totalAlcoholG);
+  const alcoholStatus: FitStatus | null =
+    days.length === 0
+      ? null
+      : period === "day"
+        ? null // a daily judgment against a weekly cap would mislead
+        : period === "week"
+          ? fitStatus(alcoholUnits, targets.values.alcoholUnitsWeek, "cap")
+          : fitStatus(alcoholUnits / Math.max(1, loggedDays / 7), targets.values.alcoholUnitsWeek, "cap");
+
   const totals = [
-    { label: "Calories", value: `${sum(days, (day) => day.totalNutrition.caloriesKcal)} kcal`, testid: "calories" },
-    { label: "Protein", value: `${sum(days, (day) => day.totalNutrition.proteinG)} g`, testid: "protein" },
-    { label: "Carbs", value: `${sum(days, (day) => day.totalNutrition.carbsG)} g`, testid: "carbs" },
-    { label: "Fat", value: `${sum(days, (day) => day.totalNutrition.fatG)} g`, testid: "fat" },
-    { label: "Sodium", value: `${sum(days, (day) => day.totalNutrition.sodiumMg)} mg`, testid: "sodium" },
-    { label: "Meals", value: `${days.reduce((total, day) => total + day.mealCount, 0)}`, testid: "meals" },
-    { label: "Alcohol", value: `${alcoholUnitsFromGrams(totalAlcoholG)} units`, testid: "alcohol-units" },
+    { label: "Calories", value: `${sum(days, (day) => day.totalNutrition.caloriesKcal)} kcal`, testid: "calories", status: judge(sum(days, (day) => day.totalNutrition.caloriesKcal), "caloriesKcal", "cap") },
+    { label: "Protein", value: `${sum(days, (day) => day.totalNutrition.proteinG)} g`, testid: "protein", status: judge(sum(days, (day) => day.totalNutrition.proteinG), "proteinG", "goal") },
+    { label: "Carbs", value: `${sum(days, (day) => day.totalNutrition.carbsG)} g`, testid: "carbs", status: judge(sum(days, (day) => day.totalNutrition.carbsG), "carbsG", "cap") },
+    { label: "Fat", value: `${sum(days, (day) => day.totalNutrition.fatG)} g`, testid: "fat", status: judge(sum(days, (day) => day.totalNutrition.fatG), "fatG", "cap") },
+    { label: "Sodium", value: `${sum(days, (day) => day.totalNutrition.sodiumMg)} mg`, testid: "sodium", status: judge(sum(days, (day) => day.totalNutrition.sodiumMg), "sodiumMg", "cap") },
+    { label: "Meals", value: `${days.reduce((total, day) => total + day.mealCount, 0)}`, testid: "meals", status: null },
+    { label: "Alcohol", value: `${alcoholUnits} units`, testid: "alcohol-units", status: alcoholStatus },
   ];
 
   // Breakdown: per day for day/week/month; per month for year.
@@ -127,6 +155,22 @@ export default async function DashboardPage({
                 <span data-testid={`dashboard-total-${total.testid}`} className="text-lg font-semibold">
                   {total.value}
                 </span>
+                {total.status !== null ? (
+                  <span
+                    data-testid={`dashboard-status-${total.testid}`}
+                    className={`text-xs font-medium ${
+                      total.status === "ok" || total.status === "met"
+                        ? "text-status-cookable"
+                        : total.status === "near" || total.status === "partial"
+                          ? "text-status-near"
+                          : total.status === "over"
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                    }`}
+                  >
+                    {total.status}
+                  </span>
+                ) : null}
               </div>
             ))}
           </div>

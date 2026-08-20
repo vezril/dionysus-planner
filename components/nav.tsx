@@ -22,6 +22,8 @@ const NAV_ITEMS = [
   { href: "/what-can-i-cook", label: "What Can I Cook" },
   // openspec: consumption-dashboard
   { href: "/dashboard", label: "Dashboard" },
+  // openspec: nutrition-targets-guide
+  { href: "/guide", label: "Guide" },
   { href: "/ingredients", label: "Products" },
   { href: "/pantry", label: "Pantry" },
   { href: "/recipes", label: "Recipes" },
