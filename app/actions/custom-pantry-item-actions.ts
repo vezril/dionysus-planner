@@ -10,7 +10,7 @@
 import { revalidatePath } from "next/cache";
 import { abvPercentToGramsPer100Ml } from "@/domain/abv";
 import { scaleMicronutrients } from "@/domain/micronutrients";
-import { getIngredientRecordById, setIngredientMicronutrients } from "@/data/ingredients";
+import { getIngredientRecordById, setIngredientCategories, setIngredientMicronutrients } from "@/data/ingredients";
 import { customPantryItemSchema } from "@/domain/validation/customPantryItem.schema";
 import { toCanonical } from "@/domain/units";
 import { nutritionScaleFactor, scaleNutritionFields } from "@/domain/nutritionBasis";
@@ -172,6 +172,7 @@ export async function createCustomPantryItem(
       result.ingredient.id,
       scaleMicronutrients(data.micronutrients ?? [], basisFactor),
     );
+    await setIngredientCategories(result.ingredient.id, data.categories ?? []);
 
     revalidatePath("/pantry", "layout");
     revalidatePath("/ingredients");

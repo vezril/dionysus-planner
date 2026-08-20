@@ -281,3 +281,12 @@ today's plan. A service failure consumes nothing.
 #### Scenario: A can of beer, no recipe
 - **WHEN** the user hits Eat on a ready-to-eat 355 mL-packaged beer and confirms
 - **THEN** 355 mL leaves the pantry, today's day log gains the beer's nutrition, and today's plan shows the beer marked eaten
+
+### Requirement: Products carry custom categories
+Products and generics SHALL accept user-defined free-text categories
+(comma-separated input on both product forms), stored as a replace-set
+and round-tripped on edit.
+
+#### Scenario: Tagging salmon
+- **WHEN** the user saves a product named "Salmon, atlantic" with categories "fish, salmon"
+- **THEN** both categories persist and reappear when editing the product

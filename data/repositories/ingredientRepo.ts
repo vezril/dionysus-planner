@@ -243,6 +243,38 @@ export function replaceMicronutrients(db: Db, ingredientId: number, entries: Mic
   });
 }
 
+/** openspec: ingredient-categories-auto-tags — replace-set category
+ * labels, same posture as replaceMicronutrients. */
+export function replaceCategories(db: Db, ingredientId: number, tags: string[]): void {
+  db.transaction((tx) => {
+    tx.delete(schema.ingredientTag).where(eq(schema.ingredientTag.ingredientId, ingredientId)).run();
+    for (const tag of tags) {
+      tx.insert(schema.ingredientTag).values({ ingredientId, tag }).run();
+    }
+  });
+}
+
+export async function getCategories(db: Db, ingredientId: number): Promise<string[]> {
+  const rows = await db
+    .select({ tag: schema.ingredientTag.tag })
+    .from(schema.ingredientTag)
+    .where(eq(schema.ingredientTag.ingredientId, ingredientId));
+  return rows.map((row) => row.tag);
+}
+
+export async function getAllCategories(db: Db): Promise<Map<number, string[]>> {
+  const rows = await db
+    .select({ ingredientId: schema.ingredientTag.ingredientId, tag: schema.ingredientTag.tag })
+    .from(schema.ingredientTag);
+  const byIngredientId = new Map<number, string[]>();
+  for (const row of rows) {
+    const existing = byIngredientId.get(row.ingredientId);
+    if (existing) existing.push(row.tag);
+    else byIngredientId.set(row.ingredientId, [row.tag]);
+  }
+  return byIngredientId;
+}
+
 /** openspec: generic-products — id → genericOfId for every ingredient
  * (group-root resolution) plus products linked to a given generic. */
 export async function getGenericLinks(db: Db): Promise<Map<number, number | null>> {

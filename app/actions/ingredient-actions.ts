@@ -22,7 +22,8 @@ import {
   type NutritionFieldValues,
 } from "@/domain/nutritionBasis";
 import type { IngredientRecord } from "@/data/repositories/ingredientRepo";
-import { setIngredientMicronutrients,
+import { setIngredientCategories,
+  setIngredientMicronutrients,
   createIngredientRecord,
   getIngredientRecordById,
   getIngredientReferences,
@@ -178,6 +179,7 @@ export async function createIngredient(input: unknown): Promise<ActionResult<Ing
   });
   // openspec: vitamin-tracking — basis-scaled sparse rows.
   await setIngredientMicronutrients(record.id, scaleMicronutrients(data.micronutrients ?? [], nutrition.factor));
+  await setIngredientCategories(record.id, data.categories ?? []);
 
   revalidatePath("/ingredients");
   return { ok: true, data: record };
@@ -239,6 +241,7 @@ export async function overrideIngredientNutrition(
     overridden,
   });
   await setIngredientMicronutrients(id, scaleMicronutrients(data.micronutrients ?? [], nutrition.factor));
+  await setIngredientCategories(id, data.categories ?? []);
 
   revalidatePath("/ingredients");
   return { ok: true, data: record };

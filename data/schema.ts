@@ -134,6 +134,20 @@ export const recipeTag = sqliteTable(
   (table) => [primaryKey({ columns: [table.recipeId, table.tag] })],
 );
 
+/** openspec: ingredient-categories-auto-tags — user-defined category
+ * labels on products/generics; recipes derive tags from them at read
+ * time. Replace-set semantics, same posture as recipe_tag. */
+export const ingredientTag = sqliteTable(
+  "ingredient_tag",
+  {
+    ingredientId: integer("ingredientId")
+      .notNull()
+      .references(() => ingredient.id, { onDelete: "cascade" }),
+    tag: text("tag").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.ingredientId, table.tag] })],
+);
+
 /** openspec: vitamin-tracking — sparse per-ingredient micronutrient rows
  * (keys from domain/micronutrients.ts MICRONUTRIENTS, amounts per the
  * ingredient's reference quantity). */
