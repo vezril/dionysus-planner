@@ -12,7 +12,7 @@
  */
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { createCustomPantryItem } from "@/app/actions/custom-pantry-item-actions";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UNITS } from "@/domain/units";
+import { referenceBasisFor, unitsForClass } from "@/domain/nutritionBasis";
 import {
   customPantryItemSchema,
   type CustomPantryItemSchemaInput,
@@ -41,6 +42,8 @@ type FormValues = {
   packageUnit: string | undefined;
   initialQuantity: number | undefined;
   unit: string | undefined;
+  nutritionBasisQuantity: number | undefined;
+  nutritionBasisUnit: string | undefined;
 };
 
 const toOptionalNumber = (raw: string): number | undefined => (raw === "" ? undefined : Number(raw));
@@ -68,6 +71,8 @@ const DEFAULT_VALUES: FormValues = {
   packageUnit: undefined,
   initialQuantity: undefined,
   unit: undefined,
+  nutritionBasisQuantity: undefined,
+  nutritionBasisUnit: undefined,
 };
 
 const NUTRITION_FIELDS: Array<{ name: keyof FormValues & string; label: string }> = [
@@ -91,11 +96,29 @@ export function CreateCustomItemDialog() {
     handleSubmit,
     reset,
     setError,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(customPantryItemSchema) as unknown as Resolver<FormValues>,
     defaultValues: DEFAULT_VALUES,
   });
+
+  // openspec: nutrition-basis-and-edit — basis follows the selected class,
+  // defaulting to its reference so an untouched form behaves as before.
+  const watchedUnitClass = watch("unitClass");
+  const watchedBasisQuantity = watch("nutritionBasisQuantity");
+  const watchedBasisUnit = watch("nutritionBasisUnit");
+  useEffect(() => {
+    if (!watchedUnitClass) return;
+    const reference = referenceBasisFor(watchedUnitClass);
+    const unitStillValid =
+      watchedBasisUnit != null && unitsForClass(watchedUnitClass).includes(watchedBasisUnit);
+    if (!unitStillValid) {
+      setValue("nutritionBasisQuantity", reference.quantity);
+      setValue("nutritionBasisUnit", reference.unit);
+    }
+  }, [watchedUnitClass, watchedBasisUnit, setValue]);
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
@@ -217,8 +240,54 @@ export function CreateCustomItemDialog() {
 
             <fieldset className="flex flex-col gap-2">
               <legend className="text-sm font-medium">
-                Nutrition <span className="font-normal text-muted-foreground">(per 100 g / 100 mL / 1 count)</span>
+                Nutrition{" "}
+                <span data-testid="nutrition-basis-label" className="font-normal text-muted-foreground">
+                  (per {watchedBasisQuantity ?? "…"} {watchedBasisUnit ?? "— pick a unit class"})
+                </span>
               </legend>
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex min-w-24 flex-col gap-1">
+                  <label htmlFor="custom-item-nutritionBasisQuantity" className="text-sm font-medium">
+                    Values are per
+                  </label>
+                  <Input
+                    id="custom-item-nutritionBasisQuantity"
+                    type="number"
+                    step="any"
+                    {...register("nutritionBasisQuantity", { setValueAs: toOptionalNumber })}
+                  />
+                </div>
+                <div className="flex min-w-24 flex-col gap-1">
+                  <span className="text-sm font-medium">Basis unit</span>
+                  <Controller
+                    control={control}
+                    name="nutritionBasisUnit"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value ?? ""}
+                        onValueChange={field.onChange}
+                        disabled={!watchedUnitClass}
+                      >
+                        <SelectTrigger aria-label="Basis unit">
+                          <SelectValue placeholder="Unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(watchedUnitClass ? unitsForClass(watchedUnitClass) : []).map((unit) => (
+                            <SelectItem key={unit} value={unit}>
+                              {unit}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              </div>
+              {errors.nutritionBasisUnit ? (
+                <p data-testid="field-error-nutritionBasisUnit" className="text-sm text-destructive">
+                  {errors.nutritionBasisUnit.message}
+                </p>
+              ) : null}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {NUTRITION_FIELDS.map(({ name, label }) => (
                   <div key={name} className="flex flex-col gap-1">

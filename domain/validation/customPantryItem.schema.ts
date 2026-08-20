@@ -33,10 +33,18 @@ export const customPantryItemSchema = z
       .number({ error: "Quantity is required (0 is fine)." })
       .min(0, { message: "Quantity cannot be negative." }),
     unit: z.enum(unitKeys, { error: "Select a unit." }),
+    // openspec: nutrition-basis-and-edit — optional entry basis ("per 355
+    // mL"); class check + conversion live in the Server Action.
+    nutritionBasisQuantity: z.number().gt(0).nullish(),
+    nutritionBasisUnit: z.string().trim().min(1).nullish(),
   })
   .refine((value) => value.packageQuantity == null || value.packageUnit != null, {
     message: "A package size needs a unit.",
     path: ["packageUnit"],
+  })
+  .refine((value) => value.nutritionBasisQuantity == null || value.nutritionBasisUnit != null, {
+    message: "A nutrition basis needs a unit.",
+    path: ["nutritionBasisUnit"],
   });
 
 export type CustomPantryItemSchemaInput = z.infer<typeof customPantryItemSchema>;

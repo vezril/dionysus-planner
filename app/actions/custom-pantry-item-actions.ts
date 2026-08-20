@@ -10,6 +10,7 @@
 import { revalidatePath } from "next/cache";
 import { customPantryItemSchema } from "@/domain/validation/customPantryItem.schema";
 import { toCanonical } from "@/domain/units";
+import { nutritionScaleFactor, scaleNutritionFields } from "@/domain/nutritionBasis";
 import type { CustomPantryItemResult } from "@/data/customPantryItems";
 import { createCustomPantryItemRecords, findIngredientByBarcode } from "@/data/customPantryItems";
 
@@ -58,6 +59,39 @@ export async function createCustomPantryItem(
     return DUPLICATE_BARCODE_ERROR;
   }
 
+  // openspec: nutrition-basis-and-edit — convert label-basis nutrition
+  // ("per 355 mL") to per-reference before persisting; absent basis is a
+  // no-op. Cross-class basis is a field error, never a silent guess.
+  let nutrition = {
+    caloriesPerRef: data.caloriesPerRef,
+    proteinPerRef: data.proteinPerRef,
+    carbsPerRef: data.carbsPerRef,
+    fatPerRef: data.fatPerRef,
+    fiberPerRef: data.fiberPerRef ?? null,
+    sugarPerRef: data.sugarPerRef ?? null,
+    sodiumMgPerRef: data.sodiumMgPerRef ?? null,
+  };
+  if (data.nutritionBasisQuantity != null && data.nutritionBasisUnit != null) {
+    const factor = nutritionScaleFactor(data.nutritionBasisQuantity, data.nutritionBasisUnit, data.unitClass);
+    if (!factor.ok) {
+      const message =
+        factor.error === "CLASS_MISMATCH"
+          ? `The basis unit must match the item's unit class (${data.unitClass}).`
+          : factor.error === "UNKNOWN_UNIT"
+            ? "Unknown basis unit."
+            : "Basis quantity must be positive.";
+      return {
+        ok: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Custom item input failed validation.",
+          fieldErrors: { nutritionBasisUnit: [message] },
+        },
+      };
+    }
+    nutrition = scaleNutritionFields(nutrition, factor.factor);
+  }
+
   const { quantityCanonical, entryUnitClass } = toCanonical(data.initialQuantity, data.unit);
 
   try {
@@ -65,13 +99,7 @@ export async function createCustomPantryItem(
       name: data.name,
       unitClass: data.unitClass,
       densityGPerMl: data.densityGPerMl ?? null,
-      caloriesPerRef: data.caloriesPerRef,
-      proteinPerRef: data.proteinPerRef,
-      carbsPerRef: data.carbsPerRef,
-      fatPerRef: data.fatPerRef,
-      fiberPerRef: data.fiberPerRef ?? null,
-      sugarPerRef: data.sugarPerRef ?? null,
-      sodiumMgPerRef: data.sodiumMgPerRef ?? null,
+      ...nutrition,
       brand: data.brand ?? null,
       barcode: data.barcode ?? null,
       packageQuantity: data.packageQuantity ?? null,

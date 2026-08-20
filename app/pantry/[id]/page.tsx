@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPantryItemDetail } from "@/data/purchases";
 import { computePriceStats } from "@/domain/priceStats";
@@ -55,9 +56,19 @@ export default async function PantryItemDetailPage({
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl font-semibold">{ingredient.name}</h1>
-        <span data-testid="pantry-detail-on-hand" className="font-mono text-sm tabular-nums text-muted-foreground">
-          {item.displayQuantity} {item.displayUnit} on hand
-        </span>
+        <div className="flex items-baseline gap-4">
+          <span data-testid="pantry-detail-on-hand" className="font-mono text-sm tabular-nums text-muted-foreground">
+            {item.displayQuantity} {item.displayUnit} on hand
+          </span>
+          {/* openspec: nutrition-basis-and-edit — one click from the pantry
+              to editing nutrition/name/product identity. */}
+          <Link
+            href={`/ingredients/${ingredient.id}/edit`}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Edit details
+          </Link>
+        </div>
       </div>
 
       {/* openspec: custom-pantry-items — product identity, only when at
