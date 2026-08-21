@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { previewCook } from "@/app/actions/cook-actions";
 import { CreateVariationButton } from "./_components/CreateVariationButton";
 import { RecipeRating } from "./_components/RecipeRating";
 import { notFound } from "next/navigation";
@@ -57,6 +58,13 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
   }
 
   const { recipe, lines, nutrition, tags, derivedTags, variantOf, variations } = detail;
+  // openspec: recipe-missing-highlight — the cook preview's per-line
+  // pantry plan (grouped generic/product matching, local-only) at the
+  // authored servings tells us which lines the pantry can't cover.
+  const preview = await previewCook(recipe.id, recipe.servings);
+  const pantryStatusByLineId = new Map<number, string>(
+    preview.ok ? preview.data.lines.map((line) => [line.lineId, line.status]) : [],
+  );
   // openspec: nutrition-targets-guide — per-serving % of the daily target.
   const targets = await getResolvedTargets();
   const TARGET_KEY_BY_ROW: Record<string, string> = {
@@ -166,6 +174,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
           displayQuantity: line.displayQuantity,
           displayUnit: line.displayUnit,
           unresolved: nutrition.unresolvedLineIds.includes(line.id),
+          pantryStatus: pantryStatusByLineId.get(line.id) ?? "ok",
         }))}
         totalRows={NUTRIENT_ROWS.map((row) => ({
           key: row.key,
