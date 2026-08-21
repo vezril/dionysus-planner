@@ -23,6 +23,10 @@ export interface ScalerLine {
   displayQuantity: number;
   displayUnit: string;
   unresolved: boolean;
+  /** openspec: recipe-missing-highlight — cook-preview plan status at
+   * the authored servings ("ok" | "insufficient" | "missing" |
+   * "unresolved" | "choice"); only missing/insufficient are badged. */
+  pantryStatus: string;
 }
 
 export interface ScalerNutrientRow {
@@ -94,6 +98,22 @@ export function PortionScaler({
               {line.unresolved ? (
                 <span data-testid="recipe-line-unresolved" className="text-sm text-destructive">
                   Unresolved — cannot compare units
+                </span>
+              ) : null}
+              {/* openspec: recipe-missing-highlight */}
+              {line.pantryStatus === "missing" ? (
+                <span
+                  data-testid="recipe-line-missing"
+                  className="rounded-full border border-destructive/40 px-2 py-0.5 text-xs font-medium text-destructive"
+                >
+                  missing from pantry
+                </span>
+              ) : line.pantryStatus === "insufficient" ? (
+                <span
+                  data-testid="recipe-line-short"
+                  className="rounded-full border border-status-near/40 px-2 py-0.5 text-xs font-medium text-status-near"
+                >
+                  not enough in pantry
                 </span>
               ) : null}
             </li>
