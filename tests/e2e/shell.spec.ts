@@ -62,6 +62,19 @@ test.describe("S-105 app shell", () => {
     );
   });
 
+  // openspec: pantry-grid-watermark — the brand watermark is present,
+  // decorative (aria-hidden), and never intercepts clicks.
+  test("logo watermark renders behind content without capturing input", async ({ page }) => {
+    await page.goto("/pantry");
+    const watermark = page.getByTestId("logo-watermark");
+    await expect(watermark).toHaveCount(1);
+    await expect(watermark).toHaveAttribute("alt", "");
+    const pointerEvents = await watermark.evaluate(
+      (element) => getComputedStyle(element.parentElement!).pointerEvents,
+    );
+    expect(pointerEvents).toBe("none");
+  });
+
   test("AC1: root / redirects to /what-can-i-cook", async ({ page }) => {
     const response = await page.goto("/");
     await expect(page).toHaveURL(/\/what-can-i-cook$/);

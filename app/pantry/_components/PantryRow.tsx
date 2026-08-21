@@ -27,7 +27,9 @@ export function PantryRow({ item }: { item: PantryListRow }) {
   return (
     <li
       data-testid="pantry-row"
-      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3"
+      // openspec: pantry-grid-watermark — fixed tracks on sm+ so the
+      // quantity / freshness / action columns align across rows.
+      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3 sm:grid sm:grid-cols-[minmax(0,1fr)_7rem_11rem_max-content]"
     >
       {/* openspec: pantry-item-detail — the name links to the detail page;
           edit/remove affordances are untouched. */}
@@ -42,12 +44,12 @@ export function PantryRow({ item }: { item: PantryListRow }) {
       {item.displayQuantity === 0 ? (
         <span
           data-testid="out-of-stock"
-          className="rounded-sm border border-destructive/40 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-destructive"
+          className="rounded-sm border border-destructive/40 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-destructive sm:justify-self-end"
         >
           Out of stock
         </span>
       ) : (
-        <span className="text-sm text-muted-foreground font-mono tabular-nums">
+        <span className="text-sm text-muted-foreground font-mono tabular-nums sm:text-right">
           {item.displayQuantity} {item.displayUnit}
         </span>
       )}
@@ -73,8 +75,11 @@ export function PantryRow({ item }: { item: PantryListRow }) {
             </span>
           ) : null}
         </span>
-      ) : null}
-      <div className="flex shrink-0 gap-2">
+      ) : (
+        // Empty cell keeps the grid tracks aligned for out-of-stock rows.
+        <span aria-hidden className="hidden sm:block" />
+      )}
+      <div className="flex shrink-0 gap-2 sm:justify-self-end">
         {/* openspec: pantry-quick-eat */}
         {item.readyToEat && item.displayQuantity > 0 ? <EatItemButton item={item} /> : null}
         <Button type="button" size="sm" variant="outline" onClick={() => setEditOpen(true)}>
