@@ -85,6 +85,7 @@ export default async function PlannerPage({
         entriesByDate={week.entriesByDate}
         recipeOptions={week.recipeOptions}
         batchOptions={week.readyToEat}
+        pantryOptions={week.pantryOptions}
       />
 
       <ShoppingListPanel list={week.shoppingList} />

@@ -5,6 +5,7 @@
  * other facade; only `/data/**` touches drizzle.
  */
 import { createDb } from "@/data/db";
+import { getPantryList } from "@/data/pantry";
 import * as pantryRepo from "@/data/repositories/pantryRepo";
 import * as plannerRepo from "@/data/repositories/plannerRepo";
 import * as recipeRepo from "@/data/repositories/recipeRepo";
@@ -38,6 +39,9 @@ export interface PlannerWeek {
   shoppingList: ShoppingList;
   /** openspec: planner-ready-to-eat — service batches, week-plan-adjusted. */
   readyToEat: Array<{ batchId: number; label: string; availablePortions: number }>;
+  /** openspec: plan-pantry-backdate — ready-to-eat stocked pantry
+   * products, plannable straight onto a day. */
+  pantryOptions: Array<{ ingredientId: number; name: string }>;
   serviceAvailable: boolean;
   recipeOptions: Array<{ id: number; name: string; servings: number }>;
 }
@@ -208,6 +212,13 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
       entriesByDate[entry.date]?.push({ ...entry, caloriesKcal });
     }
 
+    // openspec: plan-pantry-backdate — dedupe stocked ready-to-eat
+    // products for the picker.
+    const pantryOptionsById = new Map<number, string>();
+    for (const row of await getPantryList()) {
+      if (row.readyToEat && row.displayQuantity > 0) pantryOptionsById.set(row.ingredientId, row.ingredientName);
+    }
+
     return {
       weekStart,
       dates,
@@ -215,6 +226,7 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
       suggestions,
       shoppingList,
       readyToEat,
+      pantryOptions: [...pantryOptionsById].map(([ingredientId, name]) => ({ ingredientId, name })),
       serviceAvailable,
       recipeOptions: allRecipes.map((recipe) => ({ id: recipe.id, name: recipe.name, servings: recipe.servings })),
     };

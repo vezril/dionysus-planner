@@ -13,11 +13,14 @@ export function AddPlanEntryForm({
   selectedLabel,
   recipeOptions,
   batchOptions,
+  pantryOptions,
 }: {
   selectedDate: string;
   selectedLabel: string;
   recipeOptions: Array<{ id: number; name: string; servings: number }>;
   batchOptions: Array<{ batchId: number; label: string; availablePortions: number }>;
+  /** openspec: plan-pantry-backdate — ready-to-eat pantry products. */
+  pantryOptions: Array<{ ingredientId: number; name: string }>;
 }) {
   const [recipeId, setRecipeId] = useState<string>("");
   const date = selectedDate;
@@ -33,7 +36,11 @@ export function AddPlanEntryForm({
   const selectedBatch = recipeId.startsWith("batch:")
     ? batchOptions.find((option) => `batch:${option.batchId}` === recipeId)
     : undefined;
-  const selected = selectedRecipe ?? selectedBatch;
+  // openspec: plan-pantry-backdate — "pantry:<ingredientId>" entries.
+  const selectedPantry = recipeId.startsWith("pantry:")
+    ? pantryOptions.find((option) => `pantry:${option.ingredientId}` === recipeId)
+    : undefined;
+  const selected = selectedRecipe ?? selectedBatch ?? selectedPantry;
 
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-md border border-border p-3">
@@ -46,7 +53,7 @@ export function AddPlanEntryForm({
             if (portions !== "") return;
             const recipe = recipeOptions.find((candidate) => `cook:${candidate.id}` === value);
             if (recipe) setPortions(recipe.servings.toString());
-            else if (value.startsWith("batch:")) setPortions("1");
+            else if (value.startsWith("batch:") || value.startsWith("pantry:")) setPortions("1");
           }}
         >
           <SelectTrigger aria-label="Plan recipe">
@@ -56,6 +63,11 @@ export function AddPlanEntryForm({
             {batchOptions.map((option) => (
               <SelectItem key={`batch:${option.batchId}`} value={`batch:${option.batchId}`}>
                 {option.label} — ready to eat ({option.availablePortions} left)
+              </SelectItem>
+            ))}
+            {pantryOptions.map((option) => (
+              <SelectItem key={`pantry:${option.ingredientId}`} value={`pantry:${option.ingredientId}`}>
+                {option.name} — from pantry
               </SelectItem>
             ))}
             {recipeOptions.map((option) => (
@@ -97,7 +109,9 @@ export function AddPlanEntryForm({
             const result = await addPlanEntry(
               selectedBatch
                 ? { kind: "eat_batch", date, batchId: selectedBatch.batchId, portions: Number(portions) }
-                : { kind: "cook", date, recipeId: Number(recipeId.replace("cook:", "")), portions: Number(portions) },
+                : selectedPantry
+                  ? { kind: "eat_pantry", date, ingredientId: selectedPantry.ingredientId, portions: Number(portions) }
+                  : { kind: "cook", date, recipeId: Number(recipeId.replace("cook:", "")), portions: Number(portions) },
             );
             if (!result.ok) setErrorMessage(result.error.message);
           })

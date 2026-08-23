@@ -5,6 +5,7 @@
  * ActionResult convention. Plans are planner-local; no service calls.
  */
 import { revalidatePath } from "next/cache";
+import { getIngredientRecordById } from "@/data/ingredients";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { addPlanEntryRecord, removePlanEntryRecord, type PlanEntryRecord } from "@/data/planner";
 import { getRecipeDetail } from "@/data/recipes";
@@ -44,6 +45,29 @@ export async function addPlanEntry(input: unknown): Promise<ActionResult<PlanEnt
       recipeId: data.recipeId,
       batchId: null,
       batchLabel: null,
+      portions: data.portions,
+    });
+    revalidatePath("/planner");
+    return { ok: true, data: record };
+  }
+
+  // openspec: plan-pantry-backdate — plan a ready-to-eat pantry product
+  // onto a day; nothing is consumed until it's actually eaten.
+  if (data.kind === "eat_pantry") {
+    const ingredient = await getIngredientRecordById(data.ingredientId);
+    if (!ingredient) {
+      return { ok: false, error: { code: "NOT_FOUND", message: "Product not found." } };
+    }
+    if (!ingredient.readyToEat) {
+      return { ok: false, error: { code: "VALIDATION_ERROR", message: "That product isn't ready to consume." } };
+    }
+    const record = await addPlanEntryRecord({
+      date: data.date,
+      kind: "eat_pantry",
+      ingredientId: data.ingredientId,
+      recipeId: null,
+      batchId: null,
+      batchLabel: ingredient.name,
       portions: data.portions,
     });
     revalidatePath("/planner");

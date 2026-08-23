@@ -17,6 +17,7 @@ export function PlannerBoard({
   entriesByDate,
   recipeOptions,
   batchOptions,
+  pantryOptions,
 }: {
   dates: string[];
   dayLabels: string[];
@@ -24,6 +25,7 @@ export function PlannerBoard({
   entriesByDate: Record<string, PlanEntryRow[]>;
   recipeOptions: Array<{ id: number; name: string; servings: number }>;
   batchOptions: Array<{ batchId: number; label: string; availablePortions: number }>;
+  pantryOptions: Array<{ ingredientId: number; name: string }>;
 }) {
   const [selectedDate, setSelectedDate] = useState(dates.includes(today) ? today : dates[0]);
   const selectedIndex = dates.indexOf(selectedDate);
@@ -35,6 +37,7 @@ export function PlannerBoard({
         selectedLabel={`${dayLabels[selectedIndex]} ${selectedDate.slice(5)}`}
         recipeOptions={recipeOptions}
         batchOptions={batchOptions}
+        pantryOptions={pantryOptions}
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7">

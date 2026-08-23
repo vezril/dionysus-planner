@@ -55,6 +55,14 @@ export function PlanDayColumn({
                     (eaten)
                   </span>
                 </span>
+              ) : entry.kind === "eat_pantry" ? (
+                /* openspec: plan-pantry-backdate — planned, not yet eaten. */
+                <Link href="/pantry" className="text-sm font-medium hover:text-primary hover:underline">
+                  {entry.batchLabel}{" "}
+                  <span data-testid="plan-entry-pantry" className="text-xs font-normal text-primary">
+                    (from pantry)
+                  </span>
+                </Link>
               ) : entry.kind === "eat_batch" ? (
                 <Link href="/meal-log/batches" className="text-sm font-medium hover:text-primary hover:underline">
                   {entry.batchLabel}{" "}
