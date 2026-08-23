@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MICRONUTRIENTS, MIRROR_EXTRA_LABELS } from "@/domain/micronutrients";
-import { LogPortionButton } from "./batches/_components/LogPortionButton";
+import { SortableReadyList } from "./_components/SortableReadyList";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { formatInstantIn, resolveDionysusTimezone, todayIsoDateIn } from "@/app/lib/dionysusTimezone";
 import { getDayLog, listBatches, listRecipes } from "@/services/dionysusService";
@@ -131,21 +131,15 @@ export default async function MealLogPage({
             Nothing ready right now — cook a recipe to stock up.
           </p>
         ) : (
-          <ul data-testid="ready-to-consume" className="flex flex-col divide-y divide-border">
-            {readyToConsume.map((row) => (
-              <li
-                key={row.recipeId}
-                data-testid="ready-to-consume-row"
-                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2"
-              >
-                <span className="text-sm font-medium">
-                  {recipeNameById.get(row.recipeId) ?? `Recipe #${row.recipeId}`}
-                </span>
-                <span className="text-sm text-muted-foreground">{row.totalPortions} portions</span>
-                {row.oldestBatchId !== null ? <LogPortionButton batchId={row.oldestBatchId} /> : null}
-              </li>
-            ))}
-          </ul>
+          // openspec: sortable-columns
+          <SortableReadyList
+            rows={readyToConsume.map((row) => ({
+              recipeId: row.recipeId,
+              name: recipeNameById.get(row.recipeId) ?? `Recipe #${row.recipeId}`,
+              totalPortions: row.totalPortions,
+              oldestBatchId: row.oldestBatchId,
+            }))}
+          />
         )}
       </section>
 

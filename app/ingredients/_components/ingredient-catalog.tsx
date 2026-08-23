@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { SortButton } from "@/components/SortButton";
 import type { IngredientSummary } from "@/data/ingredients";
+import { nextSortState, sortRows, type SortState, type SortValue } from "@/domain/listSort";
 
 /**
  * Client search island (ADR-002 — ONLY the search box + its filtered list
@@ -19,14 +21,33 @@ import type { IngredientSummary } from "@/data/ingredients";
  * shape for later pickers without adding a debounced-fetch code path this
  * story doesn't need.
  */
+// openspec: sortable-columns — column-title sort keys.
+const PICKERS: Record<string, (ingredient: IngredientSummary) => SortValue> = {
+  name: (ingredient) => ingredient.name,
+  calories: (ingredient) => ingredient.caloriesPerRef,
+  category: (ingredient) => ingredient.category,
+};
+
 export function IngredientCatalog({ ingredients }: { ingredients: IngredientSummary[] }) {
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortState | null>(null);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (needle === "") return ingredients;
-    return ingredients.filter((ingredient) => ingredient.name.toLowerCase().includes(needle));
-  }, [ingredients, query]);
+    const matched =
+      needle === "" ? ingredients : ingredients.filter((ingredient) => ingredient.name.toLowerCase().includes(needle));
+    if (sort === null) return matched;
+    return sortRows(matched, PICKERS[sort.key] ?? PICKERS.name, sort.direction);
+  }, [ingredients, query, sort]);
+
+  const header = (key: string, label: string) => (
+    <SortButton
+      label={label}
+      active={sort?.key === key}
+      direction={sort?.key === key ? sort.direction : "asc"}
+      onClick={() => setSort((current) => nextSortState(current, key))}
+    />
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -42,6 +63,13 @@ export function IngredientCatalog({ ingredients }: { ingredients: IngredientSumm
           placeholder="Search by name…"
           className="max-w-sm"
         />
+      </div>
+
+      {/* openspec: sortable-columns */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border pb-2">
+        {header("name", "Name")}
+        {header("calories", "Calories")}
+        {header("category", "Category")}
       </div>
 
       {filtered.length === 0 ? (
