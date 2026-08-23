@@ -4,7 +4,19 @@
     {
       "name": "dionysus-dev",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev"],
+      "runtimeArgs": [
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "dionysus-dev-service",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "DIONYSUS_SERVICE_URL=http://localhost:18080",
+        "pnpm",
+        "dev"
+      ],
       "port": 3000
     }
   ]
