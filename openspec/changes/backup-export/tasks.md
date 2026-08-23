@@ -1,0 +1,3 @@
+- [ ] 1.1 JSON bundle route + pure markdown generator + unit tests
+- [ ] 1.2 Obsidian sync script; run against live; verify vault files
+- [ ] 1.3 Gate; train v2.36.0

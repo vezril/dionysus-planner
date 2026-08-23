@@ -29,9 +29,7 @@ export function SortButton({
       } ${className}`}
     >
       {label}
-      <span aria-hidden className="w-2">
-        {active ? (direction === "asc" ? "▲" : "▼") : ""}
-      </span>
+      {active ? <span aria-hidden>{direction === "asc" ? "▲" : "▼"}</span> : null}
     </button>
   );
 }

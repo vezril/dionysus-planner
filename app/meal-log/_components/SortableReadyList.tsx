@@ -38,7 +38,7 @@ export function SortableReadyList({ rows }: { rows: ReadyRow[] }) {
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center gap-4 border-b border-border pb-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border pb-2">
         {header("name", "Name")}
         {header("portions", "Portions")}
       </div>

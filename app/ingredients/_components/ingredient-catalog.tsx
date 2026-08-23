@@ -66,7 +66,7 @@ export function IngredientCatalog({ ingredients }: { ingredients: IngredientSumm
       </div>
 
       {/* openspec: sortable-columns */}
-      <div className="flex items-center gap-4 border-b border-border pb-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border pb-2">
         {header("name", "Name")}
         {header("calories", "Calories")}
         {header("category", "Category")}
