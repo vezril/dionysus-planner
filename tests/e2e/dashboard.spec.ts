@@ -77,6 +77,28 @@ test.describe("consumption dashboard", () => {
     expect(value).toBeGreaterThanOrEqual(1.04);
   });
 
+  // openspec: dashboard-analytics — month/year views: KPI averages with
+  // deltas plus calories and alcohol charts above the table.
+  test("month view shows KPI averages and exploration charts", async ({ page }) => {
+    await page.goto("/dashboard?period=month");
+    await expect(page.getByTestId("dashboard-kpis")).toBeVisible();
+    await expect(page.getByTestId("dashboard-kpi-kcal")).toContainText("kcal");
+    await expect(page.getByTestId("dashboard-kpi-alcohol")).toContainText("u");
+    await expect(page.getByTestId("chart-calories")).toBeVisible();
+    // The shandy logged today puts at least one bar on the board.
+    expect(await page.getByTestId("chart-calories-bar").count()).toBeGreaterThanOrEqual(1);
+    await expect(page.getByTestId("chart-alcohol")).toBeVisible();
+    await expect(page.getByTestId("chart-calories-cap")).toHaveCount(1); // daily kcal target line
+  });
+
+  test("year view charts aggregate per month", async ({ page }) => {
+    await page.goto("/dashboard?period=year");
+    await expect(page.getByTestId("dashboard-kpis")).toBeVisible();
+    await expect(page.getByTestId("chart-calories")).toBeVisible();
+    expect(await page.getByTestId("chart-calories-bar").count()).toBeGreaterThanOrEqual(1);
+    await expect(page.getByTestId("chart-alcohol")).toBeVisible();
+  });
+
   // openspec: dashboard-week-day-cards — the week is seven mini day
   // views; clicking one opens that day's detailed view.
   test("week view shows seven day cards and clicks through to the day", async ({ page }) => {

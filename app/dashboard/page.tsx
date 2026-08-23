@@ -3,6 +3,15 @@ import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { resolveDionysusTimezone, todayIsoDateIn } from "@/app/lib/dionysusTimezone";
 import { alcoholUnitsFromGrams } from "@/domain/abv";
 import { periodRange, shiftAnchor, type Period } from "@/domain/periods";
+import {
+  dailyCaloriesSeries,
+  monthlyAlcoholSeries,
+  monthlyCaloriesSeries,
+  percentDelta,
+  periodStats,
+  weeklyAlcoholSeries,
+} from "@/domain/dashboardStats";
+import { BarTrendChart } from "./_components/BarTrendChart";
 import { getLogRange, type RangeDayJson } from "@/services/dionysusService";
 import { getResolvedTargets } from "@/data/nutritionTargets";
 import { fitStatus, type FitStatus, type TargetKind } from "@/domain/nutritionTargets";
@@ -39,9 +48,16 @@ export default async function DashboardPage({
   const targets = await getResolvedTargets();
   let days: RangeDayJson[] = [];
   let serviceAvailable = true;
+  // openspec: dashboard-analytics — the previous period feeds the KPI
+  // deltas on month/year views.
+  let previousDays: RangeDayJson[] = [];
   try {
     const baseUrl = resolveDionysusServiceUrl();
     days = (await getLogRange(baseUrl, range.from, range.to)).days;
+    if (period === "month" || period === "year") {
+      const previousRange = periodRange(period, shiftAnchor(period, anchor, -1));
+      previousDays = (await getLogRange(baseUrl, previousRange.from, previousRange.to)).days;
+    }
   } catch {
     serviceAvailable = false;
   }
@@ -111,6 +127,37 @@ export default async function DashboardPage({
       proteinStatus: day ? fitStatus(proteinG, targets.values.proteinG, "goal") : null,
     };
   });
+
+  // openspec: dashboard-analytics — month/year averages, deltas, charts.
+  const stats = period === "month" || period === "year" ? periodStats(days) : null;
+  const previousStats = period === "month" || period === "year" ? periodStats(previousDays) : null;
+  const kpis =
+    stats !== null
+      ? [
+          { key: "kcal", label: "Avg calories / day", value: `${stats.avgCaloriesKcal} kcal`, delta: percentDelta(stats.avgCaloriesKcal, previousStats?.avgCaloriesKcal) },
+          { key: "protein", label: "Avg protein / day", value: `${stats.avgProteinG} g`, delta: percentDelta(stats.avgProteinG, previousStats?.avgProteinG) },
+          { key: "meals", label: "Meals / day", value: `${stats.avgMeals}`, delta: percentDelta(stats.avgMeals, previousStats?.avgMeals) },
+          { key: "alcohol", label: "Alcohol / week", value: `${stats.alcoholUnitsPerWeek} u`, delta: percentDelta(stats.alcoholUnitsPerWeek, previousStats?.alcoholUnitsPerWeek) },
+        ]
+      : [];
+  const caloriesSeries =
+    period === "month"
+      ? dailyCaloriesSeries(days, range.from, range.to)
+      : period === "year"
+        ? monthlyCaloriesSeries(days, range.from.slice(0, 4))
+        : [];
+  const alcoholSeries =
+    period === "month"
+      ? weeklyAlcoholSeries(days, range.from, range.to)
+      : period === "year"
+        ? monthlyAlcoholSeries(days, range.from.slice(0, 4))
+        : [];
+  const caloriesAvg =
+    period === "month" ? (stats?.avgCaloriesKcal ?? null) : stats !== null ? Math.round((stats.avgCaloriesKcal * stats.loggedDays) / 12) : null;
+  const alcoholAvg =
+    alcoholSeries.length > 0 && stats !== null
+      ? Math.round((alcoholSeries.reduce((sum, point) => sum + point.value, 0) / alcoholSeries.length) * 10) / 10
+      : null;
 
   // Breakdown: per day for day/month; per month for year.
   const breakdown =
@@ -204,6 +251,49 @@ export default async function DashboardPage({
               </div>
             ))}
           </div>
+
+          {/* openspec: dashboard-analytics — KPI averages with deltas vs
+              the previous period, then the exploration charts. */}
+          {stats !== null ? (
+            <div data-testid="dashboard-kpis" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {kpis.map((kpi) => (
+                <div key={kpi.key} className="flex flex-col rounded-md border border-border p-3">
+                  <span className="text-xs text-muted-foreground">{kpi.label}</span>
+                  <span data-testid={`dashboard-kpi-${kpi.key}`} className="text-lg font-semibold">
+                    {kpi.value}
+                  </span>
+                  {kpi.delta !== null ? (
+                    <span data-testid={`dashboard-kpi-${kpi.key}-delta`} className="text-xs text-muted-foreground">
+                      {kpi.delta > 0 ? "▲" : kpi.delta < 0 ? "▼" : "＝"} {Math.abs(kpi.delta)}% vs previous{" "}
+                      {period}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground/60">no previous {period}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {stats !== null && caloriesSeries.length > 0 ? (
+            <div className="flex flex-col gap-5">
+              <BarTrendChart
+                title={period === "month" ? "Calories per day" : "Calories per month"}
+                unit="kcal"
+                points={caloriesSeries}
+                averageLine={caloriesAvg}
+                capLine={period === "month" ? targets.values.caloriesKcal : null}
+                testid="chart-calories"
+              />
+              <BarTrendChart
+                title={period === "month" ? "Alcohol units per week" : "Alcohol units per month"}
+                unit="u"
+                points={alcoholSeries}
+                averageLine={alcoholAvg}
+                capLine={period === "month" ? targets.values.alcoholUnitsWeek : null}
+                testid="chart-alcohol"
+              />
+            </div>
+          ) : null}
 
           {period === "week" ? (
             <div data-testid="dashboard-week-days" className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
