@@ -94,3 +94,18 @@ export async function getById(db: Db, id: number): Promise<PlanEntryRecord | nul
       }
     : null;
 }
+
+/** openspec: backup-export — every plan entry, oldest first. */
+export async function getAllEntries(db: Db): Promise<PlanEntryRecord[]> {
+  const rows = await db.select().from(schema.planEntry).orderBy(schema.planEntry.date);
+  return rows.map((row) => ({
+    id: row.id,
+    date: row.date,
+    kind: row.kind,
+    ingredientId: row.ingredientId,
+    recipeId: row.recipeId,
+    batchId: row.batchId,
+    batchLabel: row.batchLabel,
+    portions: row.portions,
+  }));
+}

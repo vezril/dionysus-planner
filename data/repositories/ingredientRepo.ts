@@ -293,6 +293,20 @@ export async function getMerchantLinks(db: Db, ingredientId: number): Promise<st
   return rows.map((row) => row.url);
 }
 
+/** openspec: backup-export — all merchant links in one query. */
+export async function getAllMerchantLinks(db: Db): Promise<Map<number, string[]>> {
+  const rows = await db
+    .select({ ingredientId: schema.ingredientLink.ingredientId, url: schema.ingredientLink.url })
+    .from(schema.ingredientLink);
+  const byIngredientId = new Map<number, string[]>();
+  for (const row of rows) {
+    const existing = byIngredientId.get(row.ingredientId);
+    if (existing) existing.push(row.url);
+    else byIngredientId.set(row.ingredientId, [row.url]);
+  }
+  return byIngredientId;
+}
+
 /** openspec: generic-products — id → genericOfId for every ingredient
  * (group-root resolution) plus products linked to a given generic. */
 export async function getGenericLinks(db: Db): Promise<Map<number, number | null>> {
