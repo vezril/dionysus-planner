@@ -173,7 +173,31 @@ describe("eatPantryItem", () => {
     expect(planEntries()).toEqual([]);
   });
 
-  it("a downed service consumes nothing and plans nothing", async () => {
+  // openspec: plan-pantry-backdate
+  it("a backdated eat logs the meal at noon UTC of that day and plans that date", async () => {
+    const { eatPantryItem } = await import("@/app/actions/eat-actions");
+    const result = await eatPantryItem({ pantryItemId: beerRowId, quantity: 1, unit: "each", date: "2026-08-19" });
+    expect(result.ok).toBe(true);
+    expect(serviceMock.meals[0].eatenAt).toBe("2026-08-19T12:00:00.000Z");
+    const sqlite = new Database(dbPath);
+    const rows = sqlite.prepare("SELECT date, kind, ingredientId FROM plan_entry").all() as Array<{
+      date: string;
+      kind: string;
+      ingredientId: number | null;
+    }>;
+    sqlite.close();
+    expect(rows).toEqual([{ date: "2026-08-19", kind: "eat_item", ingredientId: beerId }]);
+  });
+
+  it("a future date is rejected untouched", async () => {
+    const { eatPantryItem } = await import("@/app/actions/eat-actions");
+    const result = await eatPantryItem({ pantryItemId: beerRowId, quantity: 1, unit: "each", date: "2199-01-01" });
+    expect(result.ok).toBe(false);
+    expect(serviceMock.meals).toHaveLength(0);
+    expect(beerQuantity()).toBe(710);
+  });
+
+    it("a downed service consumes nothing and plans nothing", async () => {
     serviceMock.failAll = true;
     const { eatPantryItem } = await import("@/app/actions/eat-actions");
     const result = await eatPantryItem({ pantryItemId: beerRowId, quantity: 1, unit: "each" });

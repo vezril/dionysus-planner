@@ -29,6 +29,14 @@ export const planEntrySchema = z.preprocess(
       batchId: z.number().int().positive(),
       portions: z.number().gt(0),
     }),
+    // openspec: plan-pantry-backdate — plan a ready-to-eat pantry
+    // product onto a day (nothing is consumed until actually eaten).
+    z.object({
+      kind: z.literal("eat_pantry"),
+      date: dateSchema,
+      ingredientId: z.number().int().positive(),
+      portions: z.number().gt(0),
+    }),
   ]),
 );
 

@@ -26,6 +26,9 @@ export function EatItemButton({ item }: { item: PantryListRow }) {
         : { quantity: "", unit: item.displayUnit };
   const [quantity, setQuantity] = useState(prefill.quantity);
   const [unit] = useState(prefill.unit);
+  // openspec: plan-pantry-backdate — log to an earlier day if forgotten.
+  const todayIso = new Date().toLocaleDateString("en-CA");
+  const [logDate, setLogDate] = useState(todayIso);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -57,6 +60,22 @@ export function EatItemButton({ item }: { item: PantryListRow }) {
               of {item.displayQuantity} {item.displayUnit} on hand
             </span>
           </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="eat-date" className="text-sm font-medium">
+              Log to day
+            </label>
+            <Input
+              id="eat-date"
+              type="date"
+              className="w-40"
+              max={todayIso}
+              value={logDate}
+              onChange={(event) => setLogDate(event.target.value)}
+            />
+            {logDate !== todayIso ? (
+              <p className="text-xs text-status-near">Backdating to {logDate}.</p>
+            ) : null}
+          </div>
           {errorMessage ? (
             <p data-testid="eat-error" className="text-sm text-destructive">
               {errorMessage}
@@ -73,7 +92,12 @@ export function EatItemButton({ item }: { item: PantryListRow }) {
               onClick={() =>
                 startTransition(async () => {
                   setErrorMessage(null);
-                  const result = await eatPantryItem({ pantryItemId: item.id, quantity: Number(quantity), unit });
+                  const result = await eatPantryItem({
+                    pantryItemId: item.id,
+                    quantity: Number(quantity),
+                    unit,
+                    date: logDate,
+                  });
                   if (!result.ok) {
                     setErrorMessage(result.error.message);
                     return;

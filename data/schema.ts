@@ -185,11 +185,14 @@ export const planEntry = sqliteTable("plan_entry", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   date: text("date").notNull(),
   // openspec: planner-ready-to-eat — cook a recipe OR eat a service batch.
-  kind: text("kind", { enum: ["cook", "eat_batch", "eat_item"] }).notNull().default("cook"),
+  kind: text("kind", { enum: ["cook", "eat_batch", "eat_item", "eat_pantry"] }).notNull().default("cook"),
   recipeId: integer("recipeId").references(() => recipe.id, { onDelete: "cascade" }),
   // Service-side batch id (cross-system — no FK) + label snapshotted at
   // plan time so rendering never depends on the service being up.
   batchId: integer("batchId"),
+  /** openspec: plan-pantry-backdate — the ready-to-eat pantry product a
+   * plan entry points at (eat_pantry / eat_item). */
+  ingredientId: integer("ingredientId"),
   batchLabel: text("batchLabel"),
   portions: real("portions").notNull(),
   createdAt: text("createdAt").notNull(),

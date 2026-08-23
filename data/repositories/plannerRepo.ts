@@ -12,7 +12,8 @@ type Db = BetterSQLite3Database<typeof schema>;
 export interface PlanEntryRecord {
   id: number;
   date: string;
-  kind: "cook" | "eat_batch" | "eat_item";
+  kind: "cook" | "eat_batch" | "eat_item" | "eat_pantry";
+  ingredientId: number | null;
   recipeId: number | null;
   batchId: number | null;
   batchLabel: string | null;
@@ -31,6 +32,7 @@ export async function listForDates(db: Db, dates: string[]): Promise<PlanEntryRo
       id: planEntry.id,
       date: planEntry.date,
       kind: planEntry.kind,
+      ingredientId: planEntry.ingredientId ?? null,
       recipeId: planEntry.recipeId,
       batchId: planEntry.batchId,
       batchLabel: planEntry.batchLabel,
@@ -47,7 +49,8 @@ export async function listForDates(db: Db, dates: string[]): Promise<PlanEntryRo
 
 export interface PlanEntryInsert {
   date: string;
-  kind: "cook" | "eat_batch" | "eat_item";
+  kind: "cook" | "eat_batch" | "eat_item" | "eat_pantry";
+  ingredientId?: number | null;
   recipeId: number | null;
   batchId: number | null;
   batchLabel: string | null;
@@ -63,6 +66,7 @@ export async function add(db: Db, input: PlanEntryInsert): Promise<PlanEntryReco
     id: row.id,
     date: row.date,
     kind: row.kind,
+    ingredientId: row.ingredientId,
     recipeId: row.recipeId,
     batchId: row.batchId,
     batchLabel: row.batchLabel,
@@ -82,6 +86,7 @@ export async function getById(db: Db, id: number): Promise<PlanEntryRecord | nul
         id: row.id,
         date: row.date,
         kind: row.kind,
+        ingredientId: row.ingredientId,
         recipeId: row.recipeId,
         batchId: row.batchId,
         batchLabel: row.batchLabel,

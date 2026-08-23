@@ -33,6 +33,16 @@ const schema = z.object({
   pantryItemId: z.number().int().positive(),
   quantity: z.number().gt(0),
   unit: z.string().min(1),
+  // openspec: plan-pantry-backdate — log to an earlier day when the
+  // eating was forgotten at the time. Defaults to today; never future.
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine((raw) => {
+      const parsed = new Date(`${raw}T00:00:00Z`);
+      return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === raw;
+    })
+    .optional(),
 });
 
 export async function eatPantryItem(input: unknown): Promise<ActionResult<{ consumed: number }>> {
@@ -41,6 +51,12 @@ export async function eatPantryItem(input: unknown): Promise<ActionResult<{ cons
     return { ok: false, error: { code: "VALIDATION_ERROR", message: "Eat input failed validation." } };
   }
   const { pantryItemId, quantity, unit } = parsed.data;
+  const timeZone = resolveDionysusTimezone();
+  const today = todayIsoDateIn(timeZone);
+  const logDate = parsed.data.date ?? today;
+  if (logDate > today) {
+    return { ok: false, error: { code: "VALIDATION_ERROR", message: "Can't log to a future day." } };
+  }
 
   const row = await getPantryItemRecordById(pantryItemId);
   if (!row) return { ok: false, error: { code: "NOT_FOUND", message: "Pantry item not found." } };
@@ -106,7 +122,9 @@ export async function eatPantryItem(input: unknown): Promise<ActionResult<{ cons
     }
 
     await serviceCreateMeal(baseUrl, {
-      eatenAt: new Date().toISOString(),
+      // Backdated logs land at noon UTC of that day — inside the local
+      // calendar day for any timezone west of UTC+12.
+      eatenAt: logDate === today ? new Date().toISOString() : `${logDate}T12:00:00.000Z`,
       lines: [
         {
           lineType: "direct_consumable",
@@ -128,10 +146,10 @@ export async function eatPantryItem(input: unknown): Promise<ActionResult<{ cons
 
   // ---- Pantry + planner second ----
   const [applied] = await consumeFromPantry([{ pantryItemId, amountInRowBasis: inRowBasis }]);
-  const timeZone = resolveDionysusTimezone();
   await addPlanEntryRecord({
-    date: todayIsoDateIn(timeZone),
+    date: logDate,
     kind: "eat_item",
+    ingredientId: ingredient.id,
     recipeId: null,
     batchId: null,
     batchLabel: `${ingredient.name} (${quantity} ${unit})`,

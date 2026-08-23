@@ -214,7 +214,50 @@ describe("weekly planner", () => {
     expect(week.suggestions.length).toBeGreaterThan(0);
   });
 
-  it("an invalid date is rejected", async () => {
+  // openspec: plan-pantry-backdate — plan a ready-to-eat pantry product.
+  it("a ready-to-eat pantry product plans onto a day without consuming anything", async () => {
+    const sqlite = new Database(dbPath);
+    const beerId = insertRawIngredient(sqlite, {
+      name: "Planner RTE Beer",
+      unitClass: "VOLUME",
+      caloriesPerRef: 43,
+      readyToEat: true,
+    });
+    insertRawPantryItem(sqlite, beerId, {
+      quantityCanonical: 355,
+      entryUnitClass: "VOLUME",
+      displayQuantity: 355,
+      displayUnit: "mL",
+    });
+    sqlite.close();
+
+    const { addPlanEntry } = await import("@/app/actions/planner-actions");
+    const { getPlannerWeek } = await import("@/data/planner");
+    const added = await addPlanEntry({ kind: "eat_pantry", date: "2026-08-21", ingredientId: beerId, portions: 1 });
+    expect(added.ok).toBe(true);
+
+    const week = await getPlannerWeek("2026-08-17", 3);
+    expect(week.pantryOptions).toEqual([{ ingredientId: beerId, name: "Planner RTE Beer" }]);
+    expect(week.entriesByDate["2026-08-21"][0]).toMatchObject({
+      kind: "eat_pantry",
+      batchLabel: "Planner RTE Beer",
+      ingredientId: beerId,
+      portions: 1,
+    });
+
+    const check = new Database(dbPath);
+    const quantity = (check.prepare("SELECT quantityCanonical FROM pantry_item WHERE ingredientId = ?").get(beerId) as { quantityCanonical: number }).quantityCanonical;
+    check.close();
+    expect(quantity).toBe(355); // planning consumes nothing
+  });
+
+  it("a non-ready-to-eat product is rejected from the plan", async () => {
+    const { addPlanEntry } = await import("@/app/actions/planner-actions");
+    const result = await addPlanEntry({ kind: "eat_pantry", date: "2026-08-21", ingredientId: breadId, portions: 1 });
+    expect(result.ok).toBe(false);
+  });
+
+    it("an invalid date is rejected", async () => {
     const { addPlanEntry } = await import("@/app/actions/planner-actions");
     const result = await addPlanEntry({ date: "2026-02-31", recipeId: breadId, portions: 1 });
     expect(result.ok).toBe(false);
