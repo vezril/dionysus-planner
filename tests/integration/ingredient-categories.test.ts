@@ -101,7 +101,16 @@ describe("ingredient categories and derived recipe tags", () => {
     expect(stored.map((row) => row.tag)).toEqual(["fish"]);
   });
 
-  it("an untagged recipe derives nothing", async () => {
+  // openspec: category-tree — path categories derive a tag per level.
+  it("a path category derives a tag for every level", async () => {
+    const { setIngredientCategories } = await import("@/data/ingredients");
+    const { getRecipeDetail } = await import("@/data/recipes");
+    await setIngredientCategories(genericSalmonId, ["Fish/Salmon/Atlantic"]);
+    const detail = (await getRecipeDetail(recipeId))!;
+    expect([...detail.derivedTags].sort()).toEqual(["Atlantic", "Fish", "Salmon"]);
+  });
+
+    it("an untagged recipe derives nothing", async () => {
     const { getRecipeDetail } = await import("@/data/recipes");
     const detail = (await getRecipeDetail(recipeId))!;
     expect(detail.derivedTags).toEqual([]);

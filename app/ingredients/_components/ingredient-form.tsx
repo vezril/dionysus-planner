@@ -372,12 +372,12 @@ export function IngredientForm({
       <div className="flex max-w-sm flex-col gap-1">
         <label htmlFor="ingredient-categories" className="text-sm font-medium">
           Categories{" "}
-          <span className="font-normal text-muted-foreground">(comma-separated — recipes inherit them as tags)</span>
+          <span className="font-normal text-muted-foreground">(comma-separated; nest with / like Rhum/Agricole — recipes inherit every level)</span>
         </label>
         <input
           id="ingredient-categories"
           type="text"
-          placeholder="fish, salmon"
+          placeholder="Rhum/Lightly Aged Pot Rhum, fish"
           className="rounded-md border border-input bg-background px-3 py-2 text-sm"
           {...register("categoriesText")}
         />
