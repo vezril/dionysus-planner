@@ -27,9 +27,11 @@ export interface IngredientSummary {
   proteinPerRef: number;
   carbsPerRef: number;
   fatPerRef: number;
+  /** openspec: category-tree — the product's custom category paths. */
+  categories: string[];
 }
 
-function toSummary(record: IngredientRecord): IngredientSummary {
+function toSummary(record: IngredientRecord): Omit<IngredientSummary, "categories"> {
   return {
     id: record.id,
     name: record.name,
@@ -53,7 +55,9 @@ export async function getIngredientCatalog(query?: string): Promise<IngredientSu
   const db = createDb();
   try {
     const records = !query ? await ingredientRepo.listAll(db) : await ingredientRepo.searchByName(db, query);
-    return records.map(toSummary);
+    // openspec: category-tree — one query, attached per product.
+    const categoriesById = await ingredientRepo.getAllCategories(db);
+    return records.map((record) => ({ ...toSummary(record), categories: categoriesById.get(record.id) ?? [] }));
   } finally {
     db.$client.close();
   }

@@ -18,6 +18,7 @@
 import { eq } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { ingredient, ingredientTag, recipe, recipeLine, recipeTag } from "@/data/schema";
+import { expandCategoryLevels } from "@/domain/categoryTree";
 import * as schema from "@/data/schema";
 import type { UnitClass } from "@/domain/types";
 import type { IngredientRecord } from "@/data/repositories/ingredientRepo";
@@ -346,10 +347,11 @@ export async function getAllDerivedTags(db: Db): Promise<Map<number, string[]>> 
   }
   const byRecipeId = new Map<number, Set<string>>();
   for (const line of lines) {
-    const tags = [
+    // openspec: category-tree — "A/B" paths derive a tag per level.
+    const tags = expandCategoryLevels([
       ...(tagsByIngredientId.get(line.ingredientId) ?? []),
       ...(line.genericOfId !== null ? (tagsByIngredientId.get(line.genericOfId) ?? []) : []),
-    ];
+    ]);
     if (tags.length === 0) continue;
     const set = byRecipeId.get(line.recipeId) ?? new Set<string>();
     for (const tag of tags) set.add(tag);
