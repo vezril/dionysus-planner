@@ -57,7 +57,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  const { recipe, lines, nutrition, tags, derivedTags, variantOf, variations } = detail;
+  const { recipe, lines, nutrition, tags, derivedTags, variantOf, variations, subRecipeReady } = detail;
   // openspec: recipe-missing-highlight — the cook preview's per-line
   // pantry plan (grouped generic/product matching, local-only) at the
   // authored servings tells us which lines the pantry can't cover.
@@ -137,14 +137,24 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
             as links to their recipe pages. */}
         {splitInstructionSegments(recipe.instructions).map((segment, index) =>
           segment.type === "recipeRef" ? (
-            <Link
-              key={index}
-              href={`/recipes/${segment.recipeId}`}
-              data-testid="subrecipe-link"
-              className="font-medium text-primary hover:underline"
-            >
-              {segment.text}
-            </Link>
+            <span key={index} className="whitespace-nowrap">
+              <Link
+                href={`/recipes/${segment.recipeId}`}
+                data-testid="subrecipe-link"
+                className="font-medium text-primary hover:underline"
+              >
+                {segment.text}
+              </Link>
+              {/* openspec: subrecipe-ready — already cooked? use it. */}
+              {subRecipeReady[segment.recipeId] !== undefined ? (
+                <span
+                  data-testid="subrecipe-ready"
+                  className="ml-1 rounded-full border border-status-cookable/50 px-1.5 py-0.5 text-xs font-medium text-status-cookable"
+                >
+                  {subRecipeReady[segment.recipeId]} portions ready
+                </span>
+              ) : null}
+            </span>
           ) : (
             <span key={index}>{segment.text}</span>
           ),

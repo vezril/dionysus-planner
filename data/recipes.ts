@@ -12,6 +12,9 @@ import type { RecipeLineInput, RecipeRecord, RecipeLineRecord } from "@/data/rep
 import * as ingredientRepo from "@/data/repositories/ingredientRepo";
 import type { IngredientRecord } from "@/data/repositories/ingredientRepo";
 import * as pantryRepo from "@/data/repositories/pantryRepo";
+import { parseRecipeRefs } from "@/domain/cooklangParser";
+import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
+import { listBatches, listRecipes as listServiceRecipes } from "@/services/dionysusService";
 import { computeRecipeNutrition } from "@/domain/nutrition";
 import type { RecipeNutrition } from "@/domain/nutrition";
 import { computeCookableAndNearMatch } from "@/domain/matching";
@@ -37,6 +40,9 @@ export interface RecipeDetail {
    * variation, and this recipe's own variations. */
   variantOf: { id: number; name: string } | null;
   variations: Array<{ id: number; name: string }>;
+  /** openspec: subrecipe-ready — remaining batch portions per referenced
+   * sub-recipe id (absent = none / service down). */
+  subRecipeReady: Record<number, number>;
 }
 
 export interface RecipeWriteInputPayload {
@@ -225,7 +231,34 @@ export async function getRecipeDetail(id: number): Promise<RecipeDetail | null> 
     const variations = allRecipes
       .filter((row) => row.variantOfId === id)
       .map((row) => ({ id: row.id, name: row.name }));
-    return { recipe, lines, nutrition, tags, derivedTags, variantOf, variations };
+
+    // openspec: subrecipe-ready — for each [[sub-recipe]] reference, sum
+    // the remaining portions of its cooked batches (service mirror
+    // matched by NAME, same mapping as the planner's ready-to-eat).
+    const subRecipeReady: Record<number, number> = {};
+    const refs = parseRecipeRefs(recipe.instructions);
+    if (refs.length > 0) {
+      try {
+        const baseUrl = resolveDionysusServiceUrl();
+        const [batches, serviceRecipes] = await Promise.all([listBatches(baseUrl), listServiceRecipes(baseUrl)]);
+        const nameByServiceRecipeId = new Map(serviceRecipes.map((row) => [row.id, row.name]));
+        const remainingByName = new Map<string, number>();
+        for (const batch of batches) {
+          const name = nameByServiceRecipeId.get(batch.recipeId);
+          if (name === undefined || batch.remainingPortions <= 0) continue;
+          remainingByName.set(name, Math.round(((remainingByName.get(name) ?? 0) + batch.remainingPortions) * 100) / 100);
+        }
+        for (const ref of refs) {
+          const local = allRecipes.find((row) => row.id === ref.recipeId);
+          const remaining = local ? remainingByName.get(local.name) : undefined;
+          if (remaining !== undefined && remaining > 0) subRecipeReady[ref.recipeId] = remaining;
+        }
+      } catch {
+        // service down — no availability info, links stay plain
+      }
+    }
+
+    return { recipe, lines, nutrition, tags, derivedTags, variantOf, variations, subRecipeReady };
   } finally {
     db.$client.close();
   }
