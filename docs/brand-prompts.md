@@ -13,6 +13,11 @@ reads as one system.
 | demeter | Demeter | amber #EDB417 (--status-near) | wheat-sheaf circuit crown |
 | hermes | Hermes | green #0AE442 (--status-cookable) | winged helm + caduceus signal lines |
 | apollo | Apollo | warm gold-white | laurel sun-ray traces + lyre strings |
+| hephaestus | Hephaestus | molten orange-red (--destructive family) | forge-flame traces, hammer + anvil sparks |
+| argus | Argus | violet (chart-5) | peacock-feather wreath of glowing sensor eyes |
+| muses | The Muses | soft lavender-rose | three overlapping profiles, staff-line and scroll traces |
+| zeus | Zeus | white-hot electric blue | lightning-bolt circuit crown, storm-cloud traces |
+| artemis | Artemis | silver moonlight | crescent diadem, bow + arrow vector, stag antler traces |
 
 ## Dionysus (reverse-engineered from the shipped mark)
 
@@ -50,6 +55,55 @@ reads as one system.
 > strings at the base, dark near-black violet background (#06060F),
 > clean minimal vector lines with a soft neon glow, centered emblem,
 > no text
+
+## Hephaestus
+
+> Cyberpunk neon line-art logo of Hephaestus, Greek god of the forge,
+> rugged bearded profile in glowing cyan circuit-linework, crowned with
+> forge-flame circuit traces in molten orange-red, a hammer over an
+> anvil beneath the profile with sparks as glowing ember nodes, dark
+> near-black violet background (#06060F), clean minimal vector lines
+> with a soft neon glow, centered emblem, no text
+
+## Argus
+
+> Cyberpunk neon line-art logo of Argus Panoptes, the all-seeing
+> watchman of Greek myth, vigilant profile in glowing cyan
+> circuit-linework, wreathed in peacock feathers rendered as violet
+> circuit traces, each feather eye a softly glowing sensor node, a few
+> extra watchful eyes woven into the linework, dark near-black violet
+> background (#06060F), clean minimal vector lines with a soft neon
+> glow, centered emblem, no text
+
+## The Muses
+
+> Cyberpunk neon line-art logo of the Greek Muses, three overlapping
+> serene profiles in glowing cyan circuit-linework fading into each
+> other, laurel sprigs and a flowing musical staff rendered as soft
+> lavender-rose circuit traces winding through their hair, a small
+> unrolling scroll of glowing lines at the base, dark near-black violet
+> background (#06060F), clean minimal vector lines with a soft neon
+> glow, centered emblem, no text
+
+## Zeus
+
+> Cyberpunk neon line-art logo of Zeus, king of the Greek gods, stern
+> bearded profile in glowing cyan circuit-linework, crowned with
+> jagged lightning-bolt circuit traces in white-hot electric blue,
+> storm-cloud contours as layered linework behind the head, one bold
+> thunderbolt held vertical beside the profile, dark near-black violet
+> background (#06060F), clean minimal vector lines with a soft neon
+> glow, centered emblem, no text
+
+## Artemis
+
+> Cyberpunk neon line-art logo of Artemis, Greek goddess of the hunt
+> and moon, focused female profile in glowing cyan circuit-linework,
+> crescent-moon diadem in cool silver-white neon, a drawn bow and
+> nocked arrow as clean vector traces before the profile, faint stag
+> antler circuit lines behind, dark near-black violet background
+> (#06060F), clean minimal vector lines with a soft neon glow,
+> centered emblem, no text
 
 Asset pipeline once generated (per the app-logo change): checkerboard-
 key the export onto the --background violet, re-synthesize the soft
