@@ -75,6 +75,9 @@ test.describe("Meal Log flow", () => {
 
     await expect(page.getByTestId("log-meal-confirmation")).toBeVisible();
 
+    // The action's revalidate can refresh the current route mid-goto
+    // (webkit-visible race) — let the network settle first.
+    await page.waitForLoadState("networkidle");
     await page.goto("/meal-log");
     await expect(page.getByTestId("day-log-meals")).toBeVisible();
     const sodiumText = await page.getByTestId("day-log-total-sodiumMg").innerText();
