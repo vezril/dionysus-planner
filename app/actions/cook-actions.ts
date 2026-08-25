@@ -9,6 +9,8 @@
  * truth: every status is re-derived here.
  */
 import { revalidatePath } from "next/cache";
+import { resolveDionysusTimezone, todayIsoDateIn } from "@/app/lib/dionysusTimezone";
+import { addPlanEntryRecord } from "@/data/planner";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { consumeFromPantry, getAllPantryRows, getIngredientRecordById, getPantryList } from "@/data/pantry";
 import { getGenericLinksMap } from "@/data/ingredients";
@@ -484,6 +486,20 @@ export async function cookRecipe(input: unknown): Promise<ActionResult<CookResul
         }) — log it from Meals › Log.`,
       );
     }
+  }
+
+  // openspec: subrecipes-consume-qol — eaten-now portions land on
+  // today's plan so immediate consumption is always accounted.
+  if (eatenNow > 0) {
+    await addPlanEntryRecord({
+      date: todayIsoDateIn(resolveDionysusTimezone()),
+      kind: "eat_item",
+      recipeId: null,
+      batchId,
+      batchLabel: detail.recipe.name,
+      portions: eatenNow,
+    });
+    revalidatePath("/planner");
   }
 
   revalidatePath("/pantry");

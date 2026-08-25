@@ -11,7 +11,7 @@ import * as ingredientRepo from "@/data/repositories/ingredientRepo";
 import * as plannerRepo from "@/data/repositories/plannerRepo";
 import * as recipeRepo from "@/data/repositories/recipeRepo";
 import { getResolvedTargets } from "@/data/nutritionTargets";
-import { humanizeMentions } from "@/domain/cooklangParser";
+import { humanizeMentions, obsidianizeRecipeRefs } from "@/domain/cooklangParser";
 import type { BackupBundle, BackupPantryRow, BackupProduct, BackupRecipe } from "@/domain/backupMarkdown";
 import { getLogRange, type RangeDayJson } from "@/services/dionysusService";
 
@@ -50,7 +50,7 @@ export async function buildFullBackup(): Promise<FullBackup> {
       derivedTags: (derivedByRecipeId.get(recipe.id) ?? []).filter(
         (tag) => !(tagsByRecipeId.get(recipe.id) ?? []).includes(tag),
       ),
-      instructions: humanizeMentions(recipe.instructions),
+      instructions: humanizeMentions(obsidianizeRecipeRefs(recipe.instructions)),
       lines: recipe.lines.map((line) => ({
         displayQuantity: line.displayQuantity,
         displayUnit: line.displayUnit,

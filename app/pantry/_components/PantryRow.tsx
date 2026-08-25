@@ -14,6 +14,7 @@ import { EditPantryItemDialog } from "@/app/pantry/_components/EditPantryItemDia
 import { RemovePantryItemDialog } from "@/app/pantry/_components/RemovePantryItemDialog";
 import { Button } from "@/components/ui/button";
 import type { PantryListRow } from "@/data/pantry";
+import { AdjustQuantityButton } from "./AdjustQuantityButton";
 import { EatItemButton } from "./EatItemButton";
 import { computeFreshness } from "@/domain/freshness";
 
@@ -79,9 +80,11 @@ export function PantryRow({ item }: { item: PantryListRow }) {
         // Empty cell keeps the grid tracks aligned for out-of-stock rows.
         <span aria-hidden className="hidden sm:block" />
       )}
-      <div className="flex shrink-0 gap-2 sm:justify-self-end">
+      <div className="flex max-w-full flex-wrap justify-end gap-2 sm:justify-self-end">
         {/* openspec: pantry-quick-eat */}
         {item.readyToEat && item.displayQuantity > 0 ? <EatItemButton item={item} /> : null}
+        {/* openspec: subrecipes-consume-qol */}
+        {item.displayQuantity > 0 ? <AdjustQuantityButton item={item} /> : null}
         <Button type="button" size="sm" variant="outline" onClick={() => setEditOpen(true)}>
           Edit
         </Button>

@@ -12,6 +12,8 @@
  * dionysus-service, always caught and mapped, never an unhandled exception.
  */
 import { revalidatePath } from "next/cache";
+import { resolveDionysusTimezone, todayIsoDateIn } from "@/app/lib/dionysusTimezone";
+import { addPlanEntryRecord } from "@/data/planner";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import {
   mealLogBatchSchema,
@@ -25,6 +27,8 @@ import {
   createIngredient as serviceCreateIngredient,
   createMeal as serviceCreateMeal,
   createRecipe as serviceCreateRecipe,
+  listBatches,
+  listRecipes,
   type BatchJson,
   type IngredientJson,
   type MealJson,
@@ -155,6 +159,20 @@ export async function quickLogBatchPortion(batchId: number): Promise<ActionResul
       eatenAt: new Date().toISOString(),
       lines: [{ lineType: "batch_portion", batchId, portions: 1 }],
     });
+    // openspec: subrecipes-consume-qol — the logged portion lands on
+    // today's plan so immediate consumption is always accounted.
+    const [batches, recipes] = await Promise.all([listBatches(baseUrl), listRecipes(baseUrl)]);
+    const batch = batches.find((candidate) => candidate.id === batchId);
+    const label = batch ? (recipes.find((recipe) => recipe.id === batch.recipeId)?.name ?? `Batch #${batchId}`) : `Batch #${batchId}`;
+    await addPlanEntryRecord({
+      date: todayIsoDateIn(resolveDionysusTimezone()),
+      kind: "eat_item",
+      recipeId: null,
+      batchId,
+      batchLabel: label,
+      portions: 1,
+    });
+    revalidatePath("/planner");
     revalidatePath("/meal-log");
     revalidatePath("/meal-log/batches");
     return { ok: true, data };

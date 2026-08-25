@@ -7,7 +7,7 @@ import { getRecipeDetail } from "@/data/recipes";
 import { getResolvedTargets } from "@/data/nutritionTargets";
 import { percentOfTarget } from "@/domain/nutritionTargets";
 import type { NutritionTotals } from "@/domain/nutrition";
-import { humanizeMentions } from "@/domain/cooklangParser";
+import { splitInstructionSegments } from "@/domain/cooklangParser";
 import { computeRecipeAbv } from "@/domain/abv";
 import { DeleteRecipeButton } from "@/app/recipes/_components/delete-recipe-button";
 import { PortionScaler } from "./_components/PortionScaler";
@@ -133,7 +133,22 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
       {/* openspec: recipe-display-polish — mentions render as plain prose;
           quantities live in the ingredient list below. */}
       <p data-testid="recipe-instructions" className="whitespace-pre-wrap text-sm">
-        {humanizeMentions(recipe.instructions)}
+        {/* openspec: subrecipes-consume-qol — [[sub-recipe]] refs render
+            as links to their recipe pages. */}
+        {splitInstructionSegments(recipe.instructions).map((segment, index) =>
+          segment.type === "recipeRef" ? (
+            <Link
+              key={index}
+              href={`/recipes/${segment.recipeId}`}
+              data-testid="subrecipe-link"
+              className="font-medium text-primary hover:underline"
+            >
+              {segment.text}
+            </Link>
+          ) : (
+            <span key={index}>{segment.text}</span>
+          ),
+        )}
       </p>
 
       {tags.length > 0 || derivedTags.length > 0 ? (

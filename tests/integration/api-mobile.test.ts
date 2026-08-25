@@ -40,8 +40,8 @@ vi.mock("@/services/dionysusService", () => ({
     serviceMock.meals.push(created);
     return created;
   }),
-  listBatches: vi.fn(async () => []),
-  listRecipes: vi.fn(async () => []),
+  listBatches: vi.fn(async () => [{ id: 42, recipeId: 7, cookedAt: "2026-08-20T12:00:00Z", servingsMade: 4, remainingPortions: 3 }]),
+  listRecipes: vi.fn(async () => [{ id: 7, name: "Mobile Chili" }]),
   getDayLog: vi.fn(async () => {
     if (serviceMock.fail) throw new Error("down");
     return { date: "2026-08-21", totalNutrition: { caloriesKcal: 0 }, meals: [] };
@@ -186,7 +186,24 @@ describe("mobile API", () => {
     expect(removed.status).toBe(204);
   });
 
-  it("log-range validates its dates", async () => {
+  // openspec: subrecipes-consume-qol — one-tap portion log lands on
+  // today's plan too.
+  it("POST log-portion logs the meal AND records today's eat_item plan entry", async () => {
+    const { POST } = await import("@/app/api/mobile/log-portion/route");
+    const response = await POST(jsonRequest("http://x/api/mobile/log-portion", "POST", { batchId: 42 }));
+    expect(response.status).toBe(200);
+    expect(serviceMock.meals).toHaveLength(1);
+    const sqlite = new Database(dbPath);
+    const rows = sqlite.prepare("SELECT kind, batchLabel, portions FROM plan_entry").all() as Array<{
+      kind: string;
+      batchLabel: string;
+      portions: number;
+    }>;
+    sqlite.close();
+    expect(rows).toEqual([{ kind: "eat_item", batchLabel: "Mobile Chili", portions: 1 }]);
+  });
+
+    it("log-range validates its dates", async () => {
     const { GET } = await import("@/app/api/mobile/log-range/route");
     expect((await GET(new Request("http://x/api/mobile/log-range"))).status).toBe(400);
     expect((await GET(new Request("http://x/api/mobile/log-range?from=2026-08-01&to=2026-08-21"))).status).toBe(200);
