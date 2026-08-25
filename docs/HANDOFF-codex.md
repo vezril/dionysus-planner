@@ -126,3 +126,11 @@ OpenSpec changes with full deltas live in `openspec/changes/archive/`.
 
 Current state: planner v2.31.0 live (helm revision 35), 737
 unit+integration tests, ~122 chromium e2e, migrations 0003–0015.
+
+## Brand prompts (2026-08-25)
+
+The neon god-mark generation prompts for the service family live in
+[brand-prompts.md](brand-prompts.md) — Dionysus (shipped), plus
+Demeter, Hermes, and Apollo, with the per-god accent colors mapped to
+the ui-theme palette and the asset-pipeline steps. Use them verbatim
+when a new service needs its mark so the set stays visually coherent.
