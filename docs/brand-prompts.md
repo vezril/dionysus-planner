@@ -27,6 +27,8 @@ reads as one system.
 
 ## Dionysus (reverse-engineered from the shipped mark)
 
+![Dionysus](brand/dionysus.png)
+
 > Cyberpunk neon line-art logo of Dionysus, Greek god of wine, serene
 > male profile in glowing cyan circuit-linework, crowned with an ivy
 > and grapevine wreath rendered as circuit traces, grape clusters as
@@ -35,6 +37,8 @@ reads as one system.
 > no text
 
 ## Demeter
+
+![Demeter](brand/demeter.png)
 
 > Cyberpunk neon line-art logo of Demeter, Greek goddess of the
 > harvest, serene female profile in glowing cyan circuit-linework,
@@ -45,6 +49,8 @@ reads as one system.
 
 ## Hermes
 
+![Hermes](brand/hermes.png)
+
 > Cyberpunk neon line-art logo of Hermes, Greek messenger god, sharp
 > youthful profile in glowing cyan circuit-linework, winged helm with
 > feathers as swept neon-green circuit traces, a small caduceus with
@@ -53,6 +59,8 @@ reads as one system.
 > minimal vector lines with a soft neon glow, centered emblem, no text
 
 ## Apollo
+
+![Apollo](brand/apollo.png)
 
 > Cyberpunk neon line-art logo of Apollo, Greek god of the sun and
 > music, classical male profile in glowing cyan circuit-linework,
@@ -64,6 +72,8 @@ reads as one system.
 
 ## Hephaestus
 
+![Hephaestus](brand/hephaestus.png)
+
 > Cyberpunk neon line-art logo of Hephaestus, Greek god of the forge,
 > rugged bearded profile in glowing cyan circuit-linework, crowned with
 > forge-flame circuit traces in molten orange-red, a hammer over an
@@ -72,6 +82,8 @@ reads as one system.
 > with a soft neon glow, centered emblem, no text
 
 ## Argus
+
+![Argus](brand/argus.png)
 
 > Cyberpunk neon line-art logo of Argus Panoptes, the all-seeing
 > watchman of Greek myth, vigilant profile in glowing cyan
@@ -83,6 +95,8 @@ reads as one system.
 
 ## The Muses
 
+![The Muses](brand/muses.png)
+
 > Cyberpunk neon line-art logo of the Greek Muses, three overlapping
 > serene profiles in glowing cyan circuit-linework fading into each
 > other, laurel sprigs and a flowing musical staff rendered as soft
@@ -93,6 +107,8 @@ reads as one system.
 
 ## Zeus
 
+![Zeus](brand/zeus.png)
+
 > Cyberpunk neon line-art logo of Zeus, king of the Greek gods, stern
 > bearded profile in glowing cyan circuit-linework, crowned with
 > jagged lightning-bolt circuit traces in white-hot electric blue,
@@ -102,6 +118,8 @@ reads as one system.
 > glow, centered emblem, no text
 
 ## Artemis
+
+![Artemis](brand/artemis.png)
 
 > Cyberpunk neon line-art logo of Artemis, Greek goddess of the hunt
 > and moon, focused female profile in glowing cyan circuit-linework,
