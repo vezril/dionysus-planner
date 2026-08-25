@@ -93,3 +93,48 @@ export function stripMentionIds(body: string): string {
 export function humanizeMentions(body: string): string {
   return body.replace(MENTION_PATTERN, (_fullMatch, name: string) => name);
 }
+
+// openspec: subrecipes-consume-qol — Obsidian-style sub-recipe links.
+// `[[Name(id)]]`, id captured at authoring time by the editor's `[[`
+// autocomplete (same explicit-id posture as ingredient mentions).
+const RECIPE_REF_PATTERN = /\[\[([^\]()]+?)\((\d+)\)\]\]/g;
+
+export interface RecipeRef {
+  recipeId: number;
+  name: string;
+}
+
+/** Every `[[Name(id)]]` reference in the body, in order. */
+export function parseRecipeRefs(body: string): RecipeRef[] {
+  return [...body.matchAll(RECIPE_REF_PATTERN)].map((match) => ({
+    recipeId: Number(match[2]),
+    name: match[1].trim(),
+  }));
+}
+
+export type InstructionSegment =
+  | { type: "text"; text: string }
+  | { type: "recipeRef"; text: string; recipeId: number };
+
+/**
+ * Splits humanized instructions into prose and sub-recipe link
+ * segments so read views can render clickable references. Text
+ * segments arrive already humanized (mention ids stripped).
+ */
+export function splitInstructionSegments(body: string): InstructionSegment[] {
+  const segments: InstructionSegment[] = [];
+  let cursor = 0;
+  for (const match of body.matchAll(RECIPE_REF_PATTERN)) {
+    const index = match.index ?? 0;
+    if (index > cursor) segments.push({ type: "text", text: humanizeMentions(body.slice(cursor, index)) });
+    segments.push({ type: "recipeRef", text: match[1].trim(), recipeId: Number(match[2]) });
+    cursor = index + match[0].length;
+  }
+  if (cursor < body.length) segments.push({ type: "text", text: humanizeMentions(body.slice(cursor)) });
+  return segments;
+}
+
+/** `[[Name(id)]]` → `[[Name]]` — real Obsidian links in the vault. */
+export function obsidianizeRecipeRefs(body: string): string {
+  return body.replace(RECIPE_REF_PATTERN, (_full, name: string) => `[[${name.trim()}]]`);
+}

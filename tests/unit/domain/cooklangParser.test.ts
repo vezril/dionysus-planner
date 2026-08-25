@@ -137,3 +137,37 @@ describe("humanizeMentions (openspec: recipe-display-polish)", () => {
     expect(humanizeMentions("Email me @ home. No mentions here.")).toBe("Email me @ home. No mentions here.");
   });
 });
+
+// openspec: subrecipes-consume-qol — [[sub-recipe]] references.
+import {
+  obsidianizeRecipeRefs,
+  parseRecipeRefs,
+  splitInstructionSegments,
+} from "@/domain/cooklangParser";
+
+describe("recipe refs", () => {
+  const body = "Season with @Paprika(4){1%tsp}, then make [[Cajun Spice Mix(12)]] and serve.";
+
+  it("parses [[Name(id)]] references", () => {
+    expect(parseRecipeRefs(body)).toEqual([{ recipeId: 12, name: "Cajun Spice Mix" }]);
+    expect(parseRecipeRefs("no refs @Salt(1){1%g}")).toEqual([]);
+  });
+
+  it("splits instructions into humanized text and link segments", () => {
+    expect(splitInstructionSegments(body)).toEqual([
+      { type: "text", text: "Season with Paprika, then make " },
+      { type: "recipeRef", text: "Cajun Spice Mix", recipeId: 12 },
+      { type: "text", text: " and serve." },
+    ]);
+  });
+
+  it("obsidianizes refs for the vault export", () => {
+    expect(obsidianizeRecipeRefs(body)).toBe(
+      "Season with @Paprika(4){1%tsp}, then make [[Cajun Spice Mix]] and serve.",
+    );
+  });
+
+  it("ignores malformed refs", () => {
+    expect(parseRecipeRefs("[[No Id]] and [[Trailing(abc)]]")).toEqual([]);
+  });
+});

@@ -100,6 +100,16 @@ function findMentionQueryAtCaret(text: string, caretIndex: number): { start: num
   return { start: atIndex, query: between };
 }
 
+/** openspec: subrecipes-consume-qol — the `[[query` the caret sits in. */
+function findRecipeQueryAtCaret(text: string, caretIndex: number): { start: number; query: string } | null {
+  const uptoCaret = text.slice(0, caretIndex);
+  const openIndex = uptoCaret.lastIndexOf("[[");
+  if (openIndex === -1) return null;
+  const between = uptoCaret.slice(openIndex + 2);
+  if (/[\n\](){}@]/.test(between)) return null;
+  return { start: openIndex, query: between };
+}
+
 export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProps) {
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -111,6 +121,9 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
   const [tagsError, setTagsError] = useState<string | null>(null);
   const [mentionOptions, setMentionOptions] = useState<IngredientOption[]>([]);
   const [mentionQueryStart, setMentionQueryStart] = useState<number | null>(null);
+  // openspec: subrecipes-consume-qol — `[[` recipe-link autocomplete.
+  const [recipeOptions, setRecipeOptions] = useState<Array<{ id: number; name: string }>>([]);
+  const [recipeQueryStart, setRecipeQueryStart] = useState<number | null>(null);
 
   const {
     register,
@@ -134,6 +147,25 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
     void bodyRegistration.onChange(event);
     const textarea = event.target;
     const caretIndex = textarea.selectionStart ?? textarea.value.length;
+
+    // openspec: subrecipes-consume-qol — `[[` wins over `@` when both
+    // could match (a recipe query is the more recent trigger).
+    const recipeQuery = findRecipeQueryAtCaret(textarea.value, caretIndex);
+    if (recipeQuery !== null && recipeQuery.query.trim() !== "") {
+      setMentionOptions([]);
+      setMentionQueryStart(null);
+      setRecipeQueryStart(recipeQuery.start);
+      try {
+        const response = await fetch(`/api/recipes?q=${encodeURIComponent(recipeQuery.query)}`);
+        setRecipeOptions((await response.json()) as Array<{ id: number; name: string }>);
+      } catch {
+        setRecipeOptions([]);
+      }
+      return;
+    }
+    setRecipeOptions([]);
+    setRecipeQueryStart(null);
+
     const mentionQuery = findMentionQueryAtCaret(textarea.value, caretIndex);
 
     if (mentionQuery === null || mentionQuery.query.trim() === "") {
@@ -176,6 +208,23 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
     setValue("body", nextValue, { shouldDirty: true });
     setMentionOptions([]);
     setMentionQueryStart(null);
+  }
+
+  function insertRecipeRef(option: { id: number; name: string }) {
+    const textarea = textareaRef.current;
+    if (recipeQueryStart === null || !textarea) return;
+    const caretIndex = textarea.selectionStart ?? bodyValue.length;
+    const before = bodyValue.slice(0, recipeQueryStart);
+    const after = bodyValue.slice(caretIndex);
+    const inserted = `[[${option.name}(${option.id})]]`;
+    const nextValue = `${before}${inserted}${after}`;
+    textarea.value = nextValue;
+    const cursor = before.length + inserted.length;
+    textarea.focus();
+    textarea.setSelectionRange(cursor, cursor);
+    setValue("body", nextValue, { shouldDirty: true });
+    setRecipeOptions([]);
+    setRecipeQueryStart(null);
   }
 
   function commitTagDraft() {
@@ -265,7 +314,7 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
           <Textarea
             id="recipe-instructions"
             className="min-h-40 w-full max-w-2xl font-mono"
-            placeholder={"Fry the @onion in butter...\nType @ to link an ingredient."}
+            placeholder={"Fry the @onion in butter...\nType @ to link an ingredient, [[ to link a recipe."}
             {...bodyRegistration}
             ref={(node) => {
               bodyRegistration.ref(node);
@@ -287,6 +336,25 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
                     onClick={() => insertMention(option)}
                   >
                     {option.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {recipeOptions.length > 0 ? (
+            <ul
+              data-testid="recipe-ref-suggestions"
+              className="w-full max-w-2xl rounded-lg border border-border bg-popover shadow-md"
+            >
+              {recipeOptions.map((option) => (
+                <li key={option.id}>
+                  <button
+                    type="button"
+                    data-testid="recipe-ref-option"
+                    className="block w-full px-2.5 py-1.5 text-left text-sm hover:bg-muted"
+                    onClick={() => insertRecipeRef(option)}
+                  >
+                    {option.name} <span className="text-xs text-muted-foreground">— recipe</span>
                   </button>
                 </li>
               ))}

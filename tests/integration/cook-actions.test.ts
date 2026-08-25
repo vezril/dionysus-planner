@@ -342,4 +342,46 @@ describe("cookRecipe", () => {
   });
 });
 
+
+  // openspec: subrecipes-consume-qol — eaten-now lands on today's plan.
+  it("eating portions now records an eat_item plan entry on today", async () => {
+    const { cookRecipe } = await import("@/app/actions/cook-actions");
+    const [sodaLine, flourLine] = lineIds();
+    const result = await cookRecipe({
+      recipeId,
+      portions: 2,
+      eatNowPortions: 1,
+      lines: [
+        { lineId: sodaLine, action: "consume" },
+        { lineId: flourLine, action: "ignore" },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    const sqlite = new Database(dbPath);
+    const rows = sqlite.prepare("SELECT kind, batchLabel, portions FROM plan_entry").all() as Array<{
+      kind: string;
+      batchLabel: string;
+      portions: number;
+    }>;
+    sqlite.close();
+    expect(rows).toEqual([{ kind: "eat_item", batchLabel: "Cook Test Recipe", portions: 1 }]);
+  });
+
+  it("eating nothing now records no plan entry", async () => {
+    const { cookRecipe } = await import("@/app/actions/cook-actions");
+    const [sodaLine, flourLine] = lineIds();
+    await cookRecipe({
+      recipeId,
+      portions: 1,
+      eatNowPortions: 0,
+      lines: [
+        { lineId: sodaLine, action: "consume" },
+        { lineId: flourLine, action: "ignore" },
+      ],
+    });
+    const sqlite = new Database(dbPath);
+    const count = (sqlite.prepare("SELECT COUNT(*) AS n FROM plan_entry").get() as { n: number }).n;
+    sqlite.close();
+    expect(count).toBe(0);
+  });
 });
