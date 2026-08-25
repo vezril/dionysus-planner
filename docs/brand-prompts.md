@@ -18,6 +18,12 @@ reads as one system.
 | muses | The Muses | soft lavender-rose | three overlapping profiles, staff-line and scroll traces |
 | zeus | Zeus | white-hot electric blue | lightning-bolt circuit crown, storm-cloud traces |
 | artemis | Artemis | silver moonlight | crescent diadem, bow + arrow vector, stag antler traces |
+| hera | Hera | imperial rose-gold | regal diadem, peacock-feather scepter, pomegranate node |
+| poseidon | Poseidon | deep sapphire | trident, cresting wave traces, sea-foam nodes |
+| ares | Ares | blood crimson | Corinthian war helm, crossed spear, shield ring |
+| athena | Athena | steel-bronze + olive green | crested helm, perched owl, olive sprig traces |
+| aphrodite | Aphrodite | soft coral-pink | rose bloom, scallop shell arc, dove line |
+| hestia | Hestia | warm ember gold | round hearth ring, contained flame, rising warmth lines |
 
 ## Dionysus (reverse-engineered from the shipped mark)
 
@@ -104,6 +110,64 @@ reads as one system.
 > antler circuit lines behind, dark near-black violet background
 > (#06060F), clean minimal vector lines with a soft neon glow,
 > centered emblem, no text
+
+## Hera
+
+> Cyberpunk neon line-art logo of Hera, queen of the Greek gods, regal
+> female profile in glowing cyan circuit-linework, tall imperial diadem
+> rendered as rose-gold circuit traces, a slender scepter tipped with a
+> single peacock-feather eye beside the profile, a small glowing
+> pomegranate node at the base, dark near-black violet background
+> (#06060F), clean minimal vector lines with a soft neon glow, centered
+> emblem, no text
+
+## Poseidon
+
+> Cyberpunk neon line-art logo of Poseidon, Greek god of the sea, strong
+> bearded profile in glowing cyan circuit-linework, a bold trident in
+> deep sapphire neon rising beside the head, cresting wave contours as
+> layered circuit traces around the shoulders, small sea-foam nodes
+> along the crests, dark near-black violet background (#06060F), clean
+> minimal vector lines with a soft neon glow, centered emblem, no text
+
+## Ares
+
+> Cyberpunk neon line-art logo of Ares, Greek god of war, hard-edged
+> profile wearing a crested Corinthian helm in glowing cyan
+> circuit-linework, the crest and cheek guards traced in blood-crimson
+> neon, a crossed spear behind a circular shield ring of circuit
+> segments, dark near-black violet background (#06060F), clean minimal
+> vector lines with a soft neon glow, centered emblem, no text
+
+## Athena
+
+> Cyberpunk neon line-art logo of Athena, Greek goddess of wisdom and
+> strategy, composed female profile in glowing cyan circuit-linework
+> wearing a crested helm traced in steel-bronze neon, a small owl
+> perched on the shoulder with round glowing eyes, an olive sprig in
+> soft olive-green circuit traces at the base, dark near-black violet
+> background (#06060F), clean minimal vector lines with a soft neon
+> glow, centered emblem, no text
+
+## Aphrodite
+
+> Cyberpunk neon line-art logo of Aphrodite, Greek goddess of love and
+> beauty, graceful female profile in glowing cyan circuit-linework with
+> flowing hair, a blooming rose rendered in soft coral-pink circuit
+> traces woven into the hair, a scallop-shell arc of fine lines behind
+> the head and a single dove outline in flight, dark near-black violet
+> background (#06060F), clean minimal vector lines with a soft neon
+> glow, centered emblem, no text
+
+## Hestia
+
+> Cyberpunk neon line-art logo of Hestia, Greek goddess of the hearth,
+> serene hooded female profile in glowing cyan circuit-linework, a
+> perfect round hearth ring below the profile holding a contained flame
+> traced in warm ember-gold neon, gentle rising warmth lines as soft
+> circuit traces, a feeling of calm and home, dark near-black violet
+> background (#06060F), clean minimal vector lines with a soft neon
+> glow, centered emblem, no text
 
 Asset pipeline once generated (per the app-logo change): checkerboard-
 key the export onto the --background violet, re-synthesize the soft
