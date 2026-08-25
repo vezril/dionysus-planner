@@ -7,6 +7,10 @@ the ui-theme --background), clean minimal vector lines, soft glow,
 centered emblem, no text. Accents map to the theme palette so the set
 reads as one system.
 
+> **UI integration:** how these accents map to each service's frontend tokens is specified in
+> the codex repo → [`docs/ux-standards.md`](https://github.com/vezril/codex/blob/main/docs/ux-standards.md)
+> (shared cyberpunk base + per-service accent recipe).
+
 | Service | God | Accent | Motif |
 | --- | --- | --- | --- |
 | dionysus | Dionysus | magenta #FF30D3 (--accent) | grape clusters + vine circuit-wreath |
@@ -134,6 +138,8 @@ reads as one system.
 
 ## Hera
 
+![Hera](brand/hera.png)
+
 > Cyberpunk neon line-art logo of Hera, queen of the Greek gods, regal
 > female profile in glowing cyan circuit-linework, tall imperial diadem
 > rendered as rose-gold circuit traces, a slender scepter tipped with a
@@ -144,6 +150,8 @@ reads as one system.
 
 ## Poseidon
 
+![Poseidon](brand/poseidon.png)
+
 > Cyberpunk neon line-art logo of Poseidon, Greek god of the sea, strong
 > bearded profile in glowing cyan circuit-linework, a bold trident in
 > deep sapphire neon rising beside the head, cresting wave contours as
@@ -153,6 +161,8 @@ reads as one system.
 
 ## Ares
 
+![Ares](brand/ares.png)
+
 > Cyberpunk neon line-art logo of Ares, Greek god of war, hard-edged
 > profile wearing a crested Corinthian helm in glowing cyan
 > circuit-linework, the crest and cheek guards traced in blood-crimson
@@ -161,6 +171,8 @@ reads as one system.
 > vector lines with a soft neon glow, centered emblem, no text
 
 ## Athena
+
+![Athena](brand/athena.png)
 
 > Cyberpunk neon line-art logo of Athena, Greek goddess of wisdom and
 > strategy, composed female profile in glowing cyan circuit-linework
@@ -172,6 +184,8 @@ reads as one system.
 
 ## Aphrodite
 
+![Aphrodite](brand/aphrodite.png)
+
 > Cyberpunk neon line-art logo of Aphrodite, Greek goddess of love and
 > beauty, graceful female profile in glowing cyan circuit-linework with
 > flowing hair, a blooming rose rendered in soft coral-pink circuit
@@ -181,6 +195,8 @@ reads as one system.
 > glow, centered emblem, no text
 
 ## Hestia
+
+![Hestia](brand/hestia.png)
 
 > Cyberpunk neon line-art logo of Hestia, Greek goddess of the hearth,
 > serene hooded female profile in glowing cyan circuit-linework, a
