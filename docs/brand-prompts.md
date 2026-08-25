@@ -7,6 +7,10 @@ the ui-theme --background), clean minimal vector lines, soft glow,
 centered emblem, no text. Accents map to the theme palette so the set
 reads as one system.
 
+> **UI integration:** how these accents map to each service's frontend tokens is specified in
+> the codex repo → [`docs/ux-standards.md`](https://github.com/vezril/codex/blob/main/docs/ux-standards.md)
+> (shared cyberpunk base + per-service accent recipe).
+
 | Service | God | Accent | Motif |
 | --- | --- | --- | --- |
 | dionysus | Dionysus | magenta #FF30D3 (--accent) | grape clusters + vine circuit-wreath |
