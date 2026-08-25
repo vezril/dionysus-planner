@@ -131,6 +131,24 @@ unit+integration tests, ~122 chromium e2e, migrations 0003–0015.
 
 The neon god-mark generation prompts for the service family live in
 [brand-prompts.md](brand-prompts.md) — Dionysus (shipped), plus
-Demeter, Hermes, and Apollo, with the per-god accent colors mapped to
-the ui-theme palette and the asset-pipeline steps. Use them verbatim
-when a new service needs its mark so the set stays visually coherent.
+Demeter, Hermes, Apollo, Hephaestus, Argus, the Muses, Zeus, and
+Artemis, with the per-god accent colors mapped to the ui-theme palette
+and the asset-pipeline steps. Use them verbatim when a new service
+needs its mark so the set stays visually coherent.
+
+### TASK for Codex: embed the generated marks (2026-08-25)
+
+Calvin is generating the logo images from these prompts now. When the
+image files land (expect PNGs named for their god — ask him where he
+dropped them if they are not already in the repo):
+
+1. Put the source exports under `docs/brand/<god>.png` in
+   dionysus-planner.
+2. Embed each mark in `docs/brand-prompts.md` directly above its
+   prompt (`![<God>](brand/<god>.png)`) so the doc shows prompt +
+   result side by side.
+3. Leave the per-service favicon/app-icon pipeline (checkerboard-key
+   onto #06060F, re-synthesize glow, cut icon.png/apple-icon.png/
+   logo.png) to each service's own repo when that service exists —
+   the planner repo only archives the masters.
+4. Land it as a small docs PR through the normal gate.
