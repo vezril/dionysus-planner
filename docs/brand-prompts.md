@@ -24,6 +24,9 @@ reads as one system.
 | athena | Athena | steel-bronze + olive green | crested helm, perched owl, olive sprig traces |
 | aphrodite | Aphrodite | soft coral-pink | rose bloom, scallop shell arc, dove line |
 | hestia | Hestia | warm ember gold | round hearth ring, contained flame, rising warmth lines |
+| hades | Hades | spectral pale jade | bident, Cerberus silhouette, helm-of-darkness shroud |
+| persephone | Persephone | blossom pink → pomegranate crimson | split floral/seed crown, duality of seasons |
+| styx | Styx | icy spectral mist | winding river current, oath ripples, ferry lantern node |
 
 ## Dionysus (reverse-engineered from the shipped mark)
 
@@ -186,6 +189,38 @@ reads as one system.
 > circuit traces, a feeling of calm and home, dark near-black violet
 > background (#06060F), clean minimal vector lines with a soft neon
 > glow, centered emblem, no text
+
+## Hades
+
+> Cyberpunk neon line-art logo of Hades, Greek god of the underworld,
+> stern shadowed profile facing right in glowing cyan circuit-linework,
+> a two-pronged bident in spectral pale-jade neon beside the head, the
+> faint three-headed silhouette of Cerberus as ghost-light circuit
+> traces below, a dark helm shroud suggested by broken linework around
+> the crown, dark near-black violet background (#06060F), clean minimal
+> vector lines with a soft neon glow, centered emblem, no text
+
+## Persephone
+
+> Cyberpunk neon line-art logo of Persephone, Greek goddess of spring
+> and queen of the underworld, serene female profile facing right in
+> glowing cyan circuit-linework, a split crown — blooming petals in
+> soft blossom-pink circuit traces on one side flowing into pomegranate
+> seeds in deep crimson neon on the other — capturing the duality of
+> seasons, a single falling petal and a single seed as glowing nodes,
+> dark near-black violet background (#06060F), clean minimal vector
+> lines with a soft neon glow, centered emblem, no text
+
+## Styx
+
+> Cyberpunk neon line-art logo of the river Styx, personified as a
+> veiled female profile facing right in glowing cyan circuit-linework,
+> her hair flowing into a winding river of icy spectral-mist neon
+> current lines that loops beneath the portrait, concentric oath
+> ripples as fine circuit arcs, a small ferry lantern as a single warm
+> glowing node on the water, dark near-black violet background
+> (#06060F), clean minimal vector lines with a soft neon glow, centered
+> emblem, no text
 
 Asset pipeline once generated (per the app-logo change): checkerboard-
 key the export onto the --background violet, re-synthesize the soft
