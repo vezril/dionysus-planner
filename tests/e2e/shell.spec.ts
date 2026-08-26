@@ -254,3 +254,23 @@ test.describe("S-105 app shell at 375px (NFR-8)", () => {
     }
   });
 });
+
+// openspec: api-docs — the reference page renders every documented
+// operation and links the collection.
+import { test as apiDocsTest, expect as apiDocsExpect } from "@playwright/test";
+apiDocsTest.describe("api docs", () => {
+  apiDocsTest.beforeEach(({}, testInfo) => {
+    apiDocsTest.skip(testInfo.project.name !== "chromium", "functional ACs verified once on chromium");
+  });
+
+  apiDocsTest("renders operations and serves spec + collection", async ({ page, request }) => {
+    await page.goto("/api-docs");
+    apiDocsExpect(await page.getByTestId("api-operation").count()).toBeGreaterThanOrEqual(15);
+    await apiDocsExpect(page.getByRole("link", { name: "Insomnia collection" })).toBeVisible();
+    const spec = await request.get("/api/openapi");
+    apiDocsExpect(spec.status()).toBe(200);
+    apiDocsExpect(((await spec.json()) as { openapi: string }).openapi).toBe("3.1.0");
+    const collection = await request.get("/insomnia-collection.json");
+    apiDocsExpect(collection.status()).toBe(200);
+  });
+});

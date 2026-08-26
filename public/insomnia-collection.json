@@ -1,0 +1,376 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-01-01T00:00:00.000Z",
+  "__export_source": "dionysus-planner/scripts/generate-insomnia.mjs",
+  "resources": [
+    {
+      "_id": "wrk_dionysus",
+      "_type": "workspace",
+      "name": "Dionysus Planner API",
+      "description": "The planner's HTTP surface: catalog reads, the mobile companion API, backup export, and category defaults. No authentication — the server is reachable only on the private LAN (dionysus.lan) and the Tailscale tailnet (mimir.tail783b49.ts.net); never expose it publicly.",
+      "scope": "collection",
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "env_dionysus",
+      "_type": "environment",
+      "parentId": "wrk_dionysus",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://dionysus.lan:61642",
+        "tailnet_url": "http://mimir.tail783b49.ts.net:61642"
+      },
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "fld_core",
+      "_type": "request_group",
+      "parentId": "wrk_dionysus",
+      "name": "core",
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_001",
+      "_type": "request",
+      "parentId": "fld_core",
+      "name": "GET /api/health",
+      "description": "Liveness probe",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/health",
+      "parameters": [],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_002",
+      "_type": "request",
+      "parentId": "fld_core",
+      "name": "GET /api/ingredients",
+      "description": "Search the product catalog by name",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/ingredients",
+      "parameters": [
+        {
+          "name": "q",
+          "value": "",
+          "disabled": true
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_003",
+      "_type": "request",
+      "parentId": "fld_core",
+      "name": "GET /api/recipes",
+      "description": "Search recipes by name (sub-recipe autocomplete)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/recipes",
+      "parameters": [
+        {
+          "name": "q",
+          "value": "",
+          "disabled": true
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_004",
+      "_type": "request",
+      "parentId": "fld_core",
+      "name": "GET /api/what-can-i-cook",
+      "description": "Cookability of every recipe against current pantry stock",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/what-can-i-cook",
+      "parameters": [
+        {
+          "name": "threshold",
+          "value": "",
+          "disabled": true
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "fld_categories",
+      "_type": "request_group",
+      "parentId": "wrk_dionysus",
+      "name": "categories",
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_005",
+      "_type": "request",
+      "parentId": "fld_categories",
+      "name": "GET /api/category-defaults",
+      "description": "Resolve nutrition defaults for a category list\n\nDeepest matching path wins (exact before ancestor, first-listed tie-break, case-insensitive).",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/category-defaults",
+      "parameters": [
+        {
+          "name": "categories",
+          "value": "",
+          "disabled": false
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "fld_mobile",
+      "_type": "request_group",
+      "parentId": "wrk_dionysus",
+      "name": "mobile",
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_006",
+      "_type": "request",
+      "parentId": "fld_mobile",
+      "name": "GET /api/mobile/pantry",
+      "description": "Pantry rows",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/mobile/pantry",
+      "parameters": [],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_007",
+      "_type": "request",
+      "parentId": "fld_mobile",
+      "name": "POST /api/mobile/eat",
+      "description": "Quick-consume a ready-to-eat pantry item\n\nService-first, all-or-nothing: logs the meal in the inventory service, consumes the pantry, records today's eat_item plan entry. Optional date (past or today) backdates the log.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/mobile/eat",
+      "parameters": [],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pantryItemId\": 0,\n  \"quantity\": 0,\n  \"unit\": \"each\",\n  \"date\": \"\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_008",
+      "_type": "request",
+      "parentId": "fld_mobile",
+      "name": "GET /api/mobile/products",
+      "description": "Look a product up by barcode",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/mobile/products",
+      "parameters": [
+        {
+          "name": "barcode",
+          "value": "",
+          "disabled": false
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_009",
+      "_type": "request",
+      "parentId": "fld_mobile",
+      "name": "POST /api/mobile/products",
+      "description": "Create a product (scanner flow), optionally with initial stock",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/mobile/products",
+      "parameters": [],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"\",\n  \"unitClass\": \"\",\n  \"category\": \"\",\n  \"barcode\": \"\",\n  \"brand\": \"\",\n  \"nutritionBasisQuantity\": 100,\n  \"nutritionBasisUnit\": \"mL\",\n  \"caloriesPerRef\": 0,\n  \"proteinPerRef\": 0,\n  \"carbsPerRef\": 0,\n  \"fatPerRef\": 0,\n  \"alcoholAbvPercent\": 0,\n  \"readyToEat\": false,\n  \"initialQuantity\": 0,\n  \"unit\": \"\",\n  \"packageQuantity\": 0,\n  \"packageUnit\": \"\",\n  \"categories\": [],\n  \"newGenericName\": \"\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_010",
+      "_type": "request",
+      "parentId": "fld_mobile",
+      "name": "GET /api/mobile/planner",
+      "description": "The week's plan",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/mobile/planner",
+      "parameters": [
+        {
+          "name": "weekStart",
+          "value": "",
+          "disabled": true
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_011",
+      "_type": "request",
+      "parentId": "fld_mobile",
+      "name": "POST /api/mobile/planner-entries",
+      "description": "Add a plan entry",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/mobile/planner-entries",
+      "parameters": [],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"kind\": \"\",\n  \"date\": \"\",\n  \"recipeId\": 0,\n  \"batchId\": 0,\n  \"ingredientId\": 0,\n  \"portions\": 0\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_012",
+      "_type": "request",
+      "parentId": "fld_mobile",
+      "name": "DELETE /api/mobile/planner-entries",
+      "description": "Remove a plan entry",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/mobile/planner-entries",
+      "parameters": [
+        {
+          "name": "id",
+          "value": "",
+          "disabled": false
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_013",
+      "_type": "request",
+      "parentId": "fld_mobile",
+      "name": "GET /api/mobile/log",
+      "description": "A day's meal log (inventory-service proxy)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/mobile/log",
+      "parameters": [
+        {
+          "name": "date",
+          "value": "",
+          "disabled": true
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_014",
+      "_type": "request",
+      "parentId": "fld_mobile",
+      "name": "GET /api/mobile/log-range",
+      "description": "Per-day rollups for a range (HealthKit sync feed)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/mobile/log-range",
+      "parameters": [
+        {
+          "name": "from",
+          "value": "",
+          "disabled": false
+        },
+        {
+          "name": "to",
+          "value": "",
+          "disabled": false
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_015",
+      "_type": "request",
+      "parentId": "fld_mobile",
+      "name": "POST /api/mobile/log-portion",
+      "description": "One-tap: eat one portion of a batch\n\nLogs the meal and records today's eat_item plan entry.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/mobile/log-portion",
+      "parameters": [],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"batchId\": 0\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "fld_backup",
+      "_type": "request_group",
+      "parentId": "wrk_dionysus",
+      "name": "backup",
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_016",
+      "_type": "request",
+      "parentId": "fld_backup",
+      "name": "GET /api/backup",
+      "description": "Lossless JSON bundle of everything the planner owns",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/backup",
+      "parameters": [],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_017",
+      "_type": "request",
+      "parentId": "fld_backup",
+      "name": "GET /api/backup/markdown",
+      "description": "The backup rendered as Obsidian-ready markdown files",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/backup/markdown",
+      "parameters": [],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_018",
+      "_type": "request",
+      "parentId": "fld_core",
+      "name": "GET /api/openapi",
+      "description": "This document",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/openapi",
+      "parameters": [],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    }
+  ]
+}

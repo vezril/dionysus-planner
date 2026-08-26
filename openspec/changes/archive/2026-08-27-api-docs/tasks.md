@@ -1,0 +1,3 @@
+- [x] 1.1 OpenAPI spec + /api/openapi + /api-docs viewer + guide link
+- [x] 1.2 Insomnia generator + collection; coverage drift gate
+- [x] 1.3 CLAUDE.md pickup file; e2e; gate; train v2.43.0
