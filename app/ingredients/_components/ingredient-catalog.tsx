@@ -7,6 +7,9 @@ import { SortButton } from "@/components/SortButton";
 import type { IngredientSummary } from "@/data/ingredients";
 import { nextSortState, sortRows, type SortState, type SortValue } from "@/domain/listSort";
 import { buildCategoryTree, pruneTreeByQuery, type CategoryNode } from "@/domain/categoryTree";
+import { clearCategoryDefaults, setCategoryDefaults } from "@/app/actions/category-defaults-actions";
+import { normalizeCategoryPath, type CategoryDefaults } from "@/domain/categoryDefaults";
+import { useRouter } from "next/navigation";
 
 /**
  * Client search island (ADR-002 — ONLY the search box + its filtered list
@@ -30,7 +33,88 @@ const PICKERS: Record<string, (ingredient: IngredientSummary) => SortValue> = {
 };
 
 // openspec: category-tree — nested browse view, products as leaf links.
-function CategoryBranch({ node, depth }: { node: CategoryNode; depth: number }) {
+// openspec: category-defaults — per-node defaults editor state lives on
+// the catalog; the branch renders the chip + editor for its own path.
+interface DefaultsApi {
+  defaultsByPath: Record<string, CategoryDefaults>;
+  editingPath: string | null;
+  setEditingPath: (path: string | null) => void;
+}
+
+function DefaultsEditor({ displayPath, current, onClose }: { displayPath: string; current: CategoryDefaults | undefined; onClose: () => void }) {
+  const router = useRouter();
+  const [values, setValues] = useState<Record<string, string>>(() => ({
+    caloriesPerRef: current?.caloriesPerRef?.toString() ?? "",
+    proteinPerRef: current?.proteinPerRef?.toString() ?? "",
+    carbsPerRef: current?.carbsPerRef?.toString() ?? "",
+    fatPerRef: current?.fatPerRef?.toString() ?? "",
+    alcoholAbvPercent: current?.alcoholAbvPercent?.toString() ?? "",
+  }));
+  const [message, setMessage] = useState<string | null>(null);
+  const FIELDS: Array<[string, string]> = [
+    ["caloriesPerRef", "kcal"],
+    ["proteinPerRef", "protein g"],
+    ["carbsPerRef", "carbs g"],
+    ["fatPerRef", "fat g"],
+    ["alcoholAbvPercent", "% ABV"],
+  ];
+  return (
+    <div data-testid="category-defaults-editor" className="my-1 ml-4 flex flex-wrap items-end gap-2 rounded-md border border-border p-2">
+      {FIELDS.map(([key, label]) => (
+        <label key={key} className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+          {label}
+          <input
+            type="number"
+            step="any"
+            aria-label={`Default ${label}`}
+            className="w-20 rounded-md border border-input bg-background px-1.5 py-1 text-sm text-foreground"
+            value={values[key]}
+            onChange={(event) => setValues((v) => ({ ...v, [key]: event.target.value }))}
+          />
+        </label>
+      ))}
+      <button
+        type="button"
+        data-testid="category-defaults-save"
+        className="rounded-md border border-primary px-2 py-1 text-xs font-medium text-primary"
+        onClick={async () => {
+          const toNumber = (raw: string) => (raw.trim() === "" ? null : Number(raw));
+          const result = await setCategoryDefaults({
+            displayPath,
+            caloriesPerRef: toNumber(values.caloriesPerRef),
+            proteinPerRef: toNumber(values.proteinPerRef),
+            carbsPerRef: toNumber(values.carbsPerRef),
+            fatPerRef: toNumber(values.fatPerRef),
+            alcoholAbvPercent: toNumber(values.alcoholAbvPercent),
+          });
+          if (!result.ok) { setMessage(result.message ?? "Failed."); return; }
+          onClose();
+          router.refresh();
+        }}
+      >
+        Save defaults
+      </button>
+      <button
+        type="button"
+        data-testid="category-defaults-clear"
+        className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground"
+        onClick={async () => {
+          await clearCategoryDefaults(displayPath);
+          onClose();
+          router.refresh();
+        }}
+      >
+        Clear
+      </button>
+      {message ? <span className="text-xs text-destructive">{message}</span> : null}
+    </div>
+  );
+}
+
+function CategoryBranch({ node, depth, parentPath, api }: { node: CategoryNode; depth: number; parentPath: string; api: DefaultsApi }) {
+  const displayPath = parentPath === "" ? node.name : `${parentPath}/${node.name}`;
+  const normalized = normalizeCategoryPath(displayPath);
+  const current = api.defaultsByPath[normalized];
   return (
     <details open data-testid="category-node" className={depth === 0 ? "" : "ml-4"}>
       <summary className="cursor-pointer py-1 text-sm font-medium text-foreground hover:text-primary">
@@ -38,9 +122,29 @@ function CategoryBranch({ node, depth }: { node: CategoryNode; depth: number }) 
         <span className="ml-2 text-xs font-normal text-muted-foreground">
           {node.products.length > 0 ? node.products.length : ""}
         </span>
+        {/* openspec: category-defaults */}
+        {current?.caloriesPerRef != null ? (
+          <span data-testid="category-defaults-chip" className="ml-2 rounded-full border border-primary/40 px-1.5 py-0.5 text-xs font-normal text-primary">
+            {current.caloriesPerRef} kcal
+          </span>
+        ) : null}
+        <button
+          type="button"
+          data-testid="category-defaults-toggle"
+          className="ml-2 text-xs font-normal text-muted-foreground underline hover:text-primary"
+          onClick={(event) => {
+            event.preventDefault();
+            api.setEditingPath(api.editingPath === normalized ? null : normalized);
+          }}
+        >
+          defaults
+        </button>
       </summary>
+      {api.editingPath === normalized ? (
+        <DefaultsEditor displayPath={displayPath} current={current} onClose={() => api.setEditingPath(null)} />
+      ) : null}
       {node.children.map((child) => (
-        <CategoryBranch key={child.name} node={child} depth={depth + 1} />
+        <CategoryBranch key={child.name} node={child} depth={depth + 1} parentPath={displayPath} api={api} />
       ))}
       <ul className="ml-4 flex flex-col">
         {node.products.map((product) => (
@@ -58,10 +162,18 @@ function CategoryBranch({ node, depth }: { node: CategoryNode; depth: number }) 
   );
 }
 
-export function IngredientCatalog({ ingredients }: { ingredients: IngredientSummary[] }) {
+export function IngredientCatalog({
+  ingredients,
+  categoryDefaults,
+}: {
+  ingredients: IngredientSummary[];
+  categoryDefaults: Record<string, CategoryDefaults>;
+}) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortState | null>(null);
   const [view, setView] = useState<"list" | "tree">("list");
+  const [editingPath, setEditingPath] = useState<string | null>(null);
+  const defaultsApi: DefaultsApi = { defaultsByPath: categoryDefaults, editingPath, setEditingPath };
   const tree = useMemo(
     () => pruneTreeByQuery(buildCategoryTree(ingredients), query),
     [ingredients, query],
@@ -123,7 +235,7 @@ export function IngredientCatalog({ ingredients }: { ingredients: IngredientSumm
           {tree.length === 0 ? (
             <p className="text-sm text-muted-foreground">No products match.</p>
           ) : (
-            tree.map((node) => <CategoryBranch key={node.name} node={node} depth={0} />)
+            tree.map((node) => <CategoryBranch key={node.name} node={node} depth={0} parentPath="" api={defaultsApi} />)
           )}
         </div>
       ) : (

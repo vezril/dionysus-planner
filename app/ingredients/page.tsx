@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getIngredientCatalog } from "@/data/ingredients";
+import { getIngredientCatalog, getAllCategoryDefaultsMap } from "@/data/ingredients";
 import { IngredientCatalog } from "@/app/ingredients/_components/ingredient-catalog";
 
 /**
@@ -21,6 +21,8 @@ export const dynamic = "force-dynamic";
 
 export default async function IngredientsPage() {
   const ingredients = await getIngredientCatalog();
+  // openspec: category-defaults — chips + editor prefill for the tree.
+  const categoryDefaults = Object.fromEntries(await getAllCategoryDefaultsMap());
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
@@ -30,7 +32,7 @@ export default async function IngredientsPage() {
           Add product
         </Link>
       </div>
-      <IngredientCatalog ingredients={ingredients} />
+      <IngredientCatalog ingredients={ingredients} categoryDefaults={categoryDefaults} />
     </div>
   );
 }
