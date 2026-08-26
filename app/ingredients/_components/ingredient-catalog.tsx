@@ -187,12 +187,13 @@ export function IngredientCatalog({
     return sortRows(matched, PICKERS[sort.key] ?? PICKERS.name, sort.direction);
   }, [ingredients, query, sort]);
 
-  const header = (key: string, label: string) => (
+  const header = (key: string, label: string, className = "") => (
     <SortButton
       label={label}
       active={sort?.key === key}
       direction={sort?.key === key ? sort.direction : "asc"}
       onClick={() => setSort((current) => nextSortState(current, key))}
+      className={className}
     />
   );
 
@@ -240,11 +241,22 @@ export function IngredientCatalog({
         </div>
       ) : (
         <>
-      {/* openspec: sortable-columns */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border pb-2">
+      {/* openspec: sortable-columns + product-columns — the header sits
+          on the same grid tracks as the rows. */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border pb-2 sm:grid sm:grid-cols-[minmax(0,1fr)_4.5rem_5rem_4.5rem_4.5rem_4.5rem_max-content] sm:gap-x-3">
         {header("name", "Name")}
-        {header("calories", "Calories")}
-        {header("category", "Category")}
+        <span aria-hidden className="hidden sm:block" />
+        {header("calories", "Calories", "sm:justify-self-end")}
+        <span aria-hidden className="hidden text-right text-xs uppercase tracking-wide text-muted-foreground sm:block sm:justify-self-end">
+          Protein
+        </span>
+        <span aria-hidden className="hidden text-right text-xs uppercase tracking-wide text-muted-foreground sm:block sm:justify-self-end">
+          Carbs
+        </span>
+        <span aria-hidden className="hidden text-right text-xs uppercase tracking-wide text-muted-foreground sm:block sm:justify-self-end">
+          Fat
+        </span>
+        {header("category", "Category", "sm:justify-self-end")}
       </div>
 
       {filtered.length === 0 ? (
@@ -257,20 +269,35 @@ export function IngredientCatalog({
             <li
               key={ingredient.id}
               data-testid="ingredient-row"
-              className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3"
+              className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3 sm:grid sm:grid-cols-[minmax(0,1fr)_4.5rem_5rem_4.5rem_4.5rem_4.5rem_max-content] sm:gap-x-3"
             >
               <Link
                 href={`/ingredients/${ingredient.id}/edit`}
-                className="font-medium text-foreground hover:underline"
+                className="min-w-0 break-words font-medium text-foreground hover:underline"
               >
                 {ingredient.name}
               </Link>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span>{ingredient.unitClass}</span>
-                <span>{ingredient.caloriesPerRef} kcal</span>
-                <span>{ingredient.proteinPerRef}g protein</span>
-                <span>{ingredient.carbsPerRef}g carbs</span>
-                <span>{ingredient.fatPerRef}g fat</span>
+              {/* openspec: product-columns — per-100 numbers as aligned,
+                  right-justified tabular columns on sm+. */}
+              <span className="hidden text-xs text-muted-foreground sm:block">{ingredient.unitClass}</span>
+              <span className="hidden font-mono text-xs tabular-nums text-muted-foreground sm:block sm:text-right">
+                {ingredient.caloriesPerRef} kcal
+              </span>
+              <span className="hidden font-mono text-xs tabular-nums text-muted-foreground sm:block sm:text-right">
+                {ingredient.proteinPerRef} g
+              </span>
+              <span className="hidden font-mono text-xs tabular-nums text-muted-foreground sm:block sm:text-right">
+                {ingredient.carbsPerRef} g
+              </span>
+              <span className="hidden font-mono text-xs tabular-nums text-muted-foreground sm:block sm:text-right">
+                {ingredient.fatPerRef} g
+              </span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:justify-self-end">
+                <span className="sm:hidden">{ingredient.unitClass}</span>
+                <span className="sm:hidden">{ingredient.caloriesPerRef} kcal</span>
+                <span className="sm:hidden">{ingredient.proteinPerRef}g protein</span>
+                <span className="sm:hidden">{ingredient.carbsPerRef}g carbs</span>
+                <span className="sm:hidden">{ingredient.fatPerRef}g fat</span>
                 {ingredient.category !== "FOOD" ? (
                   <span
                     data-testid="category-badge"

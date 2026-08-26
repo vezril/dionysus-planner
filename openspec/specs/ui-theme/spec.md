@@ -97,3 +97,13 @@ last.
 #### Scenario: Sort the pantry by quantity
 - **WHEN** the user clicks the pantry's Quantity title twice
 - **THEN** rows order by quantity ascending, then descending
+
+### Requirement: Product list aligns as columns
+On small-and-up viewports the products list SHALL render name, unit
+class, calories, protein, carbs, fat, and badges in fixed grid tracks
+with right-aligned tabular numerals, the sortable header aligned to
+the same tracks; narrow viewports keep a wrapping layout.
+
+#### Scenario: Mixed products
+- **WHEN** rows with long names, drinks, and seeded items render together
+- **THEN** every numeric column lines up vertically
