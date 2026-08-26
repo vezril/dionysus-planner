@@ -64,6 +64,18 @@ export default async function GuidePage() {
 
       <TargetsEditor targets={targets} />
 
+      {/* openspec: api-docs */}
+      <section className="flex flex-col gap-2">
+        <h2 className="text-lg font-medium">API</h2>
+        <p className="text-sm text-muted-foreground">
+          The planner&apos;s HTTP surface is documented at{" "}
+          <a href="/api-docs" className="font-medium text-primary hover:underline">
+            /api-docs
+          </a>{" "}
+          — with the raw OpenAPI JSON and a downloadable Insomnia collection.
+        </p>
+      </section>
+
       <section className="flex flex-col gap-2 text-xs text-muted-foreground">
         <h2 className="text-sm font-medium text-foreground">Sources</h2>
         <p>
