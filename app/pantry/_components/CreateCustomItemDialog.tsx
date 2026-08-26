@@ -125,6 +125,9 @@ export function CreateCustomItemDialog({
   // openspec: category-defaults — on leaving the categories field, fill
   // EMPTY nutrition fields from the deepest matching category defaults.
   const [prefillNote, setPrefillNote] = useState<string | null>(null);
+  // openspec: inline-generic-create
+  const [newGenericMode, setNewGenericMode] = useState(false);
+  const [newGenericName, setNewGenericName] = useState("");
   async function prefillFromCategories(raw: string) {
     const categories = raw.split(",").map((value) => value.trim()).filter(Boolean);
     if (categories.length === 0) return;
@@ -201,6 +204,7 @@ export function CreateCustomItemDialog({
     const result = await createCustomPantryItem({
       ...values,
       categories: (getValues("categoriesText") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean),
+      newGenericName: newGenericMode && newGenericName.trim() !== "" ? newGenericName.trim() : undefined,
     });
 
     if (result.ok) {
@@ -337,8 +341,16 @@ export function CreateCustomItemDialog({
                 name="genericOfId"
                 render={({ field }) => (
                   <Select
-                    value={field.value?.toString() ?? "none"}
-                    onValueChange={(value) => field.onChange(value === "none" ? undefined : Number(value))}
+                    value={newGenericMode ? "__new__" : (field.value?.toString() ?? "none")}
+                    onValueChange={(value) => {
+                      if (value === "__new__") {
+                        setNewGenericMode(true);
+                        field.onChange(undefined);
+                      } else {
+                        setNewGenericMode(false);
+                        field.onChange(value === "none" ? undefined : Number(value));
+                      }
+                    }}
                     disabled={!watchedUnitClass}
                   >
                     <SelectTrigger aria-label="Generic of">
@@ -346,6 +358,7 @@ export function CreateCustomItemDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None — this IS a generic</SelectItem>
+                      <SelectItem value="__new__">＋ New generic…</SelectItem>
                       {genericOptions
                         .filter((option) => option.unitClass === watchedUnitClass)
                         .map((option) => (
@@ -357,6 +370,21 @@ export function CreateCustomItemDialog({
                   </Select>
                 )}
               />
+              {newGenericMode ? (
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="text"
+                    aria-label="New generic name"
+                    placeholder="e.g. Beer"
+                    className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={newGenericName}
+                    onChange={(event) => setNewGenericName(event.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Created with this item&apos;s unit class and nutrition; reused if it already exists.
+                  </p>
+                </div>
+              ) : null}
               {errors.genericOfId ? (
                 <p data-testid="field-error-genericOfId" className="text-sm text-destructive">
                   {errors.genericOfId.message}

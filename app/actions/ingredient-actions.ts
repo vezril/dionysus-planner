@@ -22,7 +22,8 @@ import {
   type NutritionFieldValues,
 } from "@/domain/nutritionBasis";
 import type { IngredientRecord } from "@/data/repositories/ingredientRepo";
-import { setIngredientCategories,
+import { findGenericByExactName,
+  setIngredientCategories,
   setIngredientMerchantLinks,
   setIngredientMicronutrients,
   createIngredientRecord,
@@ -160,7 +161,33 @@ export async function createIngredient(input: unknown): Promise<ActionResult<Ing
     return validationError({ alcoholAbvPercent: ["ABV entry needs a volume-class item."] });
   }
   nutrition.values = withAbv.values;
-  const genericLink = await validateGenericLink(data.genericOfId, data.unitClass);
+  // openspec: inline-generic-create — reuse-or-create a generic by name,
+  // seeded with this product's resolved nutrition.
+  let genericOfId = data.genericOfId;
+  if (genericOfId == null && data.newGenericName) {
+    const existing = await findGenericByExactName(data.newGenericName, data.unitClass);
+    if (existing) {
+      genericOfId = existing.id;
+    } else {
+      const generic = await createIngredientRecord({
+        name: data.newGenericName,
+        unitClass: data.unitClass,
+        category: data.category,
+        shelfLifeDays: null,
+        genericOfId: null,
+        readyToEat: false,
+        ...nutrition.values,
+        densityGPerMl: data.densityGPerMl ?? null,
+        brand: null,
+        barcode: null,
+        packageQuantity: null,
+        packageUnit: null,
+      });
+      genericOfId = generic.id;
+    }
+  }
+
+  const genericLink = await validateGenericLink(genericOfId, data.unitClass);
   if (!genericLink.ok) {
     return validationError({ genericOfId: [genericLink.message] });
   }
