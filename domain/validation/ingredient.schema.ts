@@ -40,6 +40,10 @@ export const ingredientSchema = z
     // openspec: generic-products — structural only; existence/level/class
     // checks live in the action.
     genericOfId: z.number().int().positive().nullish(),
+    // openspec: inline-generic-create — create/reuse a generic by name
+    // straight from the product form's menu.
+    newGenericName: z.string().trim().min(1).max(120).nullish(),
+
     // openspec: pantry-quick-eat
     readyToEat: z.boolean().default(false),
     // openspec: batch-nutrition-and-abv-entry — % ABV entry for VOLUME

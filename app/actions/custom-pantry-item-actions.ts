@@ -10,7 +10,7 @@
 import { revalidatePath } from "next/cache";
 import { abvPercentToGramsPer100Ml } from "@/domain/abv";
 import { scaleMicronutrients } from "@/domain/micronutrients";
-import { getIngredientRecordById, setIngredientCategories, setIngredientMicronutrients } from "@/data/ingredients";
+import { createIngredientRecord, findGenericByExactName, getIngredientRecordById, setIngredientCategories, setIngredientMicronutrients } from "@/data/ingredients";
 import { customPantryItemSchema } from "@/domain/validation/customPantryItem.schema";
 import { toCanonical } from "@/domain/units";
 import { nutritionScaleFactor, scaleNutritionFields } from "@/domain/nutritionBasis";
@@ -133,7 +133,33 @@ export async function createCustomPantryItem(
     nutrition = { ...nutrition, alcoholGPerRef: abvPercentToGramsPer100Ml(data.alcoholAbvPercent) };
   }
 
-  const genericLink = await validateGenericLink(data.genericOfId, data.unitClass);
+  // openspec: inline-generic-create — reuse-or-create a generic by name,
+  // seeded with this item's resolved nutrition.
+  let genericOfId = data.genericOfId;
+  if (genericOfId == null && data.newGenericName) {
+    const existingGeneric = await findGenericByExactName(data.newGenericName, data.unitClass);
+    if (existingGeneric) {
+      genericOfId = existingGeneric.id;
+    } else {
+      const generic = await createIngredientRecord({
+        name: data.newGenericName,
+        unitClass: data.unitClass,
+        category: data.category,
+        shelfLifeDays: null,
+        genericOfId: null,
+        readyToEat: false,
+        ...nutrition,
+        densityGPerMl: data.densityGPerMl ?? null,
+        brand: null,
+        barcode: null,
+        packageQuantity: null,
+        packageUnit: null,
+      });
+      genericOfId = generic.id;
+    }
+  }
+
+  const genericLink = await validateGenericLink(genericOfId, data.unitClass);
   if (!genericLink.ok) {
     return {
       ok: false,

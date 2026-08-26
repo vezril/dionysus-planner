@@ -258,6 +258,29 @@ export async function getIngredientCategories(ingredientId: number): Promise<str
   }
 }
 
+/** openspec: inline-generic-create — exact-name generic lookup for the
+ * reuse-or-create path (case-insensitive, same unit class, generics
+ * only). */
+export async function findGenericByExactName(
+  name: string,
+  unitClass: "MASS" | "VOLUME" | "COUNT",
+): Promise<IngredientRecord | null> {
+  const db = createDb();
+  try {
+    const candidates = await ingredientRepo.searchByName(db, name);
+    return (
+      candidates.find(
+        (candidate) =>
+          candidate.name.toLowerCase() === name.toLowerCase() &&
+          candidate.genericOfId === null &&
+          candidate.unitClass === unitClass,
+      ) ?? null
+    );
+  } finally {
+    db.$client.close();
+  }
+}
+
 /** openspec: category-defaults */
 export async function getAllCategoryDefaultsMap(): Promise<Map<string, ingredientRepo.CategoryDefaultsRecord>> {
   const db = createDb();

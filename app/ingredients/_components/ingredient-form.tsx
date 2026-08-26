@@ -235,6 +235,9 @@ export function IngredientForm({
   // openspec: category-defaults — on leaving the categories field, fill
   // EMPTY nutrition fields from the deepest matching category defaults.
   const [prefillNote, setPrefillNote] = useState<string | null>(null);
+  // openspec: inline-generic-create — "New generic…" straight from the menu.
+  const [newGenericMode, setNewGenericMode] = useState(false);
+  const [newGenericName, setNewGenericName] = useState("");
   async function prefillFromCategories(raw: string) {
     const categories = raw.split(",").map((value) => value.trim()).filter(Boolean);
     if (categories.length === 0) return;
@@ -317,6 +320,7 @@ export function IngredientForm({
       ...values,
       categories: (getValues("categoriesText") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean),
       merchantLinks: (getValues("merchantLinksText") ?? "").split("\n").map((url) => url.trim()).filter(Boolean),
+      newGenericName: newGenericMode && newGenericName.trim() !== "" ? newGenericName.trim() : undefined,
     };
     const result =
       mode === "create"
@@ -462,8 +466,16 @@ export function IngredientForm({
           name="genericOfId"
           render={({ field }) => (
             <Select
-              value={field.value?.toString() ?? "none"}
-              onValueChange={(value) => field.onChange(value === "none" ? undefined : Number(value))}
+              value={newGenericMode ? "__new__" : (field.value?.toString() ?? "none")}
+              onValueChange={(value) => {
+                if (value === "__new__") {
+                  setNewGenericMode(true);
+                  field.onChange(undefined);
+                } else {
+                  setNewGenericMode(false);
+                  field.onChange(value === "none" ? undefined : Number(value));
+                }
+              }}
               disabled={!watchedUnitClass}
             >
               <SelectTrigger aria-label="Generic of" className="max-w-sm">
@@ -471,6 +483,7 @@ export function IngredientForm({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None — this IS a generic</SelectItem>
+                <SelectItem value="__new__">＋ New generic…</SelectItem>
                 {genericOptions
                   .filter((option) => option.unitClass === watchedUnitClass && option.id !== ingredientId)
                   .map((option) => (
@@ -482,6 +495,21 @@ export function IngredientForm({
             </Select>
           )}
         />
+        {newGenericMode ? (
+          <div className="flex flex-col gap-1">
+            <input
+              type="text"
+              aria-label="New generic name"
+              placeholder="e.g. Beer"
+              className="max-w-sm rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={newGenericName}
+              onChange={(event) => setNewGenericName(event.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Created with this product&apos;s unit class and nutrition; reused if it already exists.
+            </p>
+          </div>
+        ) : null}
         {errors.genericOfId ? (
           <p data-testid="field-error-genericOfId" className="text-sm text-destructive">
             {errors.genericOfId.message}
