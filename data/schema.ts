@@ -149,6 +149,20 @@ export const ingredientLink = sqliteTable("ingredient_link", {
   url: text("url").notNull(),
 });
 
+/** openspec: category-defaults — optional nutrition defaults attached
+ * to a category path ("Rhum/Lightly Aged Pot Rhum"). Per-100 g/mL
+ * basis like ingredients; every value optional. `path` is the
+ * lowercase-normalized key; `displayPath` preserves the user's casing. */
+export const categoryNutrition = sqliteTable("category_nutrition", {
+  path: text("path").primaryKey(),
+  displayPath: text("displayPath").notNull(),
+  caloriesPerRef: real("caloriesPerRef"),
+  proteinPerRef: real("proteinPerRef"),
+  carbsPerRef: real("carbsPerRef"),
+  fatPerRef: real("fatPerRef"),
+  alcoholAbvPercent: real("alcoholAbvPercent"),
+});
+
 /** openspec: ingredient-categories-auto-tags — user-defined category
  * labels on products/generics; recipes derive tags from them at read
  * time. Replace-set semantics, same posture as recipe_tag. */

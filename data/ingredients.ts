@@ -258,6 +258,35 @@ export async function getIngredientCategories(ingredientId: number): Promise<str
   }
 }
 
+/** openspec: category-defaults */
+export async function getAllCategoryDefaultsMap(): Promise<Map<string, ingredientRepo.CategoryDefaultsRecord>> {
+  const db = createDb();
+  try {
+    const rows = await ingredientRepo.getAllCategoryDefaults(db);
+    return new Map(rows.map((row) => [row.path, row]));
+  } finally {
+    db.$client.close();
+  }
+}
+
+export async function saveCategoryDefaults(record: ingredientRepo.CategoryDefaultsRecord): Promise<void> {
+  const db = createDb();
+  try {
+    await ingredientRepo.upsertCategoryDefaults(db, record);
+  } finally {
+    db.$client.close();
+  }
+}
+
+export async function removeCategoryDefaults(path: string): Promise<void> {
+  const db = createDb();
+  try {
+    await ingredientRepo.deleteCategoryDefaults(db, path);
+  } finally {
+    db.$client.close();
+  }
+}
+
 /** openspec: ratings-variants-links */
 export async function setIngredientMerchantLinks(ingredientId: number, urls: string[]): Promise<void> {
   const db = createDb();

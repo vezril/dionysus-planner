@@ -120,6 +120,13 @@
       "when": 1787508625942,
       "tag": "0016_plan_entry_ingredient",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1787702350532,
+      "tag": "0017_category_nutrition",
+      "breakpoints": true
     }
   ]
 }

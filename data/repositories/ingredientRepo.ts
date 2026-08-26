@@ -293,6 +293,32 @@ export async function getMerchantLinks(db: Db, ingredientId: number): Promise<st
   return rows.map((row) => row.url);
 }
 
+/** openspec: category-defaults — path-keyed nutrition defaults. */
+export interface CategoryDefaultsRecord {
+  path: string;
+  displayPath: string;
+  caloriesPerRef: number | null;
+  proteinPerRef: number | null;
+  carbsPerRef: number | null;
+  fatPerRef: number | null;
+  alcoholAbvPercent: number | null;
+}
+
+export async function getAllCategoryDefaults(db: Db): Promise<CategoryDefaultsRecord[]> {
+  return db.select().from(schema.categoryNutrition);
+}
+
+export async function upsertCategoryDefaults(db: Db, record: CategoryDefaultsRecord): Promise<void> {
+  await db
+    .insert(schema.categoryNutrition)
+    .values(record)
+    .onConflictDoUpdate({ target: schema.categoryNutrition.path, set: record });
+}
+
+export async function deleteCategoryDefaults(db: Db, path: string): Promise<void> {
+  await db.delete(schema.categoryNutrition).where(eq(schema.categoryNutrition.path, path));
+}
+
 /** openspec: backup-export — all merchant links in one query. */
 export async function getAllMerchantLinks(db: Db): Promise<Map<number, string[]>> {
   const rows = await db

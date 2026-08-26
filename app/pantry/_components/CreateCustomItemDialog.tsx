@@ -122,6 +122,43 @@ export function CreateCustomItemDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // openspec: category-defaults — on leaving the categories field, fill
+  // EMPTY nutrition fields from the deepest matching category defaults.
+  const [prefillNote, setPrefillNote] = useState<string | null>(null);
+  async function prefillFromCategories(raw: string) {
+    const categories = raw.split(",").map((value) => value.trim()).filter(Boolean);
+    if (categories.length === 0) return;
+    try {
+      const response = await fetch(`/api/category-defaults?categories=${encodeURIComponent(categories.join(","))}`);
+      if (!response.ok) return;
+      const defaults = (await response.json()) as {
+        displayPath: string;
+        caloriesPerRef: number | null;
+        proteinPerRef: number | null;
+        carbsPerRef: number | null;
+        fatPerRef: number | null;
+        alcoholAbvPercent: number | null;
+      };
+      const fill = (field: string, value: number | null) => {
+        if (value === null) return false;
+        const current = getValues(field as never) as unknown;
+        if (current !== undefined && current !== null && current !== "") return false;
+        setValue(field as never, value as never, { shouldDirty: true });
+        return true;
+      };
+      const filled = [
+        fill("caloriesPerRef", defaults.caloriesPerRef),
+        fill("proteinPerRef", defaults.proteinPerRef),
+        fill("carbsPerRef", defaults.carbsPerRef),
+        fill("fatPerRef", defaults.fatPerRef),
+        fill("alcoholAbvPercent", defaults.alcoholAbvPercent),
+      ].some(Boolean);
+      if (filled) setPrefillNote(`Prefilled from ${defaults.displayPath} defaults (per 100 g/mL).`);
+    } catch {
+      // best-effort; the form stays as typed
+    }
+  }
+
 
   const {
     register,
@@ -281,7 +318,11 @@ export function CreateCustomItemDialog({
                 placeholder="Rhum/Lightly Aged Pot Rhum, fish"
                 className="rounded-md border border-input bg-background px-3 py-2 text-sm"
                 {...register("categoriesText")}
+          onBlur={(event) => void prefillFromCategories(event.target.value)}
               />
+        {prefillNote ? (
+          <p data-testid="category-prefill-note" className="text-xs text-status-cookable">{prefillNote}</p>
+        ) : null}
             </div>
 
             <label className="flex items-center gap-2 text-sm font-medium">
