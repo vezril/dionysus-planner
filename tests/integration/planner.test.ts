@@ -156,7 +156,7 @@ describe("weekly planner", () => {
       portions: 3,
       caloriesKcal: 300, // 100 per serving × 3 portions
     });
-    expect(week.readyToEat).toEqual([{ batchId: 7, label: "Chili", availablePortions: 1 }]);
+    expect(week.readyToEat).toEqual([{ batchId: 7, label: "Chili", availablePortions: 1, plannedPortions: 3 }]);
     expect(week.shoppingList.items).toEqual([]); // batches consume no pantry
     expect(week.suggestions.find((suggestion) => suggestion.name === "Bread")!.tier).toBe("cookable");
   });
@@ -181,7 +181,7 @@ describe("weekly planner", () => {
     });
     const { getPlannerWeek } = await import("@/data/planner");
     const week = await getPlannerWeek("2026-08-17", 3);
-    expect(week.readyToEat).toEqual([{ batchId: 7, label: "Chili", availablePortions: 8 }]);
+    expect(week.readyToEat).toEqual([{ batchId: 7, label: "Chili", availablePortions: 8, plannedPortions: 0 }]);
   });
 
   it("a drained oldest batch hands the merged row to the next batch", async () => {
@@ -196,7 +196,7 @@ describe("weekly planner", () => {
     const { getPlannerWeek } = await import("@/data/planner");
     await addPlanEntry({ kind: "eat_batch", date: "2026-08-19", batchId: 7, portions: 4 });
     const week = await getPlannerWeek("2026-08-17", 3);
-    expect(week.readyToEat).toEqual([{ batchId: 8, label: "Chili", availablePortions: 4 }]);
+    expect(week.readyToEat).toEqual([{ batchId: 8, label: "Chili", availablePortions: 4, plannedPortions: 4 }]);
   });
 
   it("an unknown batch is rejected", async () => {

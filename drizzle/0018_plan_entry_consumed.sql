@@ -1,0 +1,1 @@
+ALTER TABLE `plan_entry` ADD `consumedAt` text;

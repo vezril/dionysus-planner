@@ -37,8 +37,10 @@ export interface PlannerWeek {
   entriesByDate: Record<string, PlanEntryRow[]>;
   suggestions: Suggestion[];
   shoppingList: ShoppingList;
-  /** openspec: planner-ready-to-eat — service batches, week-plan-adjusted. */
-  readyToEat: Array<{ batchId: number; label: string; availablePortions: number }>;
+  /** openspec: planner-ready-to-eat — service batches minus reservations.
+   * openspec: planner-consume — plannedPortions = unconsumed plan entries
+   * (any date) still reserving this recipe's batches. */
+  readyToEat: Array<{ batchId: number; label: string; availablePortions: number; plannedPortions: number }>;
   /** openspec: plan-pantry-backdate — ready-to-eat stocked pantry
    * products, plannable straight onto a day. */
   pantryOptions: Array<{ ingredientId: number; name: string }>;
@@ -129,8 +131,9 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
       planned,
     );
 
-    // Ready to eat: service batches minus this week's planned batch portions.
-    let readyToEat: Array<{ batchId: number; label: string; availablePortions: number }> = [];
+    // Ready to eat: service batches minus every still-unconsumed planned
+    // batch portion, whatever week it sits on (openspec: planner-consume).
+    let readyToEat: Array<{ batchId: number; label: string; availablePortions: number; plannedPortions: number }> = [];
     let serviceAvailable = true;
     const batchCaloriesPerServing = new Map<number, number>();
     try {
@@ -146,32 +149,44 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
         if (perServing !== undefined && perServing !== null) batchCaloriesPerServing.set(batch.id, perServing);
       }
       const plannedByBatch = new Map<number, number>();
-      for (const entry of entries) {
-        if (entry.kind === "eat_batch" && entry.batchId !== null) {
-          plannedByBatch.set(entry.batchId, (plannedByBatch.get(entry.batchId) ?? 0) + entry.portions);
-        }
+      for (const plan of await plannerRepo.listUnconsumedBatchPlans(db)) {
+        plannedByBatch.set(plan.batchId, (plannedByBatch.get(plan.batchId) ?? 0) + plan.portions);
       }
       // openspec: pantry-quick-eat — one row per recipe, portions summed
       // across batches; the row carries the OLDEST batch with portions
       // left so logging drains batches first-in-first-out.
-      const groupedByRecipe = new Map<number, { batchId: number; label: string; availablePortions: number }>();
+      const groupedByRecipe = new Map<
+        number,
+        { batchId: number | null; label: string; availablePortions: number; plannedPortions: number }
+      >();
       for (const batch of [...batches].sort((a, b) => (a.id as number) - (b.id as number))) {
         if (batch.id === null) continue;
-        const available =
-          Math.round((batch.remainingPortions - (plannedByBatch.get(batch.id) ?? 0)) * 100) / 100;
-        if (available <= 0) continue;
-        const existing = groupedByRecipe.get(batch.recipeId);
-        if (existing) {
-          existing.availablePortions = Math.round((existing.availablePortions + available) * 100) / 100;
-        } else {
-          groupedByRecipe.set(batch.recipeId, {
-            batchId: batch.id,
+        const planned = plannedByBatch.get(batch.id) ?? 0;
+        const available = Math.round((batch.remainingPortions - planned) * 100) / 100;
+        let group = groupedByRecipe.get(batch.recipeId);
+        if (!group) {
+          group = {
+            batchId: null,
             label: nameByRecipeId.get(batch.recipeId) ?? `Batch #${batch.id}`,
-            availablePortions: available,
-          });
+            availablePortions: 0,
+            plannedPortions: 0,
+          };
+          groupedByRecipe.set(batch.recipeId, group);
+        }
+        group.plannedPortions = Math.round((group.plannedPortions + planned) * 100) / 100;
+        if (available > 0) {
+          group.availablePortions = Math.round((group.availablePortions + available) * 100) / 100;
+          if (group.batchId === null) group.batchId = batch.id;
         }
       }
-      readyToEat = [...groupedByRecipe.values()];
+      readyToEat = [...groupedByRecipe.values()]
+        .filter((group): group is typeof group & { batchId: number } => group.batchId !== null)
+        .map(({ batchId, label, availablePortions, plannedPortions }) => ({
+          batchId,
+          label,
+          availablePortions,
+          plannedPortions,
+        }));
     } catch {
       serviceAvailable = false;
     }
@@ -248,6 +263,42 @@ export async function removePlanEntryRecord(id: number): Promise<boolean> {
   const db = createDb();
   try {
     return await plannerRepo.remove(db, id);
+  } finally {
+    db.$client.close();
+  }
+}
+
+/** openspec: planner-consume — single-entry read for the consume action. */
+export async function getPlanEntryRecordById(id: number): Promise<plannerRepo.PlanEntryRecord | null> {
+  const db = createDb();
+  try {
+    return await plannerRepo.getById(db, id);
+  } finally {
+    db.$client.close();
+  }
+}
+
+/** openspec: planner-consume — flip an intention to eaten. */
+export async function markPlanEntryConsumed(id: number, consumedAt: string): Promise<boolean> {
+  const db = createDb();
+  try {
+    return await plannerRepo.markConsumed(db, id, consumedAt);
+  } finally {
+    db.$client.close();
+  }
+}
+
+/** openspec: planner-consume — unconsumed planned portions per batch id
+ * (any date), for the Batches page and availability math. */
+export async function getPlannedPortionsByBatch(): Promise<Map<number, number>> {
+  const db = createDb();
+  try {
+    const plans = await plannerRepo.listUnconsumedBatchPlans(db);
+    const byBatch = new Map<number, number>();
+    for (const plan of plans) {
+      byBatch.set(plan.batchId, Math.round(((byBatch.get(plan.batchId) ?? 0) + plan.portions) * 100) / 100);
+    }
+    return byBatch;
   } finally {
     db.$client.close();
   }
