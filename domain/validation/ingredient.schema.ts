@@ -92,6 +92,13 @@ export const ingredientSchema = z
       .string()
       .refine((unit) => unit in UNITS, { message: "Pick a known unit." })
       .nullish(),
+    // openspec: pack-units — the INNER pre-portioned pack (61 g pack in a
+    // 366 g box); expands `pack` mentions and portion sizing.
+    packQuantity: z.number().gt(0).nullish(),
+    packUnit: z
+      .string()
+      .refine((unit) => unit in UNITS, { message: "Pick a known unit." })
+      .nullish(),
     // openspec: nutrition-basis-and-edit — optional entry basis ("per 355
     // mL"). Structural checks only here; the class-consistency rule and the
     // actual conversion live in the Server Action (design.md Decision 2).
@@ -101,6 +108,10 @@ export const ingredientSchema = z
   .refine((value) => value.packageQuantity == null || value.packageUnit != null, {
     message: "A package size needs a unit.",
     path: ["packageUnit"],
+  })
+  .refine((value) => value.packQuantity == null || value.packUnit != null, {
+    message: "A pack size needs a unit.",
+    path: ["packUnit"],
   })
   .refine((value) => value.nutritionBasisQuantity == null || value.nutritionBasisUnit != null, {
     message: "A nutrition basis needs a unit.",

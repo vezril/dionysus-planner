@@ -119,6 +119,9 @@ export interface PantryListRow {
   unitClass: "MASS" | "VOLUME" | "COUNT";
   packageQuantity: number | null;
   packageUnit: string | null;
+  /** openspec: pack-units — the inner pack (Eat prefill, −1 pack preset). */
+  packQuantity: number | null;
+  packUnit: string | null;
 }
 
 /**
@@ -141,6 +144,8 @@ export async function getAllWithIngredientNames(db: Db): Promise<PantryListRow[]
       unitClass: ingredient.unitClass,
       packageQuantity: ingredient.packageQuantity,
       packageUnit: ingredient.packageUnit,
+      packQuantity: ingredient.packQuantity,
+      packUnit: ingredient.packUnit,
     })
     .from(pantryItem)
     .innerJoin(ingredient, eq(ingredient.id, pantryItem.ingredientId))

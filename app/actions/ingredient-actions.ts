@@ -204,6 +204,8 @@ export async function createIngredient(input: unknown): Promise<ActionResult<Ing
     barcode: data.barcode ?? null,
     packageQuantity: data.packageQuantity ?? null,
     packageUnit: data.packageQuantity != null ? (data.packageUnit ?? null) : null,
+    packQuantity: data.packQuantity ?? null,
+    packUnit: data.packQuantity != null ? (data.packUnit ?? null) : null,
   });
   // openspec: vitamin-tracking — basis-scaled sparse rows.
   await setIngredientMicronutrients(record.id, scaleMicronutrients(data.micronutrients ?? [], nutrition.factor));
@@ -267,6 +269,8 @@ export async function overrideIngredientNutrition(
     barcode: data.barcode ?? null,
     packageQuantity: data.packageQuantity ?? null,
     packageUnit: data.packageQuantity != null ? (data.packageUnit ?? null) : null,
+    packQuantity: data.packQuantity ?? null,
+    packUnit: data.packQuantity != null ? (data.packUnit ?? null) : null,
     overridden,
   });
   await setIngredientMicronutrients(id, scaleMicronutrients(data.micronutrients ?? [], nutrition.factor));

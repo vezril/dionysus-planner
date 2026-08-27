@@ -49,6 +49,10 @@ export const ingredient = sqliteTable(
     barcode: text("barcode"),
     packageQuantity: real("packageQuantity"),
     packageUnit: text("packageUnit"),
+    /** openspec: pack-units — the INNER pre-portioned pack (a 366 g box
+     * of 6×61 g packs: package 366 g, pack 61 g). */
+    packQuantity: real("packQuantity"),
+    packUnit: text("packUnit"),
     createdAt: text("createdAt").notNull(),
     updatedAt: text("updatedAt").notNull(),
   },

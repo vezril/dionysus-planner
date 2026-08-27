@@ -48,6 +48,8 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
           barcode: ingredient.barcode,
           packageQuantity: ingredient.packageQuantity,
           packageUnit: ingredient.packageUnit,
+          packQuantity: ingredient.packQuantity,
+          packUnit: ingredient.packUnit,
           caloriesPerRef: ingredient.caloriesPerRef,
           proteinPerRef: ingredient.proteinPerRef,
           carbsPerRef: ingredient.carbsPerRef,

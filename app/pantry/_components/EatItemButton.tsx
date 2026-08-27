@@ -18,12 +18,16 @@ export function EatItemButton({ item }: { item: PantryListRow }) {
   // openspec: ratings-variants-links — drink-aware wording.
   const verb = item.category === "DRINK" ? "Drink" : "Eat";
   const [open, setOpen] = useState(false);
+  // openspec: pack-units — one INNER pack first (a 61 g pouch of the
+  // 366 g box), then the package, then blank.
   const prefill =
     item.unitClass === "COUNT"
       ? { quantity: "1", unit: "each" }
-      : item.packageQuantity !== null && item.packageUnit !== null
-        ? { quantity: String(item.packageQuantity), unit: item.packageUnit }
-        : { quantity: "", unit: item.displayUnit };
+      : item.packQuantity !== null && item.packUnit !== null
+        ? { quantity: String(item.packQuantity), unit: item.packUnit }
+        : item.packageQuantity !== null && item.packageUnit !== null
+          ? { quantity: String(item.packageQuantity), unit: item.packageUnit }
+          : { quantity: "", unit: item.displayUnit };
   const [quantity, setQuantity] = useState(prefill.quantity);
   const [unit] = useState(prefill.unit);
   // openspec: plan-pantry-backdate — log to an earlier day if forgotten.

@@ -144,6 +144,8 @@ function toIngredientRecord(row: typeof ingredient.$inferSelect): IngredientReco
     barcode: row.barcode,
     packageQuantity: row.packageQuantity,
     packageUnit: row.packageUnit,
+    packQuantity: row.packQuantity,
+    packUnit: row.packUnit,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

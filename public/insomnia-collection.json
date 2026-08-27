@@ -196,7 +196,7 @@
       "parameters": [],
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"name\": \"\",\n  \"unitClass\": \"\",\n  \"category\": \"\",\n  \"barcode\": \"\",\n  \"brand\": \"\",\n  \"nutritionBasisQuantity\": 100,\n  \"nutritionBasisUnit\": \"mL\",\n  \"caloriesPerRef\": 0,\n  \"proteinPerRef\": 0,\n  \"carbsPerRef\": 0,\n  \"fatPerRef\": 0,\n  \"alcoholAbvPercent\": 0,\n  \"readyToEat\": false,\n  \"initialQuantity\": 0,\n  \"unit\": \"\",\n  \"packageQuantity\": 0,\n  \"packageUnit\": \"\",\n  \"categories\": [],\n  \"newGenericName\": \"\"\n}"
+        "text": "{\n  \"name\": \"\",\n  \"unitClass\": \"\",\n  \"category\": \"\",\n  \"barcode\": \"\",\n  \"brand\": \"\",\n  \"nutritionBasisQuantity\": 100,\n  \"nutritionBasisUnit\": \"mL\",\n  \"caloriesPerRef\": 0,\n  \"proteinPerRef\": 0,\n  \"carbsPerRef\": 0,\n  \"fatPerRef\": 0,\n  \"alcoholAbvPercent\": 0,\n  \"readyToEat\": false,\n  \"initialQuantity\": 0,\n  \"unit\": \"\",\n  \"packageQuantity\": 0,\n  \"packageUnit\": \"\",\n  \"packQuantity\": 0,\n  \"packUnit\": \"\",\n  \"categories\": [],\n  \"newGenericName\": \"\"\n}"
       },
       "headers": [
         {

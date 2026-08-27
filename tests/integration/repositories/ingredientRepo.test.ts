@@ -151,6 +151,9 @@ describe("data/repositories/ingredientRepo", () => {
           "barcode",
           "packageQuantity",
           "packageUnit",
+          // openspec: pack-units — the inner pre-portioned pack.
+          "packQuantity",
+          "packUnit",
           "createdAt",
           "updatedAt",
         ].sort(),

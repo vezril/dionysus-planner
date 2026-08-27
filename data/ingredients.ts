@@ -98,6 +98,8 @@ export interface IngredientNutritionFields {
   barcode?: string | null;
   packageQuantity?: number | null;
   packageUnit?: string | null;
+  packQuantity?: number | null;
+  packUnit?: string | null;
 }
 
 export async function getIngredientRecordById(id: number): Promise<IngredientRecord | null> {
@@ -137,6 +139,8 @@ export async function createIngredientRecord(input: IngredientNutritionFields): 
       barcode: input.barcode ?? null,
       packageQuantity: input.packageQuantity ?? null,
       packageUnit: input.packageUnit ?? null,
+      packQuantity: input.packQuantity ?? null,
+      packUnit: input.packUnit ?? null,
     });
   } finally {
     db.$client.close();
@@ -172,6 +176,8 @@ export async function updateIngredientNutritionRecord(
       barcode: patch.barcode ?? null,
       packageQuantity: patch.packageQuantity ?? null,
       packageUnit: patch.packageUnit ?? null,
+      packQuantity: patch.packQuantity ?? null,
+      packUnit: patch.packUnit ?? null,
     });
   } finally {
     db.$client.close();

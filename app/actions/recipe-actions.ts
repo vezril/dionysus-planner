@@ -13,6 +13,8 @@ import { revalidatePath } from "next/cache";
 import { recipeSchema } from "@/domain/validation/recipe.schema";
 import { toCanonical } from "@/domain/units";
 import { parseRecipeBody } from "@/domain/cooklangParser";
+import { expandPackEntry, isPackUnit } from "@/domain/packs";
+import { getIngredientRecordById } from "@/data/ingredients";
 import type { RecipeRecord, RecipeLineRecord, RecipeLineInput } from "@/data/repositories/recipeRepo";
 import {
   createRecipeWithLines,
@@ -60,17 +62,59 @@ function notFoundError(id: number): { ok: false; error: ActionError } {
   };
 }
 
-function toLineInputs(lines: Array<{ ingredientId: number; quantity: number; unit: string }>): RecipeLineInput[] {
+function toLineInputs(
+  lines: Array<{ ingredientId: number; quantity: number; unit: string; displayQuantity?: number; displayUnit?: string }>,
+): RecipeLineInput[] {
   return lines.map((line) => {
     const { quantityCanonical, entryUnitClass } = toCanonical(line.quantity, line.unit);
     return {
       ingredientId: line.ingredientId,
       quantityCanonical,
       entryUnitClass,
-      displayQuantity: line.quantity,
-      displayUnit: line.unit,
+      // openspec: pack-units — pack mentions store "1 pack" verbatim for
+      // display while the canonical amount is the expanded real quantity.
+      displayQuantity: line.displayQuantity ?? line.quantity,
+      displayUnit: line.displayUnit ?? line.unit,
     };
   });
+}
+
+/** openspec: pack-units — expand pack/packs mentions through each
+ * product's pack size before canonicalization. */
+async function expandPackLines(
+  parsedLines: Array<{ ingredientId: number; quantity: number; unit: string }>,
+): Promise<
+  | { ok: true; lines: Array<{ ingredientId: number; quantity: number; unit: string; displayQuantity?: number; displayUnit?: string }> }
+  | { ok: false; errors: string[] }
+> {
+  const expanded: Array<{ ingredientId: number; quantity: number; unit: string; displayQuantity?: number; displayUnit?: string }> = [];
+  const errors: string[] = [];
+  const cache = new Map<number, Awaited<ReturnType<typeof getIngredientRecordById>>>();
+  for (const line of parsedLines) {
+    if (!isPackUnit(line.unit)) {
+      expanded.push(line);
+      continue;
+    }
+    if (!cache.has(line.ingredientId)) {
+      cache.set(line.ingredientId, await getIngredientRecordById(line.ingredientId));
+    }
+    const record = cache.get(line.ingredientId) ?? null;
+    const result = record === null ? "NO_PACK" : expandPackEntry(line.quantity, line.unit, record);
+    if (result === "NO_PACK") {
+      errors.push(
+        `"${record?.name ?? `#${line.ingredientId}`}" is measured in packs but has no pack size — set "Pack size (optional)" on the product first.`,
+      );
+      continue;
+    }
+    expanded.push({
+      ingredientId: line.ingredientId,
+      quantity: result.quantity,
+      unit: result.unit,
+      displayQuantity: line.quantity,
+      displayUnit: line.quantity === 1 ? "pack" : "packs",
+    });
+  }
+  return errors.length > 0 ? { ok: false, errors } : { ok: true, lines: expanded };
 }
 
 /**
@@ -82,7 +126,9 @@ function toLineInputs(lines: Array<{ ingredientId: number; quantity: number; uni
  * rejection (FR-13), just derived from parsed text instead of a
  * client-submitted array.
  */
-function resolveLinesFromBody(body: string): { ok: true; lines: RecipeLineInput[] } | { ok: false; error: ActionError } {
+async function resolveLinesFromBody(
+  body: string,
+): Promise<{ ok: true; lines: RecipeLineInput[] } | { ok: false; error: ActionError }> {
   const parsed = parseRecipeBody(body);
 
   if (parsed.errors.length > 0) {
@@ -92,7 +138,11 @@ function resolveLinesFromBody(body: string): { ok: true; lines: RecipeLineInput[
     return validationError({ body: ["Type at least one ingredient (start with @)."] });
   }
 
-  return { ok: true, lines: toLineInputs(parsed.lines) };
+  const expanded = await expandPackLines(parsed.lines);
+  if (!expanded.ok) {
+    return validationError({ body: expanded.errors });
+  }
+  return { ok: true, lines: toLineInputs(expanded.lines) };
 }
 
 /**
@@ -119,7 +169,7 @@ export async function createRecipe(input: unknown): Promise<CreateRecipeResult> 
   }
 
   const data = parsed.data;
-  const resolved = resolveLinesFromBody(data.body);
+  const resolved = await resolveLinesFromBody(data.body);
   if (!resolved.ok) {
     return resolved;
   }
@@ -174,7 +224,7 @@ export async function updateRecipe(id: number, input: unknown): Promise<UpdateRe
   }
 
   const data = parsed.data;
-  const resolved = resolveLinesFromBody(data.body);
+  const resolved = await resolveLinesFromBody(data.body);
   if (!resolved.ok) {
     return resolved;
   }
@@ -259,9 +309,14 @@ export async function previewRecipeNutrition(input: unknown): Promise<PreviewRec
   const parsed = parseRecipeBody(body);
   if (parsed.errors.length > 0 || parsed.lines.length === 0) return { ok: true, data: null };
 
+  // openspec: pack-units — pack mentions preview at their expanded size;
+  // a missing pack size just means no preview yet (mid-setup, not an error).
+  const expanded = await expandPackLines(parsed.lines);
+  if (!expanded.ok) return { ok: true, data: null };
+
   let lines: RecipeLineInput[];
   try {
-    lines = toLineInputs(parsed.lines);
+    lines = toLineInputs(expanded.lines);
   } catch {
     return { ok: true, data: null };
   }
