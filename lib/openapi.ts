@@ -165,6 +165,8 @@ export const openapiSpec = {
                   unit: { type: "string" },
                   packageQuantity: { type: "number" },
                   packageUnit: { type: "string" },
+                  packQuantity: { type: "number", description: "Inner pre-portioned pack size (a 366 g box of 6×61 g packs → 61)." },
+                  packUnit: { type: "string", description: "Required when packQuantity is set." },
                   categories: { type: "array", items: { type: "string" }, description: 'Paths nest with "/".' },
                   newGenericName: { type: "string", description: "Reuse-or-create a same-class generic and link to it." },
                 },

@@ -623,4 +623,28 @@ describe("computeCookableAndNearMatch — empty pantry / empty recipes edge case
     expect(result.nearMatch).toEqual([]);
     expect(result.missingMoreCount).toBe(0);
   });
+
+  // openspec: pack-units — "pack" is product-relative with no UNITS
+  // factor: a shortfall on such a line reports in the class's canonical
+  // unit instead of crashing the whole cookability computation.
+  it("a pack-displayed line's shortfall degrades to the canonical unit, never a crash", () => {
+    const pantry = pantryIndexOf([]);
+    // Built by hand: the recipeLine helper canonicalizes via UNITS, which
+    // "pack" (expanded at line-building time in the app) never enters.
+    const dish = recipe(801, "Overnight Oats", [
+      {
+        ingredientId: 951,
+        quantityCanonical: 61,
+        entryUnitClass: "MASS",
+        displayQuantity: 1,
+        displayUnit: "pack",
+        ingredient: { unitClass: "MASS", densityGPerMl: null },
+      },
+    ]);
+    const result = computeCookableAndNearMatch(pantry, [dish], 3);
+    const unsatisfied = findUnsatisfied(result.nearMatch, 801, 951);
+    expect(unsatisfied?.status).toBe("MISSING");
+    expect(unsatisfied?.displayUnit).toBe("g");
+    expect(unsatisfied?.shortfallDisplayQuantity).toBe(61);
+  });
 });

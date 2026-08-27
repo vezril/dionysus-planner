@@ -134,6 +134,13 @@
       "when": 1787834062946,
       "tag": "0018_plan_entry_consumed",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1787842653496,
+      "tag": "0019_pack_units",
+      "breakpoints": true
     }
   ]
 }

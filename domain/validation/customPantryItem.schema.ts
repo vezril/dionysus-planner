@@ -73,6 +73,13 @@ export const customPantryItemSchema = z
       .string()
       .refine((unit) => unit in UNITS, { message: "Pick a known unit." })
       .nullish(),
+    // openspec: pack-units — the INNER pre-portioned pack (61 g pack in a
+    // 366 g box); expands `pack` mentions and portion sizing.
+    packQuantity: z.number().gt(0).nullish(),
+    packUnit: z
+      .string()
+      .refine((unit) => unit in UNITS, { message: "Pick a known unit." })
+      .nullish(),
     initialQuantity: z
       .number({ error: "Quantity is required (0 is fine)." })
       .min(0, { message: "Quantity cannot be negative." }),
@@ -85,6 +92,10 @@ export const customPantryItemSchema = z
   .refine((value) => value.packageQuantity == null || value.packageUnit != null, {
     message: "A package size needs a unit.",
     path: ["packageUnit"],
+  })
+  .refine((value) => value.packQuantity == null || value.packUnit != null, {
+    message: "A pack size needs a unit.",
+    path: ["packUnit"],
   })
   .refine((value) => value.nutritionBasisQuantity == null || value.nutritionBasisUnit != null, {
     message: "A nutrition basis needs a unit.",

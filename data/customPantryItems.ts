@@ -36,6 +36,8 @@ export interface CustomPantryItemInput {
   barcode: string | null;
   packageQuantity: number | null;
   packageUnit: string | null;
+  packQuantity?: number | null;
+  packUnit?: string | null;
   // Pantry half — canonical conversion happens in the Server Action, same
   // division of labor as addOrUpdatePantryItem (S-202 Dev Notes).
   quantityCanonical: number;
@@ -84,6 +86,8 @@ export async function createCustomPantryItemRecords(
           barcode: input.barcode,
           packageQuantity: input.packageQuantity,
           packageUnit: input.packageUnit,
+          packQuantity: input.packQuantity ?? null,
+          packUnit: input.packUnit ?? null,
           createdAt: timestamp,
           updatedAt: timestamp,
         })
@@ -132,6 +136,8 @@ export async function createCustomPantryItemRecords(
           barcode: ingredientRow.barcode,
           packageQuantity: ingredientRow.packageQuantity,
           packageUnit: ingredientRow.packageUnit,
+          packQuantity: ingredientRow.packQuantity,
+          packUnit: ingredientRow.packUnit,
           createdAt: ingredientRow.createdAt,
           updatedAt: ingredientRow.updatedAt,
         },

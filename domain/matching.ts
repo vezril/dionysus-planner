@@ -111,7 +111,16 @@ function evaluateIngredientGroup(
     }
   }
 
-  const displayUnit = first.displayUnit;
+  // openspec: pack-units — product-relative display units ("pack") have
+  // no global factor; shortfalls report in the class's canonical unit.
+  const displayUnit =
+    first.displayUnit in UNITS
+      ? first.displayUnit
+      : first.entryUnitClass === "MASS"
+        ? "g"
+        : first.entryUnitClass === "VOLUME"
+          ? "mL"
+          : "each";
   const toCanonicalFactor = UNITS[displayUnit].toCanonicalFactor;
   const fullRequiredDisplayQuantity = requiredCanonical / toCanonicalFactor;
 

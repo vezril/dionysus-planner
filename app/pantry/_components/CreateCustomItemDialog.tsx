@@ -53,6 +53,8 @@ type FormValues = {
   barcode: string | undefined;
   packageQuantity: number | undefined;
   packageUnit: string | undefined;
+  packQuantity: number | undefined;
+  packUnit: string | undefined;
   initialQuantity: number | undefined;
   unit: string | undefined;
   nutritionBasisQuantity: number | undefined;
@@ -92,6 +94,8 @@ const DEFAULT_VALUES: FormValues = {
   brand: undefined,
   barcode: undefined,
   packageQuantity: undefined,
+  packQuantity: undefined,
+  packUnit: undefined,
   packageUnit: undefined,
   initialQuantity: undefined,
   unit: undefined,
@@ -309,6 +313,50 @@ export function CreateCustomItemDialog({
                   </p>
                 ) : null}
               </div>
+            </div>
+
+            {/* openspec: pack-units — the INNER pre-portioned pack. */}
+            <div className="flex flex-wrap gap-3">
+              <div className="flex min-w-28 flex-col gap-1">
+                <label htmlFor="custom-item-pack-quantity" className="text-sm font-medium">
+                  Pack size (optional)
+                </label>
+                <Input
+                  id="custom-item-pack-quantity"
+                  type="number"
+                  step="any"
+                  {...register("packQuantity", { setValueAs: toOptionalNumber })}
+                />
+              </div>
+              <div className="flex min-w-20 flex-col gap-1">
+                <span className="text-sm font-medium">Pack unit</span>
+                <Controller
+                  control={control}
+                  name="packUnit"
+                  render={({ field }) => (
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <SelectTrigger aria-label="Pack unit">
+                        <SelectValue placeholder="Unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.keys(UNITS).map((unit) => (
+                          <SelectItem key={unit} value={unit}>
+                            {unit}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.packUnit ? (
+                  <p data-testid="field-error-packUnit" className="text-sm text-destructive">
+                    {errors.packUnit.message}
+                  </p>
+                ) : null}
+              </div>
+              <p className="w-full text-xs text-muted-foreground">
+                The inner pre-portioned pack (e.g. one 61 g pouch of a 366 g box) — recipes can then use {"{1%pack}"}.
+              </p>
             </div>
 
             <div className="flex flex-col gap-1">

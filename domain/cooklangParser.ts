@@ -20,6 +20,7 @@
  * — never parsed, left as inert plain text.
  */
 import { UNITS } from "./units";
+import { isPackUnit } from "./packs";
 
 const MENTION_PATTERN = /@([^(]+?)\((\d+)\)(?:\{([^}]*)\})?/g;
 
@@ -63,7 +64,10 @@ export function parseRecipeBody(body: string): ParseRecipeBodyResult {
       continue;
     }
 
-    if (!(unit in UNITS)) {
+    // openspec: pack-units — pack/packs is product-relative; whether the
+    // product HAS a pack size is checked at line-building time (the
+    // parser is pure, no catalog access).
+    if (!(unit in UNITS) && !isPackUnit(unit)) {
       errors.push(`"${name}" uses an unknown unit ("${unit}").`);
       continue;
     }

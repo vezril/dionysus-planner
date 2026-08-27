@@ -46,6 +46,8 @@ type FormValues = {
   barcode: string | undefined;
   packageQuantity: number | undefined;
   packageUnit: string | undefined;
+  packQuantity: number | undefined;
+  packUnit: string | undefined;
   nutritionBasisQuantity: number | undefined;
   nutritionBasisUnit: string | undefined;
   caloriesPerRef: number | undefined;
@@ -79,6 +81,8 @@ export interface IngredientFormInitialValues {
   barcode: string | null;
   packageQuantity: number | null;
   packageUnit: string | null;
+  packQuantity: number | null;
+  packUnit: string | null;
   caloriesPerRef: number;
   proteinPerRef: number;
   carbsPerRef: number;
@@ -109,6 +113,8 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
       barcode: undefined,
       packageQuantity: undefined,
       packageUnit: undefined,
+      packQuantity: undefined,
+      packUnit: undefined,
       nutritionBasisQuantity: undefined,
       nutritionBasisUnit: undefined,
       caloriesPerRef: undefined,
@@ -140,6 +146,8 @@ function toDefaultValues(initial?: IngredientFormInitialValues): FormValues {
     barcode: initial.barcode ?? undefined,
     packageQuantity: initial.packageQuantity ?? undefined,
     packageUnit: initial.packageUnit ?? undefined,
+    packQuantity: initial.packQuantity ?? undefined,
+    packUnit: initial.packUnit ?? undefined,
     // Stored values are per-reference; the edit form states that basis
     // explicitly (design.md: no original-basis reconstruction).
     nutritionBasisQuantity: referenceBasisFor(initial.unitClass).quantity,
@@ -576,6 +584,62 @@ export function IngredientForm({
             </p>
           ) : null}
         </div>
+      </div>
+
+      {/* openspec: pack-units — the INNER pre-portioned pack: recipes can
+          say {1%pack}, Eat prefills it, Adjust gets a −1 pack preset. */}
+      <div className="flex max-w-sm flex-wrap gap-3">
+        <div className="flex min-w-32 flex-1 flex-col gap-1">
+          <label htmlFor="ingredient-packQuantity" className="text-sm font-medium text-foreground">
+            Pack size (optional)
+          </label>
+          <Input
+            id="ingredient-packQuantity"
+            type="number"
+            step="any"
+            {...register("packQuantity", { setValueAs: toOptionalNumber })}
+          />
+        </div>
+        <div className="flex min-w-24 flex-col gap-1">
+          <span className="text-sm font-medium text-foreground">Pack unit</span>
+          <Controller
+            control={control}
+            name="packUnit"
+            render={({ field }) => (
+              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                <SelectTrigger aria-label="Pack unit">
+                  <SelectValue placeholder="Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(UNITS).map((unit) => (
+                    <SelectItem key={unit} value={unit}>
+                      {unit}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.packUnit ? (
+            <p data-testid="field-error-packUnit" className="text-sm text-destructive">
+              {errors.packUnit.message}
+            </p>
+          ) : null}
+        </div>
+        <p className="w-full text-xs text-muted-foreground">
+          The inner pre-portioned pack — a 366 g box of six 61 g pouches has package 366 g, pack 61 g.
+          {(() => {
+            const packQuantity = watch("packQuantity");
+            const packUnit = watch("packUnit");
+            const packageQuantity = watch("packageQuantity");
+            const packageUnit = watch("packageUnit");
+            if (!packQuantity || !packUnit || !packageQuantity || packageUnit !== packUnit) return null;
+            const packs = Math.round((packageQuantity / packQuantity) * 10) / 10;
+            return (
+              <span data-testid="packs-per-package"> ≈ {packs} packs per package.</span>
+            );
+          })()}
+        </p>
       </div>
 
       {/* openspec: nutrition-basis-and-edit — enter label values against

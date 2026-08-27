@@ -39,13 +39,16 @@ export interface IngredientRecord {
   barcode: string | null;
   packageQuantity: number | null;
   packageUnit: string | null;
+  /** openspec: pack-units — the inner pre-portioned pack. */
+  packQuantity: number | null;
+  packUnit: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export type IngredientCreateInput = Omit<
   IngredientRecord,
-  "id" | "createdAt" | "updatedAt" | "overridden" | "brand" | "barcode" | "packageQuantity" | "packageUnit"
+  "id" | "createdAt" | "updatedAt" | "overridden" | "brand" | "barcode" | "packageQuantity" | "packageUnit" | "packQuantity" | "packUnit"
 > & {
   overridden?: boolean;
   // Optional so pre-existing callers (seed, ingredient actions) are untouched.
@@ -53,6 +56,8 @@ export type IngredientCreateInput = Omit<
   barcode?: string | null;
   packageQuantity?: number | null;
   packageUnit?: string | null;
+  packQuantity?: number | null;
+  packUnit?: string | null;
 };
 
 export type IngredientUpdatePatch = Partial<
@@ -80,6 +85,8 @@ export type IngredientUpdatePatch = Partial<
     | "barcode"
     | "packageQuantity"
     | "packageUnit"
+    | "packQuantity"
+    | "packUnit"
   >
 >;
 
@@ -111,6 +118,8 @@ function toRecord(row: typeof ingredient.$inferSelect): IngredientRecord {
     barcode: row.barcode,
     packageQuantity: row.packageQuantity,
     packageUnit: row.packageUnit,
+    packQuantity: row.packQuantity,
+    packUnit: row.packUnit,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -150,6 +159,8 @@ export async function create(db: Db, input: IngredientCreateInput): Promise<Ingr
       barcode: input.barcode ?? null,
       packageQuantity: input.packageQuantity ?? null,
       packageUnit: input.packageUnit ?? null,
+      packQuantity: input.packQuantity ?? null,
+      packUnit: input.packUnit ?? null,
       createdAt: timestamp,
       updatedAt: timestamp,
     })

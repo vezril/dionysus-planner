@@ -187,6 +187,8 @@ export async function createCustomPantryItem(
       barcode: data.barcode ?? null,
       packageQuantity: data.packageQuantity ?? null,
       packageUnit: data.packageQuantity != null ? (data.packageUnit ?? null) : null,
+      packQuantity: data.packQuantity ?? null,
+      packUnit: data.packQuantity != null ? (data.packUnit ?? null) : null,
       quantityCanonical,
       entryUnitClass,
       displayQuantity: data.initialQuantity,
