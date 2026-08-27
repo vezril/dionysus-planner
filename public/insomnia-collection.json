@@ -252,7 +252,7 @@
       "_type": "request",
       "parentId": "fld_mobile",
       "name": "DELETE /api/mobile/planner-entries",
-      "description": "Remove a plan entry",
+      "description": "Remove a plan entry\n\nRemoving an unconsumed entry frees its reservation; nothing is refunded service-side (planning never consumed).",
       "method": "DELETE",
       "url": "{{ _.base_url }}/api/mobile/planner-entries",
       "parameters": [
@@ -267,6 +267,28 @@
     },
     {
       "_id": "req_013",
+      "_type": "request",
+      "parentId": "fld_mobile",
+      "name": "POST /api/mobile/planner-entries/consume",
+      "description": "Eat/drink a planned entry on its own day\n\nService-first, all-or-nothing: logs the meal with eatenAt on the ENTRY's date (noon UTC when backdated), draining the recipe's batches oldest-first for eat_batch or consuming package/basis-sized portions for eat_pantry, then marks the entry consumed. Future-dated entries are refused.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/mobile/planner-entries/consume",
+      "parameters": [],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"id\": 0\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "created": 1735689600000,
+      "modified": 1735689600000
+    },
+    {
+      "_id": "req_014",
       "_type": "request",
       "parentId": "fld_mobile",
       "name": "GET /api/mobile/log",
@@ -284,7 +306,7 @@
       "modified": 1735689600000
     },
     {
-      "_id": "req_014",
+      "_id": "req_015",
       "_type": "request",
       "parentId": "fld_mobile",
       "name": "GET /api/mobile/log-range",
@@ -307,7 +329,7 @@
       "modified": 1735689600000
     },
     {
-      "_id": "req_015",
+      "_id": "req_016",
       "_type": "request",
       "parentId": "fld_mobile",
       "name": "POST /api/mobile/log-portion",
@@ -337,7 +359,7 @@
       "modified": 1735689600000
     },
     {
-      "_id": "req_016",
+      "_id": "req_017",
       "_type": "request",
       "parentId": "fld_backup",
       "name": "GET /api/backup",
@@ -349,7 +371,7 @@
       "modified": 1735689600000
     },
     {
-      "_id": "req_017",
+      "_id": "req_018",
       "_type": "request",
       "parentId": "fld_backup",
       "name": "GET /api/backup/markdown",
@@ -361,7 +383,7 @@
       "modified": 1735689600000
     },
     {
-      "_id": "req_018",
+      "_id": "req_019",
       "_type": "request",
       "parentId": "fld_core",
       "name": "GET /api/openapi",

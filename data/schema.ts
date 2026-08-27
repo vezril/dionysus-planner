@@ -210,6 +210,9 @@ export const planEntry = sqliteTable("plan_entry", {
   batchLabel: text("batchLabel"),
   portions: real("portions").notNull(),
   createdAt: text("createdAt").notNull(),
+  /** openspec: planner-consume — when the planned entry was actually
+   * eaten/drunk (null = still just an intention; reserves availability). */
+  consumedAt: text("consumedAt"),
 });
 
 /** openspec: nutrition-targets-guide — personal daily targets keyed by

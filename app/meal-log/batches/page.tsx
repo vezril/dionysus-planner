@@ -1,5 +1,6 @@
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { formatInstantIn, resolveDionysusTimezone } from "@/app/lib/dionysusTimezone";
+import { getPlannedPortionsByBatch } from "@/data/planner";
 import { listBatches, listRecipes } from "@/services/dionysusService";
 import { CookBatchForm } from "./_components/CookBatchForm";
 import { LogPortionButton } from "./_components/LogPortionButton";
@@ -13,7 +14,11 @@ export const dynamic = "force-dynamic";
 export default async function MealLogBatchesPage() {
   const baseUrl = resolveDionysusServiceUrl();
   const timeZone = resolveDionysusTimezone();
-  const [batches, recipes] = await Promise.all([listBatches(baseUrl), listRecipes(baseUrl)]);
+  const [batches, recipes, plannedByBatch] = await Promise.all([
+    listBatches(baseUrl),
+    listRecipes(baseUrl),
+    getPlannedPortionsByBatch(),
+  ]);
   const recipeNameById = new Map(recipes.map((recipe) => [recipe.id, recipe.name]));
 
   return (
@@ -37,6 +42,13 @@ export default async function MealLogBatchesPage() {
               </span>
               <span className="text-sm text-muted-foreground">
                 cooked {formatInstantIn(batch.cookedAt, timeZone)} · {batch.remainingPortions} portions remaining
+                {/* openspec: planner-consume — reservations are visible, never deducted. */}
+                {batch.id !== null && (plannedByBatch.get(batch.id) ?? 0) > 0 ? (
+                  <span data-testid="batch-planned" className="text-status-near">
+                    {" "}
+                    · {plannedByBatch.get(batch.id)} planned
+                  </span>
+                ) : null}
               </span>
               {/* openspec: eat-now-and-quick-log — leftovers, one click. */}
               {batch.remainingPortions >= 1 && batch.id !== null ? (

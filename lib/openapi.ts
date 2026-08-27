@@ -182,7 +182,7 @@ export const openapiSpec = {
         parameters: [
           { name: "weekStart", in: "query", schema: { type: "string", format: "date" }, description: "Any date; snapped to its Monday. Defaults to the current week." },
         ],
-        responses: { "200": { description: "entriesByDate, ready-to-eat batches (merged per recipe, FIFO batch id), pantryOptions, suggestions, shoppingList, recipeOptions." } },
+        responses: { "200": { description: "entriesByDate (each entry carries consumedAt — null while still planned), ready-to-eat batches (merged per recipe, FIFO batch id, availablePortions net of unconsumed plans + plannedPortions), pantryOptions, suggestions, shoppingList, recipeOptions." } },
       },
     },
     "/api/mobile/planner-entries": {
@@ -213,8 +213,31 @@ export const openapiSpec = {
       delete: {
         tags: ["mobile"],
         summary: "Remove a plan entry",
+        description: "Removing an unconsumed entry frees its reservation; nothing is refunded service-side (planning never consumed).",
         parameters: [{ name: "id", in: "query", required: true, schema: { type: "integer" } }],
         responses: { "204": { description: "Removed." }, "400": { description: "Bad id or not found." } },
+      },
+    },
+    "/api/mobile/planner-entries/consume": {
+      post: {
+        tags: ["mobile"],
+        summary: "Eat/drink a planned entry on its own day",
+        description:
+          "Service-first, all-or-nothing: logs the meal with eatenAt on the ENTRY's date (noon UTC when backdated), draining the recipe's batches oldest-first for eat_batch or consuming package/basis-sized portions for eat_pantry, then marks the entry consumed. Future-dated entries are refused.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { type: "object", required: ["id"], properties: { id: { type: "integer", description: "Plan entry id (eat_batch or eat_pantry, unconsumed)." } } },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "The entry, now with consumedAt set." },
+          "400": { description: "Wrong kind, already consumed, future date, or insufficient portions." },
+          "404": { description: "Entry, product, or batch not found." },
+          "502": { description: "Inventory service unreachable — nothing was logged or consumed." },
+        },
       },
     },
     "/api/mobile/log": {

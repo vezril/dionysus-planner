@@ -30,6 +30,7 @@ export interface RawIngredientOverrides {
   overridden?: boolean;
   packageQuantity?: number | null;
   packageUnit?: string | null;
+  category?: "FOOD" | "DRINK" | "SUPPLEMENT";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -42,8 +43,8 @@ export function insertRawIngredient(sqlite: Database.Database, overrides: RawIng
       (seedKey, name, unitClass, densityGPerMl, caloriesPerRef, proteinPerRef, carbsPerRef, fatPerRef,
        fiberPerRef, sugarPerRef, sodiumMgPerRef, alcoholGPerRef, saturatedFatGPerRef, transFatGPerRef,
        cholesterolMgPerRef, genericOfId, readyToEat, source, overridden, packageQuantity, packageUnit,
-       createdAt, updatedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       category, createdAt, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const info = stmt.run(
     overrides.seedKey ?? null,
@@ -67,6 +68,7 @@ export function insertRawIngredient(sqlite: Database.Database, overrides: RawIng
     overrides.overridden ? 1 : 0,
     overrides.packageQuantity ?? null,
     overrides.packageUnit ?? null,
+    overrides.category ?? "FOOD",
     overrides.createdAt ?? FIXED_TIMESTAMP,
     overrides.updatedAt ?? FIXED_TIMESTAMP,
   );

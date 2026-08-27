@@ -1,11 +1,19 @@
 "use client";
 
-/** openspec: weekly-planner — one day's planned entries + remove. */
+/** openspec: weekly-planner — one day's planned entries + remove.
+ * openspec: planner-consume — Eat/Drink logs the entry on ITS OWN day;
+ * consumed entries show a badge and lose both buttons. */
 import Link from "next/link";
-import { useTransition } from "react";
-import { removePlanEntry } from "@/app/actions/planner-actions";
+import { useState, useTransition } from "react";
+import { consumePlanEntry, removePlanEntry } from "@/app/actions/planner-actions";
 import type { PlanEntryRow } from "@/data/planner";
 import { Button } from "@/components/ui/button";
+
+function consumeVerb(entry: PlanEntryRow): { action: string; done: string } {
+  return entry.kind === "eat_pantry" && entry.ingredientCategory === "DRINK"
+    ? { action: "Drink", done: "drunk" }
+    : { action: "Eat", done: "eaten" };
+}
 
 export function PlanDayColumn({
   date,
@@ -23,6 +31,7 @@ export function PlanDayColumn({
   entries: PlanEntryRow[];
 }) {
   const [pending, startTransition] = useTransition();
+  const [errorByEntry, setErrorByEntry] = useState<Record<number, string>>({});
 
   return (
     <div
@@ -46,56 +55,103 @@ export function PlanDayColumn({
       ) : (
         // Inner links/buttons shouldn't retarget the day selection.
         <ul className="flex flex-col gap-2" onClick={(event) => event.stopPropagation()}>
-          {entries.map((entry) => (
-            <li key={entry.id} data-testid="plan-entry" className="flex flex-col gap-1 rounded-sm border border-border/60 p-2">
-              {entry.kind === "eat_item" ? (
-                <span className="text-sm font-medium">
-                  {entry.batchLabel}{" "}
-                  <span data-testid="plan-entry-eaten" className="text-xs font-normal text-status-cookable">
-                    (eaten)
+          {entries.map((entry) => {
+            const verb = consumeVerb(entry);
+            const consumed = entry.consumedAt !== null;
+            const consumable = (entry.kind === "eat_batch" || entry.kind === "eat_pantry") && !consumed;
+            return (
+              <li key={entry.id} data-testid="plan-entry" className="flex flex-col gap-1 rounded-sm border border-border/60 p-2">
+                {entry.kind === "eat_item" ? (
+                  <span className="text-sm font-medium">
+                    {entry.batchLabel}{" "}
+                    <span data-testid="plan-entry-eaten" className="text-xs font-normal text-status-cookable">
+                      (eaten)
+                    </span>
                   </span>
-                </span>
-              ) : entry.kind === "eat_pantry" ? (
-                /* openspec: plan-pantry-backdate — planned, not yet eaten. */
-                <Link href="/pantry" className="text-sm font-medium hover:text-primary hover:underline">
-                  {entry.batchLabel}{" "}
-                  <span data-testid="plan-entry-pantry" className="text-xs font-normal text-primary">
-                    (from pantry)
+                ) : entry.kind === "eat_pantry" ? (
+                  /* openspec: plan-pantry-backdate — planned, not yet eaten. */
+                  <Link href="/pantry" className="text-sm font-medium hover:text-primary hover:underline">
+                    {entry.batchLabel}{" "}
+                    {consumed ? (
+                      <span data-testid="plan-entry-consumed" className="text-xs font-normal text-status-cookable">
+                        ({verb.done})
+                      </span>
+                    ) : (
+                      <span data-testid="plan-entry-pantry" className="text-xs font-normal text-primary">
+                        (from pantry)
+                      </span>
+                    )}
+                  </Link>
+                ) : entry.kind === "eat_batch" ? (
+                  <Link href="/meal-log/batches" className="text-sm font-medium hover:text-primary hover:underline">
+                    {entry.batchLabel}{" "}
+                    {consumed ? (
+                      <span data-testid="plan-entry-consumed" className="text-xs font-normal text-status-cookable">
+                        ({verb.done})
+                      </span>
+                    ) : (
+                      <span data-testid="plan-entry-batch" className="text-xs font-normal text-status-cookable">
+                        (batch)
+                      </span>
+                    )}
+                  </Link>
+                ) : (
+                  <Link href={`/recipes/${entry.recipeId}`} className="text-sm font-medium hover:text-primary hover:underline">
+                    {entry.recipeName}
+                  </Link>
+                )}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {entry.kind === "eat_item" ? "logged" : `${entry.portions} portions`}
+                    {entry.caloriesKcal !== null ? (
+                      <span data-testid="plan-entry-calories"> · {entry.caloriesKcal} kcal</span>
+                    ) : null}
                   </span>
-                </Link>
-              ) : entry.kind === "eat_batch" ? (
-                <Link href="/meal-log/batches" className="text-sm font-medium hover:text-primary hover:underline">
-                  {entry.batchLabel}{" "}
-                  <span data-testid="plan-entry-batch" className="text-xs font-normal text-status-cookable">
-                    (batch)
-                  </span>
-                </Link>
-              ) : (
-                <Link href={`/recipes/${entry.recipeId}`} className="text-sm font-medium hover:text-primary hover:underline">
-                  {entry.recipeName}
-                </Link>
-              )}
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-muted-foreground">
-                  {entry.kind === "eat_item" ? "logged" : `${entry.portions} portions`}
-                  {entry.caloriesKcal !== null ? (
-                    <span data-testid="plan-entry-calories"> · {entry.caloriesKcal} kcal</span>
-                  ) : null}
-                </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-6 px-2 text-xs"
-                  disabled={pending}
-                  aria-label={`Remove ${entry.recipeName ?? entry.batchLabel}`}
-                  onClick={() => startTransition(async () => void (await removePlanEntry(entry.id)))}
-                >
-                  ✕
-                </Button>
-              </div>
-            </li>
-          ))}
+                  {consumed ? null : (
+                    <span className="flex items-center gap-1">
+                      {consumable ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                          data-testid="plan-entry-consume"
+                          disabled={pending}
+                          aria-label={`${verb.action} ${entry.batchLabel ?? entry.recipeName}`}
+                          onClick={() =>
+                            startTransition(async () => {
+                              const result = await consumePlanEntry(entry.id);
+                              setErrorByEntry((previous) => ({
+                                ...previous,
+                                [entry.id]: result.ok ? "" : result.error.message,
+                              }));
+                            })
+                          }
+                        >
+                          {verb.action}
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        disabled={pending}
+                        aria-label={`Remove ${entry.recipeName ?? entry.batchLabel}`}
+                        onClick={() => startTransition(async () => void (await removePlanEntry(entry.id)))}
+                      >
+                        ✕
+                      </Button>
+                    </span>
+                  )}
+                </div>
+                {errorByEntry[entry.id] ? (
+                  <p data-testid="plan-entry-consume-error" className="text-xs text-destructive">
+                    {errorByEntry[entry.id]}
+                  </p>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

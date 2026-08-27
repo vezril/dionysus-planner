@@ -24,7 +24,7 @@ export function PlannerBoard({
   today: string;
   entriesByDate: Record<string, PlanEntryRow[]>;
   recipeOptions: Array<{ id: number; name: string; servings: number }>;
-  batchOptions: Array<{ batchId: number; label: string; availablePortions: number }>;
+  batchOptions: Array<{ batchId: number; label: string; availablePortions: number; plannedPortions: number }>;
   pantryOptions: Array<{ ingredientId: number; name: string }>;
 }) {
   const [selectedDate, setSelectedDate] = useState(dates.includes(today) ? today : dates[0]);

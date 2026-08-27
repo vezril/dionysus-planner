@@ -18,7 +18,7 @@ export function AddPlanEntryForm({
   selectedDate: string;
   selectedLabel: string;
   recipeOptions: Array<{ id: number; name: string; servings: number }>;
-  batchOptions: Array<{ batchId: number; label: string; availablePortions: number }>;
+  batchOptions: Array<{ batchId: number; label: string; availablePortions: number; plannedPortions: number }>;
   /** openspec: plan-pantry-backdate — ready-to-eat pantry products. */
   pantryOptions: Array<{ ingredientId: number; name: string }>;
 }) {
@@ -62,7 +62,8 @@ export function AddPlanEntryForm({
           <SelectContent>
             {batchOptions.map((option) => (
               <SelectItem key={`batch:${option.batchId}`} value={`batch:${option.batchId}`}>
-                {option.label} — ready to eat ({option.availablePortions} left)
+                {option.label} — ready to eat ({option.availablePortions} left
+                {option.plannedPortions > 0 ? ` · ${option.plannedPortions} planned` : ""})
               </SelectItem>
             ))}
             {pantryOptions.map((option) => (

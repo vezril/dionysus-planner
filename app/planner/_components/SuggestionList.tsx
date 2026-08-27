@@ -13,7 +13,7 @@ export function SuggestionList({
   serviceAvailable,
 }: {
   suggestions: Suggestion[];
-  readyToEat: Array<{ batchId: number; label: string; availablePortions: number }>;
+  readyToEat: Array<{ batchId: number; label: string; availablePortions: number; plannedPortions: number }>;
   serviceAvailable: boolean;
 }) {
   const cookable = suggestions.filter((suggestion) => suggestion.tier === "cookable");
@@ -44,7 +44,12 @@ export function SuggestionList({
             {readyToEat.map((batch) => (
               <li key={batch.batchId} data-testid="planner-ready-batch" className="flex items-center gap-2 text-sm">
                 <span className="font-medium">{batch.label}</span>
-                <span className="text-xs text-muted-foreground">{batch.availablePortions} portions available</span>
+                <span className="text-xs text-muted-foreground">
+                  {batch.availablePortions} portions available
+                  {batch.plannedPortions > 0 ? (
+                    <span data-testid="planner-ready-planned"> · {batch.plannedPortions} planned</span>
+                  ) : null}
+                </span>
               </li>
             ))}
           </ul>
