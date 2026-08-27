@@ -116,4 +116,20 @@ test.describe("weekly planner", () => {
       page.getByTestId("planner-suggestions-cookable").getByTestId("planner-suggestion").filter({ hasText: RECIPE_NAME }),
     ).toBeVisible();
   });
+
+  // openspec: nutrition-intake — a planned day totals its calories and
+  // shows the share of the daily budget on the day card.
+  test("a planned day shows its calorie total as a share of the daily budget", async ({ page }) => {
+    await page.goto("/planner");
+    await page.getByRole("combobox", { name: "Plan recipe" }).click();
+    await page.getByRole("option", { name: RECIPE_NAME }).click();
+    await page.getByLabel("Portions").fill("2");
+    await page.getByTestId("plan-add").click();
+    const entry = page.getByTestId("plan-entry").filter({ hasText: RECIPE_NAME });
+    await expect(entry).toBeVisible();
+    const day = page.getByTestId("plan-day").filter({ has: entry });
+    await expect(day.getByTestId("plan-day-kcal")).toContainText("% of day");
+    await entry.getByRole("button", { name: `Remove ${RECIPE_NAME}` }).click();
+    await expect(entry).toHaveCount(0);
+  });
 });

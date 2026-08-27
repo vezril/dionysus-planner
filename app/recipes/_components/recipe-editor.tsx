@@ -50,6 +50,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { createRecipe, updateRecipe } from "@/app/actions/recipe-actions";
+import { NutritionPreview } from "@/app/recipes/_components/NutritionPreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -362,6 +363,9 @@ export function RecipeEditor({ mode, recipeId, initialValues }: RecipeEditorProp
           ) : null}
           {bodyError ? <p className="text-sm text-destructive">{bodyError}</p> : null}
         </div>
+
+        {/* openspec: nutrition-intake — live share-of-daily-intake preview. */}
+        <NutritionPreview body={bodyValue} servings={watch("servings")} />
 
         <div className="flex flex-col gap-1">
           <label htmlFor="recipe-tags" className="text-sm font-medium text-foreground">

@@ -30,12 +30,15 @@ Trans fat: no numeric target — guidance is "as low as possible".
 ## Micronutrient daily goals (adult male defaults; registry keys)
 
 vitaminA 900 µg RAE · vitaminC 90 mg · vitaminD 15 µg (600 IU) ·
-vitaminE 15 mg · vitaminK 120 µg · vitaminB1 1.2 mg · vitaminB2 1.3 mg ·
-vitaminB3 16 mg · vitaminB6 1.3 mg · vitaminB9 400 µg DFE ·
-vitaminB12 2.4 µg · calcium 1000 mg (1200 at 70+) · iron 8 mg (women
-19–50: 18 mg) · magnesium 420 mg · potassium 3400 mg AI · zinc 11 mg ·
-phosphorus 700 mg. All are GOALS (meet-or-exceed), keys match
-`domain/micronutrients.ts` MICRONUTRIENTS.
+vitaminE 15 mg · vitaminK 120 µg · vitaminB1 (Thiamine) 1.2 mg ·
+vitaminB2 (Riboflavin) 1.3 mg · vitaminB3 (Niacin) 16 mg ·
+vitaminB6 1.3 mg · vitaminB9 (Folate) 400 µg DFE · vitaminB12 2.4 µg ·
+calcium 1000 mg (1200 at 70+) · iron 8 mg (women 19–50: 18 mg) ·
+magnesium 420 mg · potassium 3400 mg AI · zinc 11 mg ·
+phosphorus 700 mg · pantothenate (B5) 5 mg AI · biotin (B7) 30 µg AI ·
+iodine 150 µg · selenium 55 µg · copper 0.9 mg · manganese 2.3 mg AI ·
+chromium 35 µg AI · molybdenum 45 µg. All are GOALS (meet-or-exceed),
+keys match `domain/micronutrients.ts` MICRONUTRIENTS.
 
 ## Alcohol — Canada's Guidance on Alcohol and Health (CCSA, 2023)
 

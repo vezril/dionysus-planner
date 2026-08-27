@@ -86,6 +86,7 @@ export default async function PlannerPage({
         recipeOptions={week.recipeOptions}
         batchOptions={week.readyToEat}
         pantryOptions={week.pantryOptions}
+        calorieTargetKcal={targets.values.caloriesKcal}
       />
 
       <ShoppingListPanel list={week.shoppingList} />

@@ -346,4 +346,32 @@ describe("planner availability with reservations", () => {
     const after = await getPlannerWeek("2026-01-12", 0.75);
     expect(after.readyToEat[0]).toMatchObject({ availablePortions: 4, plannedPortions: 0 });
   });
+
+  // openspec: nutrition-intake — eat_pantry entries price a ladder-sized
+  // portion so the day's calorie chip can total them.
+  it("eat_pantry entries carry portion-ladder calories", async () => {
+    const sqlite = new Database(dbPath);
+    const beerId = insertRawIngredient(sqlite, {
+      name: "PA Kcal Beer",
+      unitClass: "VOLUME",
+      caloriesPerRef: 43,
+      readyToEat: true,
+      category: "DRINK",
+      packageQuantity: 355,
+      packageUnit: "mL",
+    });
+    insertRawPlanEntry(sqlite, {
+      date: "2026-01-13",
+      kind: "eat_pantry",
+      ingredientId: beerId,
+      batchLabel: "PA Kcal Beer",
+      portions: 2,
+    });
+    sqlite.close();
+
+    const { getPlannerWeek } = await import("@/data/planner");
+    const week = await getPlannerWeek("2026-01-12", 0.75);
+    // 43 kcal/100 mL × 355 mL/can × 2 cans = 305.3 → 305.
+    expect(week.entriesByDate["2026-01-13"][0].caloriesKcal).toBe(305);
+  });
 });

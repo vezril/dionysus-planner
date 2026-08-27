@@ -16,12 +16,15 @@ import { parseRecipeBody } from "@/domain/cooklangParser";
 import type { RecipeRecord, RecipeLineRecord, RecipeLineInput } from "@/data/repositories/recipeRepo";
 import {
   createRecipeWithLines,
+  getNutritionPreviewForLines,
   getRecipeRecordById,
   removeRecipeRecord,
   updateRecipeWithLines,
   createRecipeVariationRecord,
   setRecipeRatingRecord,
 } from "@/data/recipes";
+import { getResolvedTargets } from "@/data/nutritionTargets";
+import type { NutritionTotals } from "@/domain/nutrition";
 
 export interface ActionError {
   code: string;
@@ -235,4 +238,44 @@ export async function deleteRecipe(id: number): Promise<DeleteRecipeResult> {
 
   revalidatePath("/recipes");
   return { ok: true, data: { id } };
+}
+
+/**
+ * openspec: nutrition-intake — live per-serving nutrition for the body
+ * being TYPED, with the resolved daily targets for %-of-intake chips.
+ * Unparseable bodies (mid-typing) return data: null — never an error.
+ */
+export type PreviewRecipeNutritionResult =
+  | { ok: true; data: { perServing: NutritionTotals; targets: Record<string, number> } | null }
+  | { ok: false; error: ActionError };
+
+export async function previewRecipeNutrition(input: unknown): Promise<PreviewRecipeNutritionResult> {
+  const shape =
+    input !== null && typeof input === "object" ? (input as { body?: unknown; servings?: unknown }) : {};
+  const body = typeof shape.body === "string" ? shape.body : "";
+  const servings = typeof shape.servings === "number" && shape.servings > 0 ? shape.servings : null;
+  if (body.trim() === "" || servings === null) return { ok: true, data: null };
+
+  const parsed = parseRecipeBody(body);
+  if (parsed.errors.length > 0 || parsed.lines.length === 0) return { ok: true, data: null };
+
+  let lines: RecipeLineInput[];
+  try {
+    lines = toLineInputs(parsed.lines);
+  } catch {
+    return { ok: true, data: null };
+  }
+
+  try {
+    const [nutrition, targets] = await Promise.all([
+      getNutritionPreviewForLines(servings, lines),
+      getResolvedTargets(),
+    ]);
+    return { ok: true, data: { perServing: nutrition.perServing, targets: targets.values } };
+  } catch (error) {
+    return {
+      ok: false,
+      error: { code: "PERSISTENCE_ERROR", message: error instanceof Error ? error.message : "Preview failed." },
+    };
+  }
 }

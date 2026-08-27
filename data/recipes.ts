@@ -344,3 +344,44 @@ export async function listRecipeSummariesAnnotated(threshold: number): Promise<A
     db.$client.close();
   }
 }
+
+/**
+ * openspec: nutrition-intake — nutrition for a NOT-YET-SAVED recipe body:
+ * the editor's live preview runs the same computeRecipeNutrition math a
+ * saved recipe gets, against the mentioned ingredients. Unknown ids fall
+ * through as unresolved lines (the preview shows N/A, never a fake 0).
+ */
+export async function getNutritionPreviewForLines(
+  servings: number,
+  lines: Array<{ ingredientId: number; quantityCanonical: number; entryUnitClass: "MASS" | "VOLUME" | "COUNT" }>,
+): Promise<RecipeNutrition> {
+  const db = createDb();
+  try {
+    const ids = [...new Set(lines.map((line) => line.ingredientId))];
+    const records = await Promise.all(ids.map((id) => ingredientRepo.getById(db, id)));
+    const ingredientsById = Object.fromEntries(
+      records.filter((record): record is IngredientRecord => record !== null).map((record) => [record.id, record]),
+    );
+    // Lines pointing at ids the catalog doesn't have (stale mention, typo)
+    // are unresolved: like the domain's own UNRESOLVED lines they null the
+    // four required macros — never a total that quietly excludes them.
+    const known = lines.filter((line) => line.ingredientId in ingredientsById);
+    const nutrition = computeRecipeNutrition(
+      {
+        id: 0,
+        servings,
+        lines: known.map((line, index) => ({ id: index + 1, ...line })),
+      },
+      ingredientsById,
+    );
+    if (known.length < lines.length) {
+      for (const key of ["calories", "protein", "carbs", "fat"] as const) {
+        nutrition.totals[key] = { value: null, incomplete: true };
+        nutrition.perServing[key] = { value: null, incomplete: true };
+      }
+    }
+    return nutrition;
+  } finally {
+    db.$client.close();
+  }
+}

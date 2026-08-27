@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { consumePlanEntry, removePlanEntry } from "@/app/actions/planner-actions";
 import type { PlanEntryRow } from "@/data/planner";
+import { fitStatus, percentOfTarget } from "@/domain/nutritionTargets";
 import { Button } from "@/components/ui/button";
 
 function consumeVerb(entry: PlanEntryRow): { action: string; done: string } {
@@ -22,6 +23,7 @@ export function PlanDayColumn({
   isSelected,
   onSelect,
   entries,
+  calorieTargetKcal,
 }: {
   date: string;
   label: string;
@@ -29,9 +31,15 @@ export function PlanDayColumn({
   isSelected: boolean;
   onSelect: () => void;
   entries: PlanEntryRow[];
+  calorieTargetKcal: number;
 }) {
   const [pending, startTransition] = useTransition();
   const [errorByEntry, setErrorByEntry] = useState<Record<number, string>>({});
+  // openspec: nutrition-intake — the day's share of the calorie budget.
+  const dayKcal = entries.reduce((total, entry) => total + (entry.caloriesKcal ?? 0), 0);
+  const dayStatus = fitStatus(dayKcal, calorieTargetKcal, "cap");
+  const dayTone =
+    dayStatus === "over" ? "text-destructive" : dayStatus === "near" ? "text-status-near" : "text-status-cookable";
 
   return (
     <div
@@ -50,6 +58,11 @@ export function PlanDayColumn({
         <span className={`text-sm font-semibold ${isToday || isSelected ? "text-primary" : ""}`}>{label}</span>
         <span className="font-mono text-xs tabular-nums text-muted-foreground">{date.slice(5)}</span>
       </div>
+      {dayKcal > 0 ? (
+        <span data-testid="plan-day-kcal" className={`font-mono text-xs tabular-nums ${dayTone}`}>
+          {dayKcal} kcal · {percentOfTarget(dayKcal, calorieTargetKcal)}% of day
+        </span>
+      ) : null}
       {entries.length === 0 ? (
         <span className="text-xs text-muted-foreground">—</span>
       ) : (
