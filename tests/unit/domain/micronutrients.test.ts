@@ -15,11 +15,28 @@ const base = {
 };
 
 describe("MICRONUTRIENTS registry", () => {
-  it("has the 17 nutrients (16 v1 + phosphorus), each with a label and a µg/mg unit", () => {
-    expect(Object.keys(MICRONUTRIENTS)).toHaveLength(17);
+  it("has the 25 nutrients (16 v1 + phosphorus + the trace/B expansion), each with a label and a µg/mg unit", () => {
+    expect(Object.keys(MICRONUTRIENTS)).toHaveLength(25);
     for (const def of Object.values(MICRONUTRIENTS)) {
       expect(def.label.length).toBeGreaterThan(0);
       expect(["µg", "mg"]).toContain(def.unit);
+    }
+  });
+
+  // openspec: nutrition-intake — common names lead; every key has a DRI
+  // goal seed so /guide never renders a target-less micronutrient.
+  it("carries the trace expansion under common-name labels", () => {
+    expect(MICRONUTRIENTS.vitaminB1.label).toBe("Thiamine (B1)");
+    expect(MICRONUTRIENTS.vitaminB9.label).toBe("Folate (B9)");
+    for (const key of ["biotin", "pantothenate", "iodine", "selenium", "copper", "manganese", "chromium", "molybdenum"]) {
+      expect(MICRONUTRIENTS[key]).toBeDefined();
+    }
+  });
+
+  it("every registry key has a target default", async () => {
+    const { MICRO_TARGET_DEFAULTS } = await import("@/domain/nutritionTargets");
+    for (const key of Object.keys(MICRONUTRIENTS)) {
+      expect(MICRO_TARGET_DEFAULTS[key], key).toBeGreaterThan(0);
     }
   });
 });

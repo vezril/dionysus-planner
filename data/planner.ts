@@ -22,6 +22,9 @@ import * as ingredientRepo from "@/data/repositories/ingredientRepo";
 import { mergeRowsByGroup, normalizeLineToRoot } from "@/domain/interchange";
 import { resolveDionysusServiceUrl } from "@/app/lib/dionysusServiceConfig";
 import { listBatches, listRecipes as listServiceRecipes } from "@/services/dionysusService";
+import { defaultPortionQuantity } from "@/domain/portioning";
+import { REFERENCE_QUANTITY_BY_CLASS } from "@/domain/types";
+import { resolveQuantityForComparison, toCanonical } from "@/domain/units";
 
 export type { PlanEntryRecord } from "@/data/repositories/plannerRepo";
 
@@ -214,15 +217,28 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
       cookCaloriesPerServing.set(cookRecipeId, nutrition.perServing.calories.value);
     }
 
+    // openspec: nutrition-intake — eat_pantry entries price a portion via
+    // the same ladder consumption uses (1 each / package / 100 g·mL ref).
+    const pantryPortionCalories = new Map<number, number | null>();
+    for (const entry of entries) {
+      if (entry.kind !== "eat_pantry" || entry.ingredientId === null) continue;
+      if (pantryPortionCalories.has(entry.ingredientId)) continue;
+      const record = await ingredientRepo.getById(db, entry.ingredientId);
+      pantryPortionCalories.set(entry.ingredientId, record ? caloriesPerPortion(record) : null);
+    }
+
     const entriesByDate: Record<string, PlanEntryRow[]> = Object.fromEntries(dates.map((date) => [date, []]));
     for (const entry of entries) {
       let caloriesKcal: number | null = null;
       if (entry.kind === "cook" && entry.recipeId !== null) {
         const perServing = cookCaloriesPerServing.get(entry.recipeId) ?? null;
         if (perServing !== null) caloriesKcal = Math.round(perServing * entry.portions);
-      } else if (entry.kind === "eat_batch" && entry.batchId !== null) {
+      } else if ((entry.kind === "eat_batch" || entry.kind === "eat_item") && entry.batchId !== null) {
         const perServing = batchCaloriesPerServing.get(entry.batchId) ?? null;
         if (perServing !== null) caloriesKcal = Math.round(perServing * entry.portions);
+      } else if (entry.kind === "eat_pantry" && entry.ingredientId !== null) {
+        const perPortion = pantryPortionCalories.get(entry.ingredientId) ?? null;
+        if (perPortion !== null) caloriesKcal = Math.round(perPortion * entry.portions);
       }
       entriesByDate[entry.date]?.push({ ...entry, caloriesKcal });
     }
@@ -248,6 +264,34 @@ export async function getPlannerWeek(weekStart: string, threshold: number): Prom
   } finally {
     db.$client.close();
   }
+}
+
+/** openspec: nutrition-intake — calories of ONE ladder-sized portion of a
+ * ready-to-eat product (null when the package unit can't convert). */
+function caloriesPerPortion(record: {
+  unitClass: "MASS" | "VOLUME" | "COUNT";
+  caloriesPerRef: number;
+  densityGPerMl: number | null;
+  packageQuantity: number | null;
+  packageUnit: string | null;
+}): number | null {
+  const portion = defaultPortionQuantity(record);
+  let entered: { quantityCanonical: number; entryUnitClass: "MASS" | "VOLUME" | "COUNT" };
+  try {
+    entered = toCanonical(portion.quantity, portion.unit);
+  } catch {
+    return null;
+  }
+  const inClass = resolveQuantityForComparison(
+    entered.quantityCanonical,
+    entered.entryUnitClass,
+    record.unitClass,
+    record.densityGPerMl,
+    record.packageQuantity,
+    record.packageUnit,
+  );
+  if (inClass === "UNRESOLVED") return null;
+  return (inClass / REFERENCE_QUANTITY_BY_CLASS[record.unitClass]) * record.caloriesPerRef;
 }
 
 export async function addPlanEntryRecord(input: plannerRepo.PlanEntryInsert) {

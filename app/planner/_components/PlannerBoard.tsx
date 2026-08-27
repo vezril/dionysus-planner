@@ -18,6 +18,7 @@ export function PlannerBoard({
   recipeOptions,
   batchOptions,
   pantryOptions,
+  calorieTargetKcal,
 }: {
   dates: string[];
   dayLabels: string[];
@@ -26,6 +27,8 @@ export function PlannerBoard({
   recipeOptions: Array<{ id: number; name: string; servings: number }>;
   batchOptions: Array<{ batchId: number; label: string; availablePortions: number; plannedPortions: number }>;
   pantryOptions: Array<{ ingredientId: number; name: string }>;
+  /** openspec: nutrition-intake — daily calorie budget for the day chips. */
+  calorieTargetKcal: number;
 }) {
   const [selectedDate, setSelectedDate] = useState(dates.includes(today) ? today : dates[0]);
   const selectedIndex = dates.indexOf(selectedDate);
@@ -50,6 +53,7 @@ export function PlannerBoard({
             isSelected={date === selectedDate}
             onSelect={() => setSelectedDate(date)}
             entries={entriesByDate[date] ?? []}
+            calorieTargetKcal={calorieTargetKcal}
           />
         ))}
       </div>

@@ -51,6 +51,15 @@ export const MICRO_TARGET_DEFAULTS: Record<string, number> = {
   potassium: 3400,
   zinc: 11,
   phosphorus: 700,
+  // openspec: nutrition-intake — Health Canada DRI adult-male seeds.
+  pantothenate: 5,
+  biotin: 30,
+  iodine: 150,
+  selenium: 55,
+  copper: 0.9,
+  manganese: 2.3,
+  chromium: 35,
+  molybdenum: 45,
 };
 
 export interface ResolvedTargets {

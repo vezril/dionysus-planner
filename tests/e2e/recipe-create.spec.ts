@@ -112,6 +112,24 @@ test.describe("S-401 recipe creation", () => {
     const recipeRow = page.getByTestId("recipe-row").filter({ hasText: recipeName });
     await expect(recipeRow.first()).toBeVisible();
   });
+
+  // openspec: nutrition-intake — while BUILDING, a live per-serving
+  // preview appears with %-of-daily-intake chips.
+  test("typing a complete mention surfaces the live nutrition preview with a daily-intake share", async ({ page }) => {
+    await page.goto("/recipes/new");
+    await page.getByRole("textbox", { name: "Recipe name" }).fill("Preview probe (never saved)");
+    await page.getByRole("spinbutton", { name: "Servings" }).fill("2");
+    const textarea = page.getByRole("textbox", { name: "Instructions" });
+    await textarea.click();
+    await textarea.pressSequentially("Drizzle ");
+    await insertMention(page, OLIVE_OIL_INGREDIENT_NAME, "30", "mL");
+    await textarea.pressSequentially("over everything.");
+
+    const preview = page.getByTestId("recipe-nutrition-preview");
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText("Calories");
+    await expect(preview.getByTestId("preview-percent-calories")).toContainText("%");
+  });
 });
 
 test.describe("S-401 recipe editor at 375px (NFR-8)", () => {
