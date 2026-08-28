@@ -6,13 +6,16 @@
  * per the §5 boundary rule); this file touches no DB driver directly.
  */
 import { isSeedComplete } from "@/data/health";
+import { withRouteLog } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request): Promise<Response> {
-  void request;
+  return withRouteLog(request, async () => {
+    void request;
 
-  const healthy = isSeedComplete();
+    const healthy = isSeedComplete();
 
-  return Response.json({ status: healthy ? "ok" : "unavailable" }, { status: healthy ? 200 : 503 });
+    return Response.json({ status: healthy ? "ok" : "unavailable" }, { status: healthy ? 200 : 503 });
+  });
 }

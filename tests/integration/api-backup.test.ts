@@ -71,7 +71,7 @@ describe("backup API", () => {
 
   it("the JSON bundle carries recipes, products, pantry, and rollups", async () => {
     const { GET } = await import("@/app/api/backup/route");
-    const response = await GET();
+    const response = await GET(new Request("http://planner.test/api/backup"));
     expect(response.status).toBe(200);
     const bundle = (await response.json()) as Record<string, unknown>;
     const recipes = bundle.recipes as Array<Record<string, unknown>>;
@@ -90,14 +90,16 @@ describe("backup API", () => {
   it("a downed service degrades rollups to null, everything else intact", async () => {
     serviceMock.fail = true;
     const { GET } = await import("@/app/api/backup/route");
-    const bundle = (await (await GET()).json()) as Record<string, unknown>;
+    const bundle = (await (await GET(new Request("http://planner.test/api/backup"))).json()) as Record<string, unknown>;
     expect(bundle.mealLogDays).toBeNull();
     expect((bundle.recipes as unknown[]).length).toBe(1);
   });
 
   it("the markdown route renders a note per recipe and product", async () => {
     const { GET } = await import("@/app/api/backup/markdown/route");
-    const payload = (await (await GET()).json()) as { files: Array<{ path: string; content: string }> };
+    const payload = (await (await GET(new Request("http://planner.test/api/backup/markdown"))).json()) as {
+      files: Array<{ path: string; content: string }>;
+    };
     const paths = payload.files.map((file) => file.path);
     expect(paths).toContain("Recipes/Backup Sear.md");
     expect(paths).toContain("Products/Backup Salmon.md");
