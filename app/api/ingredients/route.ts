@@ -12,14 +12,17 @@
  * that reuse.
  */
 import { getIngredientCatalog } from "@/data/ingredients";
+import { withRouteLog } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request): Promise<Response> {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q") ?? "";
+  return withRouteLog(request, async () => {
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get("q") ?? "";
 
-  const ingredients = await getIngredientCatalog(query);
+    const ingredients = await getIngredientCatalog(query);
 
-  return Response.json(ingredients, { status: 200 });
+    return Response.json(ingredients, { status: 200 });
+  });
 }

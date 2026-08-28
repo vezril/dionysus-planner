@@ -21,6 +21,7 @@ import { getRecipeDetail } from "@/data/recipes";
 import { defaultPortionQuantity } from "@/domain/portioning";
 import { planEntrySchema } from "@/domain/validation/planEntry.schema";
 import { createMeal as serviceCreateMeal, listBatches, listRecipes } from "@/services/dionysusService";
+import { errorMessage, log } from "@/lib/logger";
 
 export interface ActionError {
   code: string;
@@ -174,7 +175,21 @@ export async function consumePlanEntry(id: number): Promise<ActionResult<PlanEnt
         remaining = Math.round((remaining - take) * 100) / 100;
       }
       await serviceCreateMeal(baseUrl, { eatenAt: eatenAtForDate(entry.date, today), lines });
+      log.info("planner.consume.logged", {
+        entryId: entry.id,
+        kind: entry.kind,
+        date: entry.date,
+        backdated: entry.date !== today,
+        portions: entry.portions,
+        batchesDrained: lines.length,
+      });
     } catch (error) {
+      // Service-first: nothing was consumed and consumedAt stays null.
+      log.error("planner.consume.aborted", {
+        entryId: entry.id,
+        kind: entry.kind,
+        error: errorMessage(error),
+      });
       return {
         ok: false,
         error: {
@@ -205,6 +220,7 @@ export async function consumePlanEntry(id: number): Promise<ActionResult<PlanEnt
   }
 
   await markPlanEntryConsumed(entry.id, new Date().toISOString());
+  log.info("planner.consume.committed", { entryId: entry.id, kind: entry.kind, date: entry.date });
   const updated = await getPlanEntryRecordById(entry.id);
   revalidatePath("/planner");
   revalidatePath("/pantry");

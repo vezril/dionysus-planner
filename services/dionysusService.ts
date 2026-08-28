@@ -9,6 +9,7 @@
  * .../http/*.scala in the dionysus-service repo) — this file is the single
  * place that shape is allowed to leak into dionysus-planner.
  */
+import { errorMessage, log } from "@/lib/logger";
 
 export interface NutritionJson {
   caloriesKcal: number;
@@ -86,6 +87,10 @@ export class DionysusServiceError extends Error {
 }
 
 async function request<T>(baseUrl: string, path: string, init?: RequestInit): Promise<T> {
+  // openspec: observability-logging — the ONE outbound choke point: every
+  // inventory-service call is logged here, nowhere else.
+  const method = init?.method ?? "GET";
+  const started = Date.now();
   let response: Response;
   try {
     response = await fetch(`${baseUrl}${path}`, {
@@ -93,6 +98,12 @@ async function request<T>(baseUrl: string, path: string, init?: RequestInit): Pr
       headers: { "Content-Type": "application/json", ...init?.headers },
     });
   } catch (cause) {
+    log.error("service.unreachable", {
+      method,
+      path,
+      durationMs: Date.now() - started,
+      error: errorMessage(cause),
+    });
     throw new DionysusServiceError(
       `Could not reach dionysus-service at ${baseUrl}: ${cause instanceof Error ? cause.message : String(cause)}`,
     );
@@ -104,8 +115,17 @@ async function request<T>(baseUrl: string, path: string, init?: RequestInit): Pr
       body && typeof body === "object" && "error" in body && typeof body.error === "string"
         ? body.error
         : `dionysus-service returned ${response.status} for ${path}`;
+    log.warn("service.call", {
+      method,
+      path,
+      status: response.status,
+      durationMs: Date.now() - started,
+      error: message,
+    });
     throw new DionysusServiceError(message, response.status);
   }
+
+  log.debug("service.call", { method, path, status: response.status, durationMs: Date.now() - started });
 
   if (response.status === 204) {
     return undefined as T;

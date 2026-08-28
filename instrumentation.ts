@@ -24,8 +24,16 @@ export async function register() {
     const db = createDb();
     const rows = seedDataModule.default as unknown as SeedRow[];
 
+    // openspec: observability-logging — boot is the one place a silent
+    // failure is unrecoverable: the pod comes up serving an unmigrated DB.
+    const { errorMessage, log } = await import("@/lib/logger");
+    const started = Date.now();
     try {
       await bootstrap(db.$client, rows);
+      log.info("boot.ready", { seedRows: rows.length, durationMs: Date.now() - started });
+    } catch (cause) {
+      log.error("boot.failed", { durationMs: Date.now() - started, error: errorMessage(cause) });
+      throw cause;
     } finally {
       db.$client.close();
     }

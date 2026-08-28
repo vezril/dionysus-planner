@@ -110,7 +110,7 @@ describe("mobile API", () => {
 
   it("GET pantry returns rows with readyToEat and category", async () => {
     const { GET } = await import("@/app/api/mobile/pantry/route");
-    const response = await GET();
+    const response = await GET(new Request("http://planner.test/api/mobile/pantry"));
     expect(response.status).toBe(200);
     const rows = (await response.json()) as Array<Record<string, unknown>>;
     const beer = rows.find((row) => row.ingredientName === "Mobile Beer")!;

@@ -17,6 +17,7 @@ import {
   listIngredients as serviceListIngredients,
   updateIngredient as serviceUpdateIngredient,
 } from "@/services/dionysusService";
+import { errorMessage, log } from "@/lib/logger";
 
 export interface PantryConsumptionError {
   code: "NOT_FOUND" | "VALIDATION_ERROR" | "SERVICE_ERROR";
@@ -117,6 +118,13 @@ export async function performPantryConsumption(input: {
       ],
     });
   } catch (error) {
+    // All-or-nothing: the meal did not log, so the pantry is untouched.
+    log.error("pantry.consume.aborted", {
+      pantryItemId,
+      ingredientId: ingredient.id,
+      logDate,
+      error: errorMessage(error),
+    });
     return {
       ok: false,
       error: {
@@ -128,5 +136,12 @@ export async function performPantryConsumption(input: {
 
   // ---- Pantry second ----
   const [applied] = await consumeFromPantry([{ pantryItemId, amountInRowBasis: inRowBasis }]);
+  log.info("pantry.consume.committed", {
+    pantryItemId,
+    ingredientId: ingredient.id,
+    consumed: applied.consumed,
+    logDate,
+    backdated: logDate !== today,
+  });
   return { ok: true, consumed: applied.consumed, ingredientName: ingredient.name };
 }

@@ -16,6 +16,7 @@
  */
 import { getWhatCanICook } from "@/data/whatCanICook";
 import { resolveDefaultThreshold } from "@/app/lib/threshold";
+import { withRouteLog } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -36,10 +37,12 @@ function resolveThreshold(raw: string | null): number {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  const { searchParams } = new URL(request.url);
-  const threshold = resolveThreshold(searchParams.get("threshold"));
+  return withRouteLog(request, async () => {
+    const { searchParams } = new URL(request.url);
+    const threshold = resolveThreshold(searchParams.get("threshold"));
 
-  const result = await getWhatCanICook(threshold);
+    const result = await getWhatCanICook(threshold);
 
-  return Response.json(result, { status: 200 });
+    return Response.json(result, { status: 200 });
+  });
 }
