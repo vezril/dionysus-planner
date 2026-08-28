@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mealLogMealSchema } from "@/domain/validation/mealLog.schema";
 import type { BatchJson, IngredientJson } from "@/services/dionysusService";
+import { formatQuantity } from "@/domain/quantityFormat";
 
 type LineFormValues = {
   mode: "batch_portion" | "direct_consumable";
@@ -159,7 +160,7 @@ export function LogMealForm({
                             {batches.map((batch) => (
                               <SelectItem key={batch.id} value={String(batch.id)}>
                                 {recipeNameByBatchId.get(batch.recipeId) ?? `Recipe #${batch.recipeId}`} —{" "}
-                                {batch.remainingPortions} remaining
+                                {formatQuantity(batch.remainingPortions)} remaining
                               </SelectItem>
                             ))}
                           </SelectContent>

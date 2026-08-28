@@ -17,6 +17,7 @@ import type { PantryListRow } from "@/data/pantry";
 import { AdjustQuantityButton } from "./AdjustQuantityButton";
 import { EatItemButton } from "./EatItemButton";
 import { computeFreshness } from "@/domain/freshness";
+import { formatQuantity } from "@/domain/quantityFormat";
 
 export function PantryRow({ item }: { item: PantryListRow }) {
   const [editOpen, setEditOpen] = useState(false);
@@ -51,7 +52,7 @@ export function PantryRow({ item }: { item: PantryListRow }) {
         </span>
       ) : (
         <span className="text-sm text-muted-foreground font-mono tabular-nums sm:text-right">
-          {item.displayQuantity} {item.displayUnit}
+          {formatQuantity(item.displayQuantity)} {item.displayUnit}
         </span>
       )}
       {freshness !== null ? (

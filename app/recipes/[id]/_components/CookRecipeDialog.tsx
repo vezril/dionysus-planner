@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UNITS } from "@/domain/units";
+import { formatQuantity } from "@/domain/quantityFormat";
 
 type LineChoice =
   | { action: "consume"; usePantryItemId?: number }
@@ -204,7 +205,7 @@ export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; por
                               />
                               {candidate.name}
                               <span className="text-xs text-muted-foreground">
-                                ({candidate.displayQuantity} {candidate.displayUnit})
+                                ({formatQuantity(candidate.displayQuantity)} {candidate.displayUnit})
                               </span>
                             </label>
                           );
@@ -245,7 +246,7 @@ export function CookRecipeDialog({ recipeId, portions }: { recipeId: number; por
                               <SelectContent>
                                 {preview.pantryOptions.map((option) => (
                                   <SelectItem key={option.pantryItemId} value={option.pantryItemId.toString()}>
-                                    {option.name} ({option.displayQuantity} {option.displayUnit})
+                                    {option.name} ({formatQuantity(option.displayQuantity)} {option.displayUnit})
                                   </SelectItem>
                                 ))}
                               </SelectContent>

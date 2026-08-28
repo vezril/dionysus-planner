@@ -6,6 +6,7 @@
  */
 import Link from "next/link";
 import type { Suggestion } from "@/domain/planner";
+import { formatQuantity } from "@/domain/quantityFormat";
 
 export function SuggestionList({
   suggestions,
@@ -45,9 +46,9 @@ export function SuggestionList({
               <li key={batch.batchId} data-testid="planner-ready-batch" className="flex items-center gap-2 text-sm">
                 <span className="font-medium">{batch.label}</span>
                 <span className="text-xs text-muted-foreground">
-                  {batch.availablePortions} portions available
+                  {formatQuantity(batch.availablePortions)} portions available
                   {batch.plannedPortions > 0 ? (
-                    <span data-testid="planner-ready-planned"> · {batch.plannedPortions} planned</span>
+                    <span data-testid="planner-ready-planned"> · {formatQuantity(batch.plannedPortions)} planned</span>
                   ) : null}
                 </span>
               </li>

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 /**
  * openspec: qol-nav-scale-delete — the portion slider + everything it
  * rescales (ingredient lines, nutrition totals). Client Component because
@@ -16,6 +18,7 @@ import { Slider } from "@/components/ui/slider";
 import { formatNutritionForDisplay } from "@/domain/nutrition";
 import { scaleDisplayQuantity, scaleNutrientValue } from "@/domain/portionScaling";
 import { CookRecipeDialog } from "./CookRecipeDialog";
+import { formatQuantity } from "@/domain/quantityFormat";
 
 export interface ScalerLine {
   id: number;
@@ -27,6 +30,9 @@ export interface ScalerLine {
    * the authored servings ("ok" | "insufficient" | "missing" |
    * "unresolved" | "choice"); only missing/insufficient are badged. */
   pantryStatus: string;
+  /** openspec: recipe-links-precision — the product's own page: its
+   * pantry detail when stocked, else the catalog record. */
+  href: string;
 }
 
 export interface ScalerNutrientRow {
@@ -90,10 +96,17 @@ export function PortionScaler({
                   cook scans a list: "2 g, Garlic powder". */}
               <span className="flex items-baseline">
                 <span data-testid="recipe-line-quantity" className="font-mono text-sm tabular-nums text-foreground">
-                  {scaleDisplayQuantity(line.displayQuantity, factor)} {line.displayUnit}
+                  {formatQuantity(scaleDisplayQuantity(line.displayQuantity, factor))} {line.displayUnit}
                 </span>
                 <span className="text-sm text-muted-foreground">,&nbsp;</span>
-                <span className="font-medium text-foreground">{line.name}</span>
+                {/* openspec: recipe-links-precision — straight to the product. */}
+                <Link
+                  href={line.href}
+                  data-testid="recipe-line-link"
+                  className="font-medium text-foreground hover:text-primary hover:underline"
+                >
+                  {line.name}
+                </Link>
               </span>
               {line.unresolved ? (
                 <span data-testid="recipe-line-unresolved" className="text-sm text-destructive">

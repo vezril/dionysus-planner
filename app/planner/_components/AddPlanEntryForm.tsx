@@ -7,6 +7,7 @@ import { addPlanEntry } from "@/app/actions/planner-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatQuantity } from "@/domain/quantityFormat";
 
 export function AddPlanEntryForm({
   selectedDate,
@@ -62,8 +63,8 @@ export function AddPlanEntryForm({
           <SelectContent>
             {batchOptions.map((option) => (
               <SelectItem key={`batch:${option.batchId}`} value={`batch:${option.batchId}`}>
-                {option.label} — ready to eat ({option.availablePortions} left
-                {option.plannedPortions > 0 ? ` · ${option.plannedPortions} planned` : ""})
+                {option.label} — ready to eat ({formatQuantity(option.availablePortions)} left
+                {option.plannedPortions > 0 ? ` · ${formatQuantity(option.plannedPortions)} planned` : ""})
               </SelectItem>
             ))}
             {pantryOptions.map((option) => (
