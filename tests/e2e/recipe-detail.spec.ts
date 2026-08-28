@@ -320,6 +320,35 @@ test.describe("S-403 recipe detail — nutrition display", () => {
     await expect(page.getByTestId("nutrition-total-calories")).toHaveText("80 kcal");
   });
 
+  // openspec: recipe-links-precision — an ingredient row is a way IN to
+  // the product, not a dead end.
+  test("clicking an ingredient opens that product's own page", async ({ page }) => {
+    const recipeName = `E2E Link Recipe ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    await createRecipeAndOpenDetail(page, {
+      name: recipeName,
+      servings: "1",
+      instructions: "n/a",
+      lines: [{ ingredientName: CARROT, quantity: "2", unit: "each" }],
+    });
+
+    const link = page.getByTestId("recipe-line-link").filter({ hasText: CARROT });
+    await expect(link).toBeVisible();
+    const href = await link.getAttribute("href");
+    // Stocked → its pantry detail; otherwise the catalog record. Either
+    // way it is that product's page, not a dead end.
+    expect(href).toMatch(/^\/(pantry\/\d+|ingredients\/\d+\/edit)$/);
+
+    await link.click();
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+    // Both destinations identify the product, but differently: the pantry
+    // detail prints the name, the catalog record holds it in a field.
+    if (href!.startsWith("/pantry/")) {
+      await expect(page.getByText(CARROT).first()).toBeVisible();
+    } else {
+      await expect(page.getByRole("textbox", { name: "Name" })).toHaveValue(CARROT);
+    }
+  });
+
   test("AC6: an unknown recipe id renders the not-found boundary", async ({ page }) => {
     await page.goto("/recipes/999999999");
     await expect(page.getByText(/not found/i)).toBeVisible();

@@ -9,6 +9,7 @@ import { consumePlanEntry, removePlanEntry } from "@/app/actions/planner-actions
 import type { PlanEntryRow } from "@/data/planner";
 import { fitStatus, percentOfTarget } from "@/domain/nutritionTargets";
 import { Button } from "@/components/ui/button";
+import { formatQuantity } from "@/domain/quantityFormat";
 
 function consumeVerb(entry: PlanEntryRow): { action: string; done: string } {
   return entry.kind === "eat_pantry" && entry.ingredientCategory === "DRINK"
@@ -73,9 +74,9 @@ export function PlanDayColumn({
             const consumed = entry.consumedAt !== null;
             const consumable = (entry.kind === "eat_batch" || entry.kind === "eat_pantry") && !consumed;
             return (
-              <li key={entry.id} data-testid="plan-entry" className="flex flex-col gap-1 rounded-sm border border-border/60 p-2">
+              <li key={entry.id} data-testid="plan-entry" className="flex min-w-0 flex-col gap-1 overflow-hidden rounded-sm border border-border/60 p-2">
                 {entry.kind === "eat_item" ? (
-                  <span className="text-sm font-medium">
+                  <span className="block truncate text-sm font-medium">
                     {entry.batchLabel}{" "}
                     <span data-testid="plan-entry-eaten" className="text-xs font-normal text-status-cookable">
                       (eaten)
@@ -83,7 +84,7 @@ export function PlanDayColumn({
                   </span>
                 ) : entry.kind === "eat_pantry" ? (
                   /* openspec: plan-pantry-backdate — planned, not yet eaten. */
-                  <Link href="/pantry" className="text-sm font-medium hover:text-primary hover:underline">
+                  <Link href="/pantry" className="block truncate text-sm font-medium hover:text-primary hover:underline">
                     {entry.batchLabel}{" "}
                     {consumed ? (
                       <span data-testid="plan-entry-consumed" className="text-xs font-normal text-status-cookable">
@@ -96,7 +97,7 @@ export function PlanDayColumn({
                     )}
                   </Link>
                 ) : entry.kind === "eat_batch" ? (
-                  <Link href="/meal-log/batches" className="text-sm font-medium hover:text-primary hover:underline">
+                  <Link href="/meal-log/batches" className="block truncate text-sm font-medium hover:text-primary hover:underline">
                     {entry.batchLabel}{" "}
                     {consumed ? (
                       <span data-testid="plan-entry-consumed" className="text-xs font-normal text-status-cookable">
@@ -109,19 +110,21 @@ export function PlanDayColumn({
                     )}
                   </Link>
                 ) : (
-                  <Link href={`/recipes/${entry.recipeId}`} className="text-sm font-medium hover:text-primary hover:underline">
+                  <Link href={`/recipes/${entry.recipeId}`} className="block truncate text-sm font-medium hover:text-primary hover:underline">
                     {entry.recipeName}
                   </Link>
                 )}
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    {entry.kind === "eat_item" ? "logged" : `${entry.portions} portions`}
+                {/* openspec: recipe-links-precision — a 7-column day card is
+                    ~130px: the meta line truncates, the buttons stay whole. */}
+                <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                  <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                    {entry.kind === "eat_item" ? "logged" : `${formatQuantity(entry.portions)} portions`}
                     {entry.caloriesKcal !== null ? (
                       <span data-testid="plan-entry-calories"> · {entry.caloriesKcal} kcal</span>
                     ) : null}
                   </span>
                   {consumed ? null : (
-                    <span className="flex items-center gap-1">
+                    <span className="flex shrink-0 items-center gap-1">
                       {consumable ? (
                         <Button
                           type="button"

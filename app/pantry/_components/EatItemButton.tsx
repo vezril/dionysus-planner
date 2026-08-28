@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { PantryListRow } from "@/data/pantry";
+import { formatQuantity } from "@/domain/quantityFormat";
 
 export function EatItemButton({ item }: { item: PantryListRow }) {
   const router = useRouter();
@@ -61,7 +62,7 @@ export function EatItemButton({ item }: { item: PantryListRow }) {
               />
             </div>
             <span className="pb-2 text-sm text-muted-foreground">
-              of {item.displayQuantity} {item.displayUnit} on hand
+              of {formatQuantity(item.displayQuantity)} {item.displayUnit} on hand
             </span>
           </div>
           <div className="flex flex-col gap-1">

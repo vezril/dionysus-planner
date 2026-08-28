@@ -117,6 +117,49 @@ test.describe("weekly planner", () => {
     ).toBeVisible();
   });
 
+  // openspec: recipe-links-precision — the Eat + remove pair must stay
+  // inside the day card at the 7-column desktop breakpoint (~130px wide).
+  // NB: assert on the BUTTONS and the card's own scroll box, never on every
+  // descendant rect — labels sit inside overflow-hidden boxes, so a clipped
+  // (correct) label still reports an unclipped getBoundingClientRect.
+  test("day-card entry controls stay inside the card", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/planner");
+    await page.getByRole("combobox", { name: "Plan recipe" }).click();
+    await page.getByRole("option", { name: RECIPE_NAME }).click();
+    await page.getByLabel("Portions").fill("2");
+    await page.getByTestId("plan-add").click();
+
+    const entry = page.getByTestId("plan-entry").filter({ hasText: RECIPE_NAME });
+    await expect(entry).toBeVisible();
+    const day = page.getByTestId("plan-day").filter({ has: entry });
+
+    const layout = await day.evaluate((card) => {
+      const cardBox = card.getBoundingClientRect();
+      const buttons = Array.from(card.querySelectorAll("button"));
+      return {
+        cardWidth: Math.round(cardBox.width),
+        buttonCount: buttons.length,
+        worstButtonOverflow: buttons.reduce(
+          (worst, b) => Math.max(worst, b.getBoundingClientRect().right - cardBox.right),
+          -Infinity,
+        ),
+        cardScrolls: card.scrollWidth > card.clientWidth,
+        docScrollsX: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+
+    // The 7-column breakpoint is the case that broke: a ~130px card.
+    expect(layout.cardWidth).toBeLessThan(200);
+    expect(layout.buttonCount).toBeGreaterThan(0);
+    expect(layout.worstButtonOverflow).toBeLessThan(0);
+    expect(layout.cardScrolls).toBe(false);
+    expect(layout.docScrollsX).toBe(false);
+
+    await entry.getByRole("button", { name: `Remove ${RECIPE_NAME}` }).click();
+    await expect(entry).toHaveCount(0);
+  });
+
   // openspec: nutrition-intake — a planned day totals its calories and
   // shows the share of the daily budget on the day card.
   test("a planned day shows its calorie total as a share of the daily budget", async ({ page }) => {

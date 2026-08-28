@@ -4,6 +4,7 @@ import { getPlannedPortionsByBatch } from "@/data/planner";
 import { listBatches, listRecipes } from "@/services/dionysusService";
 import { CookBatchForm } from "./_components/CookBatchForm";
 import { LogPortionButton } from "./_components/LogPortionButton";
+import { formatQuantity } from "@/domain/quantityFormat";
 
 /**
  * openspec: meal-log-integration — dionysus-service batches (cook events).
@@ -41,12 +42,12 @@ export default async function MealLogBatchesPage() {
                 {recipeNameById.get(batch.recipeId) ?? `Recipe #${batch.recipeId}`}
               </span>
               <span className="text-sm text-muted-foreground">
-                cooked {formatInstantIn(batch.cookedAt, timeZone)} · {batch.remainingPortions} portions remaining
+                cooked {formatInstantIn(batch.cookedAt, timeZone)} · {formatQuantity(batch.remainingPortions)} portions remaining
                 {/* openspec: planner-consume — reservations are visible, never deducted. */}
                 {batch.id !== null && (plannedByBatch.get(batch.id) ?? 0) > 0 ? (
                   <span data-testid="batch-planned" className="text-status-near">
                     {" "}
-                    · {plannedByBatch.get(batch.id)} planned
+                    · {formatQuantity(plannedByBatch.get(batch.id) ?? 0)} planned
                   </span>
                 ) : null}
               </span>

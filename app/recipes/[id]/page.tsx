@@ -4,6 +4,7 @@ import { CreateVariationButton } from "./_components/CreateVariationButton";
 import { RecipeRating } from "./_components/RecipeRating";
 import { notFound } from "next/navigation";
 import { getRecipeDetail } from "@/data/recipes";
+import { getAllPantryRows } from "@/data/pantry";
 import { getResolvedTargets } from "@/data/nutritionTargets";
 import { percentOfTarget } from "@/domain/nutritionTargets";
 import type { NutritionTotals } from "@/domain/nutrition";
@@ -65,6 +66,15 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
   const pantryStatusByLineId = new Map<number, string>(
     preview.ok ? preview.data.lines.map((line) => [line.lineId, line.status]) : [],
   );
+  // openspec: recipe-links-precision — a stocked product links to its
+  // pantry detail (nutrition + purchase history); anything else to its
+  // catalog record. One query, not one per line.
+  const pantryItemIdByIngredientId = new Map<number, number>();
+  for (const row of await getAllPantryRows()) {
+    if (!pantryItemIdByIngredientId.has(row.ingredientId)) {
+      pantryItemIdByIngredientId.set(row.ingredientId, row.id);
+    }
+  }
   // openspec: nutrition-targets-guide — per-serving % of the daily target.
   const targets = await getResolvedTargets();
   const TARGET_KEY_BY_ROW: Record<string, string> = {
@@ -200,6 +210,9 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
           displayUnit: line.displayUnit,
           unresolved: nutrition.unresolvedLineIds.includes(line.id),
           pantryStatus: pantryStatusByLineId.get(line.id) ?? "ok",
+          href: pantryItemIdByIngredientId.has(line.ingredient.id)
+            ? `/pantry/${pantryItemIdByIngredientId.get(line.ingredient.id)}`
+            : `/ingredients/${line.ingredient.id}/edit`,
         }))}
         totalRows={NUTRIENT_ROWS.map((row) => ({
           key: row.key,

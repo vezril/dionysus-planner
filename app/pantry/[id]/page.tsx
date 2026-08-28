@@ -9,6 +9,7 @@ import { computePriceStats } from "@/domain/priceStats";
 import { REFERENCE_QUANTITY_BY_CLASS } from "@/domain/types";
 import { AddPurchaseForm } from "./_components/AddPurchaseForm";
 import { DeletePurchaseButton } from "./_components/DeletePurchaseButton";
+import { formatQuantity } from "@/domain/quantityFormat";
 
 /**
  * openspec: pantry-item-detail — nutrition facts + purchase history for one
@@ -88,7 +89,7 @@ export default async function PantryItemDetailPage({
             </span>
           ) : null}
           <span data-testid="pantry-detail-on-hand" className="font-mono text-sm tabular-nums text-muted-foreground">
-            {item.displayQuantity} {item.displayUnit} on hand
+            {formatQuantity(item.displayQuantity)} {item.displayUnit} on hand
           </span>
           {freshness !== null ? (
             <span data-testid="pantry-detail-freshness" className="text-sm text-muted-foreground">
@@ -238,7 +239,7 @@ export default async function PantryItemDetailPage({
                   {purchase.purchasedAt}
                   {purchase.store ? ` · ${purchase.store}` : ""}
                   {purchase.displayQuantity != null
-                    ? ` · ${purchase.displayQuantity} ${purchase.displayUnit ?? ""}`
+                    ? ` · ${formatQuantity(purchase.displayQuantity)} ${purchase.displayUnit ?? ""}`
                     : ""}
                 </span>
                 <DeletePurchaseButton purchaseId={purchase.id} />
