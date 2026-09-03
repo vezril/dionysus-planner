@@ -4,7 +4,7 @@
  * and the generated Insomnia collection
  * (scripts/generate-insomnia.mjs → public/insomnia-collection.json).
  *
- * DRIFT GATE: tests/unit/openapiCoverage.test.ts asserts every
+ * DRIFT GATE: tests/integration/openapiCoverage.test.ts asserts every
  * app/api/**{@link}/route.ts has a path entry here — a new endpoint that
  * skips the docs fails CI. Add the path (and regenerate the Insomnia
  * collection) alongside any API change.
