@@ -41,7 +41,8 @@ upgrade `--reuse-values --set image.tag=X.Y.Z` (remote: add
 - `app/actions/` — server actions; validation via shared zod schemas in
   `domain/validation/` (ADR-005: parse on both sides).
 - `app/api/` — route handlers. `/api/mobile/*` is the iOS surface;
-  document every route in `lib/openapi.ts` (a unit test enforces this).
+  document every route in `lib/openapi.ts` (an integration test
+  enforces this, by importing each route module — see the drift gate).
 - `services/dionysusService.ts` — the ONLY client for the Scala
   service. Cook/eat flows are service-first, all-or-nothing.
 - UI: dark-only cyberpunk theme; `tests/unit/uxStandards.test.ts` pins
@@ -71,7 +72,7 @@ upgrade `--reuse-values --set image.tag=X.Y.Z` (remote: add
   ethanol density 0.789); CRDM unit = (mL × ABV%)/17.
 - Logging: `lib/logger.ts` emits JSON lines ({ts, level, event, ...}).
   Routes wrap their body in `withRouteLog` (keeping the
-  `export async function GET` shape the drift gate reads);
+  any export shape — the drift gate imports the module, not the text);
   `dionysusService#request` is the ONE outbound log point. Level via
   DIONYSUS_LOG_LEVEL, silent under NODE_ENV=test. Never log bodies.
 - `formatQuantity` (domain/quantityFormat) is the DISPLAY rounding

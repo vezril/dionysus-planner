@@ -70,8 +70,10 @@ export function errorMessage(cause: unknown): string {
 /**
  * Wraps an API route handler body: one line per request carrying
  * method, path, status and duration; escaping errors log at error and
- * rethrow unchanged. Handlers keep their `export async function GET`
- * shape so the OpenAPI drift gate still sees them.
+ * rethrow unchanged. (Handlers used to need the
+ * `export async function GET` shape for the drift gate to see them;
+ * openspec: drift-gate-fail-closed removed that coupling — the gate now
+ * imports the module and checks the export, so any shape works.)
  */
 export async function withRouteLog(
   request: Request | undefined,
