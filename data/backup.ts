@@ -65,6 +65,7 @@ export async function buildFullBackup(): Promise<FullBackup> {
       unitClass: ingredient.unitClass,
       brand: ingredient.brand,
       barcode: ingredient.barcode,
+      productId: ingredient.productId,
       readyToEat: ingredient.readyToEat,
       categories: categoriesById.get(ingredient.id) ?? [],
       merchantLinks: linksById.get(ingredient.id) ?? [],

@@ -25,6 +25,7 @@ const bundle: BackupBundle = {
       unitClass: "MASS",
       brand: "Brandy",
       barcode: "0123",
+      productId: null,
       readyToEat: false,
       categories: ["fish"],
       merchantLinks: ["https://store.example/salmon"],

@@ -24,6 +24,8 @@ export interface BackupProduct {
   unitClass: string;
   brand: string | null;
   barcode: string | null;
+  /** openspec: ariadne-product-ref — Ariadne Catalog id, null until linked. */
+  productId: string | null;
   readyToEat: boolean;
   categories: string[];
   merchantLinks: string[];
