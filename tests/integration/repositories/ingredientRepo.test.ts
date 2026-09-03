@@ -154,6 +154,8 @@ describe("data/repositories/ingredientRepo", () => {
           // openspec: pack-units — the inner pre-portioned pack.
           "packQuantity",
           "packUnit",
+          // openspec: ariadne-product-ref — the Ariadne Catalog link.
+          "productId",
           "createdAt",
           "updatedAt",
         ].sort(),

@@ -53,6 +53,11 @@ export const ingredient = sqliteTable(
      * of 6×61 g packs: package 366 g, pack 61 g). */
     packQuantity: real("packQuantity"),
     packUnit: text("packUnit"),
+    /** openspec: ariadne-product-ref — the same thing in the Ariadne
+     * Product Catalog. Plain nullable text, no FK: the referent lives in
+     * another system. Null is permanently legitimate ("salt to taste"),
+     * and nothing in planning, cooking, or logging may require it. */
+    productId: text("productId"),
     createdAt: text("createdAt").notNull(),
     updatedAt: text("updatedAt").notNull(),
   },

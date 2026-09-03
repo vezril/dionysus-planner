@@ -42,13 +42,16 @@ export interface IngredientRecord {
   /** openspec: pack-units — the inner pre-portioned pack. */
   packQuantity: number | null;
   packUnit: string | null;
+  /** openspec: ariadne-product-ref — Ariadne Product Catalog id; null is
+   * permanently legitimate and nothing meal-shaped may require it. */
+  productId: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export type IngredientCreateInput = Omit<
   IngredientRecord,
-  "id" | "createdAt" | "updatedAt" | "overridden" | "brand" | "barcode" | "packageQuantity" | "packageUnit" | "packQuantity" | "packUnit"
+  "id" | "createdAt" | "updatedAt" | "overridden" | "brand" | "barcode" | "packageQuantity" | "packageUnit" | "packQuantity" | "packUnit" | "productId"
 > & {
   overridden?: boolean;
   // Optional so pre-existing callers (seed, ingredient actions) are untouched.
@@ -58,6 +61,7 @@ export type IngredientCreateInput = Omit<
   packageUnit?: string | null;
   packQuantity?: number | null;
   packUnit?: string | null;
+  productId?: string | null;
 };
 
 export type IngredientUpdatePatch = Partial<
@@ -87,6 +91,7 @@ export type IngredientUpdatePatch = Partial<
     | "packageUnit"
     | "packQuantity"
     | "packUnit"
+    | "productId"
   >
 >;
 
@@ -120,6 +125,7 @@ function toRecord(row: typeof ingredient.$inferSelect): IngredientRecord {
     packageUnit: row.packageUnit,
     packQuantity: row.packQuantity,
     packUnit: row.packUnit,
+    productId: row.productId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -161,6 +167,7 @@ export async function create(db: Db, input: IngredientCreateInput): Promise<Ingr
       packageUnit: input.packageUnit ?? null,
       packQuantity: input.packQuantity ?? null,
       packUnit: input.packUnit ?? null,
+      productId: input.productId ?? null,
       createdAt: timestamp,
       updatedAt: timestamp,
     })

@@ -141,6 +141,13 @@
       "when": 1787842653496,
       "tag": "0019_pack_units",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1788465666585,
+      "tag": "0020_ariadne_product_ref",
+      "breakpoints": true
     }
   ]
 }

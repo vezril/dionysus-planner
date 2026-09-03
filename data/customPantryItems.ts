@@ -138,6 +138,7 @@ export async function createCustomPantryItemRecords(
           packageUnit: ingredientRow.packageUnit,
           packQuantity: ingredientRow.packQuantity,
           packUnit: ingredientRow.packUnit,
+          productId: ingredientRow.productId,
           createdAt: ingredientRow.createdAt,
           updatedAt: ingredientRow.updatedAt,
         },
